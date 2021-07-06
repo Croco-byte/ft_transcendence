@@ -4,10 +4,12 @@ services:
   main:
     container_name: website
     build:
-      context: ./website # ./Yassine
+      context: ./website
       target: development
+    links:
+       - "postgres"
     volumes:
-      - ./website:/usr/src/app #./Yassine:/usr/src/app
+      - ./website:/usr/src/app
       - /usr/src/app/node_modules
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
@@ -15,6 +17,8 @@ services:
     command: npm run start:dev
     env_file:
       - .env
+    environment:
+      - POSTGRES=postgres
     networks:
       - webnet
     depends_on:
@@ -24,8 +28,10 @@ services:
     image: neimheadh/phppgadmin:latest
     ports:
       - "8000:80"
+    links:
+      - "postgres"
     environment:
-      - POSTGRES_HOST=172.24.0.2
+      - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=root
       - POSTGRES_PASS=password

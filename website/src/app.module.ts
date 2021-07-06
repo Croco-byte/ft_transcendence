@@ -12,7 +12,7 @@ import { join } from 'path';
 		TypeOrmModule.forRoot(
 		{
 			type: "postgres",
-			host: "172.24.0.2",
+			host: "postgres",
 			port: 5432,
 			username: "root",
 			password: "password",
@@ -31,13 +31,7 @@ import { join } from 'path';
 			subscribers:
 			[
 				"src/**/*.subscriber.ts"
-			],
-			cli:
-			{
-				"entitiesDir": "src/entity",
-				"migrationsDir": "src/migration",
-				"subscribersDir": "src/subscriber"
-			}
+			]
 		}),
 	],
 	controllers: [AppController],
