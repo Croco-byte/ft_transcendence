@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
 
 @Entity('User')
 export class User
@@ -23,4 +23,8 @@ export class User
 
   @Column({type: "boolean", default: true})
   online: boolean
+
+  @ManyToMany(() => User)
+  @JoinTable()
+  friends: User[];
 };
