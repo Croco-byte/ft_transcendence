@@ -2,14 +2,14 @@ version: '3.7'
 
 services:
   main:
-    container_name: website
+    container_name: back
     build:
-      context: ./website
+      context: ./back
       target: development
     links:
        - "postgres"
     volumes:
-      - ./website:/usr/src/app
+      - ./back:/usr/src/app
       - /usr/src/app/node_modules
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}

@@ -1,0 +1,12 @@
+Users:
+	- OAuth connexion
+	- 2D Factor Authentication
+	- Ajouter des amis
+	- Historique de match
+	- Page de profil
+
+Chat:
+	- Page de chat
+
+Game:
+	- Page de matchmaking
