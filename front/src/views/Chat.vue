@@ -17,6 +17,43 @@ export default
 			messages:
 			[	
 			
+			],
+			friends:
+			[
+				{
+					id: 0,
+					username: "yel-alou"
+				},
+				{
+					id: 1,
+					username: "qroland"
+				},
+				{
+					id: 2,
+					username: "llefranc"
+				},
+				{
+					id: 3,
+					username: "hherin"
+				}
+			],
+			channels:
+			[
+				{
+					id: 1,
+					name: "Abcde",
+					date: "05/07/21"
+				},
+				{
+					id: 2,
+					name: "Yassine",
+					date: "05/07/21"
+				},
+				{
+					id: 1,
+					name: "Groupe 13",
+					date: "05/07/21"
+				},
 			]
 		};
 	},
@@ -35,8 +72,8 @@ export default
 			$('.chat_item.selected').removeClass('selected');
 			$(event.currentTarget).addClass('selected');
 
-			this.channelID = id;
-			this.channelName = "Yassine";
+			this.channelID = this.channels[id].id;
+			this.channelName = this.channels[id].name;
 			if (id % 2 == 0)
 				this.messages.push(
 				{
@@ -45,7 +82,7 @@ export default
 				});
 			else
 				this.messages = [];
-			$('.view').scrollTop($('.view').height());
+			$('.view').scrollTop($('.view')[0].scrollHeight);
 		}
 	}
 }
@@ -60,19 +97,19 @@ export default
 				<p>+</p>
 			</div>
 			<div class="list">
-				<div @click="switchChat" v-bind:key="n" v-for="n in 10" class="chat_item" v-bind:data-id="n">
+				<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
 					<div class="flex j-sb">
-						<p class="title">Yassine</p>
-						<p class="date">05/07/21</p>
+						<p class="title">{{ channel.name }}</p>
+						<p class="date">{{ channel.date }}</p>
 					</div>
-					<p class="last_msg_preview">Je suis le message {{n}}...</p>
+					<p class="last_msg_preview">Je suis le message...</p>
 				</div>
 			</div>
 		</div>
 		<div class="chat_view">
 			<div v-if="channelID">
 				<div class="chat_view_header">
-					<p>Yassine</p>
+					<p>{{ channelName }}</p>
 				</div>
 				<div class="view">
 					<div class="message">
@@ -297,7 +334,7 @@ export default
 
 	.chat_view #send_button:hover
 	{
-		background: rgb(92, 92, 92);
+		background: #39ea88;
 		color: white;
 	}
 </style>
