@@ -39,8 +39,10 @@ services:
       - webnet
     depends_on:
       - postgres
+    
   postgres:
     container_name: postgres
+    image: postgres
     image: postgres:12
     networks:
       - webnet
@@ -53,6 +55,22 @@ services:
       - ${DB_PORT}:${DB_PORT}
     volumes:
       - pgdata:/var/lib/postgresql/data
+  front:
+    container_name: front-vue
+    build:
+      context: ./front
+      target: development
+    volumes:
+      - ./front:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - 80:8080
+      - 9228:9228
+    command: npm run serve
+    networks:
+      - webnet
+    depends_on:
+      - main
 networks:
   webnet:
 volumes:

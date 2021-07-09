@@ -72,7 +72,7 @@ export default
 		<div class="chat_view">
 			<div v-if="channelID">
 				<div class="chat_view_header">
-					<p>Yassine</p>
+					<p>Test</p>
 				</div>
 				<div class="view">
 					<div class="message">
