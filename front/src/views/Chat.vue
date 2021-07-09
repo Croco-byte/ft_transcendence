@@ -12,11 +12,51 @@ export default
 	data: function()
 	{
 		return {
-			channelID: null,
-			channelName: null,
+			channel:
+			{
+				id: null,
+				name: null
+			},
 			messages:
 			[	
 			
+			],
+			friends:
+			[
+				{
+					id: 0,
+					username: "yel-alou"
+				},
+				{
+					id: 1,
+					username: "qroland"
+				},
+				{
+					id: 2,
+					username: "llefranc"
+				},
+				{
+					id: 3,
+					username: "hherin"
+				}
+			],
+			channels:
+			[
+				{
+					id: 1,
+					name: "Abcde",
+					date: "05/07/21"
+				},
+				{
+					id: 2,
+					name: "Yassine",
+					date: "05/07/21"
+				},
+				{
+					id: 1,
+					name: "Groupe 13",
+					date: "05/07/21"
+				},
 			]
 		};
 	},
@@ -24,7 +64,7 @@ export default
 	{
 		placeholder: function()
 		{
-			return 'Dites-bonjour à ' + this.channelName;
+			return 'Dites-bonjour à ' + this.channel.name + '...';
 		}
 	},
 	methods:
@@ -35,8 +75,8 @@ export default
 			$('.chat_item.selected').removeClass('selected');
 			$(event.currentTarget).addClass('selected');
 
-			this.channelID = id;
-			this.channelName = "Yassine";
+			this.channel.id = this.channels[id].id;
+			this.channel.name = this.channels[id].name;
 			if (id % 2 == 0)
 				this.messages.push(
 				{
@@ -45,34 +85,32 @@ export default
 				});
 			else
 				this.messages = [];
-			$('.view').scrollTop($('.view').height());
+			$('.view').scrollTop($('.view')[0].scrollHeight);
 		}
 	}
 }
 </script>
 
 <template>
-	<h1>Chat</h1>
 	<div class="chat_container">
 		<div class="chat_list">
-			<div class="chat_list_header">
-				<p>Chat</p>
-				<p>+</p>
-			</div>
 			<div class="list">
-				<div @click="switchChat" v-bind:key="n" v-for="n in 10" class="chat_item" v-bind:data-id="n">
+				<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
 					<div class="flex j-sb">
-						<p class="title">Yassine</p>
-						<p class="date">05/07/21</p>
+						<p class="title">{{ channel.name }}</p>
+						<p class="date">{{ channel.date }}</p>
 					</div>
-					<p class="last_msg_preview">Je suis le message {{n}}...</p>
+					<p class="last_msg_preview">Je suis le message...</p>
 				</div>
+			</div>
+			<div id="create_channel_button">
+				<span>+</span>
 			</div>
 		</div>
 		<div class="chat_view">
-			<div v-if="channelID">
+			<div v-if="channel.id">
 				<div class="chat_view_header">
-					<p>Test</p>
+					<p>{{ channel.name }}</p>
 				</div>
 				<div class="view">
 					<div class="message">
@@ -120,29 +158,24 @@ export default
 	{
 		display: flex;
 		flex-direction: row;
+		align-items: center;
+		justify-content: center;
 		width: 80vw;
+		height: 80vh;
 		margin: 0 auto;
-		height: 500px;
 		border: solid 1px black;
 	}
 
 	.chat_list
 	{
 		display: flex;
+		position: relative;
 		flex-direction: column;
 		width: 30%;
 		height: 100%;
 		background-color: white;
 		border-right: solid 1px black;
 		color: black;
-	}
-
-	.chat_list_header
-	{
-		display: flex;
-		justify-content: space-between;
-		padding: 0 1rem;
-		border-bottom: solid 1px black;
 	}
 
 	.chat_list .list
@@ -201,9 +234,32 @@ export default
 		margin: 0;
 	}
 
+	.chat_list #create_channel_button
+	{
+		position: absolute;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		bottom: 2rem;
+		right: 1rem;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 100%;
+		background-color: #00c4ff;
+		cursor: pointer;
+	}
+
+	.chat_list #create_channel_button span
+	{
+		font-size: 1.5rem;
+		color: white;
+		transform: translateY(-0.125rem);
+	}
+
 	.chat_view
 	{
-		color: black;
+		color: white;
+		background-color: #00c4ff;
 		width: 70%;
 		height: 100%;
 	}
@@ -234,8 +290,8 @@ export default
 		padding: 0.5rem 1rem;
 		margin: 0.5rem 0;
 		width: fit-content;
-		background-color: #00c4ff;
-		color: white;
+		background-color: white;
+		color: dimgrey;
 		border-top-right-radius: 1rem;
 		border-bottom-right-radius: 1rem;
 		border-top-left-radius: 1rem;
@@ -297,7 +353,7 @@ export default
 
 	.chat_view #send_button:hover
 	{
-		background: rgb(92, 92, 92);
+		background: #39ea88;
 		color: white;
 	}
 </style>
