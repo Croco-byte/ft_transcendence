@@ -53,7 +53,7 @@ export default
 					date: "05/07/21"
 				},
 				{
-					id: 1,
+					id: 3,
 					name: "Groupe 13",
 					date: "05/07/21"
 				},
@@ -85,62 +85,89 @@ export default
 				});
 			else
 				this.messages = [];
-			$('.view').scrollTop($('.view')[0].scrollHeight);
+			$('.view').scrollTop($('.view').scrollHeight);
+		},
+
+		onCreateChannelButtonClick: function(event)
+		{
+			console.log('click')
 		}
-	}
+	},
+	link: [
+      { rel: 'canonical', href: 'http://example.com/#!/contact/', id: 'canonical' },
+      { rel: 'author', href: 'author', undo: false }, // undo property - not to remove the element
+      { rel: 'icon', href: require('./path/to/icon-16.png'), sizes: '16x16', type: 'image/png' }, 
+      // with shorthand
+      { r: 'icon', h: 'path/to/icon-32.png', sz: '32x32', t: 'image/png' },
+      // ...
+    ],
 }
 </script>
 
 <template>
-	<div class="chat_container">
-		<div class="chat_list">
-			<div class="list">
-				<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
-					<div class="flex j-sb">
-						<p class="title">{{ channel.name }}</p>
-						<p class="date">{{ channel.date }}</p>
+	<div>
+		<div class="blur"></div>
+		<div class="chat_container">
+			<div class="chat_list">
+				<div class="list">
+					<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
+						<div class="flex j-sb">
+							<p class="title">{{ channel.name }}</p>
+							<p class="date">{{ channel.date }}</p>
+						</div>
+						<p class="last_msg_preview">Je suis le message...</p>
 					</div>
-					<p class="last_msg_preview">Je suis le message...</p>
+				</div>
+				<div id="create_channel_button" v-on:click="onCreateChannelButtonClick">
+					<span>+</span>
 				</div>
 			</div>
-			<div id="create_channel_button">
-				<span>+</span>
+			<div class="chat_view">
+				<div v-if="channel.id">
+					<div class="chat_view_header">
+						<p>{{ channel.name }}</p>
+					</div>
+					<div class="view">
+						<div class="message">
+							<p class="author">Tester</p>
+							<p class="content">Salut ! Comment tu vas ?</p>
+						</div>
+						<div class="message me">
+							<p class="username">Yassine</p>
+							<p class="content">Salut ! ca va super et toi ?</p>
+						</div>
+						<div class="message">
+							<p class="username">Tester</p>
+							<p class="content">Ca va merci.</p>
+						</div>
+						<div class="message">
+							<p class="username">Tester</p>
+							<p class="content">Bonne journée !</p>
+						</div>
+						<div class="message me">
+							<p class="username">Tester</p>
+							<p class="content">Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero dolorum rem placeat, pariatur beatae alias id reiciendis? Cumque incidunt explicabo earum voluptatem temporibus eos! Fugiat, enim officia. Doloribus, adipisci voluptas.</p>
+						</div>
+						<div v-for="message in messages" v-bind:key="message" class="message">
+							<p class="username">{{ message.author }}</p>
+							<p class="content">{{ message.content }}</p>
+						</div>
+					</div>
+					<div class="message_bar">
+						<input id="msg_input" type="text" v-bind:placeholder="placeholder"/>
+						<button id="send_button">Envoyer</button>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="chat_view">
-			<div v-if="channel.id">
-				<div class="chat_view_header">
-					<p>{{ channel.name }}</p>
+			<div class="popup" id="create_channel_popup">
+				<div class="header">
+					<p class="title">Create channel</p>
 				</div>
-				<div class="view">
-					<div class="message">
-						<p class="author">Tester</p>
-						<p class="content">Salut ! Comment tu vas ?</p>
+				<div class="body">
+					<div class="new_channel_name_div">
+						<i class="fa-solid fa-magnifying-glass"></i>
+						<input type="text" id="channel_name_input">
 					</div>
-					<div class="message me">
-						<p class="username">Yassine</p>
-						<p class="content">Salut ! ca va super et toi ?</p>
-					</div>
-					<div class="message">
-						<p class="username">Tester</p>
-						<p class="content">Ca va merci.</p>
-					</div>
-					<div class="message">
-						<p class="username">Tester</p>
-						<p class="content">Bonne journée !</p>
-					</div>
-					<div class="message me">
-						<p class="username">Tester</p>
-						<p class="content">Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero dolorum rem placeat, pariatur beatae alias id reiciendis? Cumque incidunt explicabo earum voluptatem temporibus eos! Fugiat, enim officia. Doloribus, adipisci voluptas.</p>
-					</div>
-					<div v-for="message in messages" v-bind:key="message" class="message">
-						<p class="username">{{ message.author }}</p>
-						<p class="content">{{ message.content }}</p>
-					</div>
-				</div>
-				<div class="message_bar">
-					<input id="msg_input" type="text" v-bind:placeholder="placeholder"/>
-					<button id="send_button">Envoyer</button>
 				</div>
 			</div>
 		</div>
@@ -148,6 +175,8 @@ export default
 </template>
 
 <style>
+	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css');
+
 	h1
 	{
 		font-weight: normal;
@@ -356,4 +385,46 @@ export default
 		background: #39ea88;
 		color: white;
 	}
+
+	.blur
+	{
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background-color: rgba(50, 50, 50, 0.55);
+		z-index: 99;
+	}
+
+	.popup
+	{
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 60vw;
+		height: 70vh;
+		z-index: 999;
+		background-color: white;
+	}
+
+	.popup .title
+	{
+		font-size: 1.5rem;
+	}
+
+	#create_channel_popup .new_channel_name_div
+	{
+		display: flex;
+	}
+
+	#create_channel_input
+	{
+		font-size: 1rem;
+		height: 1.2rem;
+		padding: 0.1rem 0.5rem;
+		border: none;
+	}
+
 </style>
