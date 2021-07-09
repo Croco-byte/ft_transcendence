@@ -20,7 +20,7 @@ import { ChannelController } from './channels/channel.controller';
 			username: "root",
 			password: "password",
 			database: "ft_transcendance",
-			synchronize: true,
+			synchronize: true, 
 			logging: false,
 			entities:
 			[

@@ -44,7 +44,7 @@ export default
 			[
 				{
 					id: 1,
-					name: "Abcde",
+					name: "Abcdef",
 					date: "05/07/21"
 				},
 				{
@@ -317,7 +317,7 @@ export default
 		display: flex;
 		width: 100%;
 		padding: 0.25rem 1rem;
-		margin-top: 0.5rem;
+		margin-top: auto;
 	}
 
 	.chat_view #msg_input
