@@ -12,10 +12,34 @@ export default
 	data: function()
 	{
 		return {
+			mode: 'normal',
 			channel:
 			{
 				id: null,
-				name: null
+				name: null,
+				members:
+				[
+					{
+						id: 0,
+						name: 'Momo'
+					},
+					{
+						id: 1,
+						name: 'Sousou'
+					},
+					{
+						id: 2,
+						name: 'Adam'
+					},
+					{
+						id: 3,
+						name: 'Naofel'
+					},
+					{
+						id: 4,
+						name: 'Yass'
+					},
+				]
 			},
 			messages:
 			[	
@@ -45,12 +69,12 @@ export default
 				{
 					id: 1,
 					name: "Abcdef",
-					date: "05/07/21"
+					date: "05/07/21",
 				},
 				{
 					id: 2,
 					name: "Yassine",
-					date: "05/07/21"
+					date: "05/07/21",
 				},
 				{
 					id: 3,
@@ -77,6 +101,7 @@ export default
 
 			this.channel.id = this.channels[id].id;
 			this.channel.name = this.channels[id].name;
+			// this.channel.members = this.channels[id].members;
 			if (id % 2 == 0)
 				this.messages.push(
 				{
@@ -87,27 +112,55 @@ export default
 				this.messages = [];
 			$('.view').scrollTop($('.view').scrollHeight);
 		},
+		
 
-		onCreateChannelButtonClick: function(event)
+		createChannel: function()
 		{
-			console.log('click')
+			let name = $('#create_channel_input').val().trim();
+			
+			if (name && name.length > 0)
+			{
+				// Axios send to nestjs the name
+				
+				this.mode = 'normal';
+			}
+		},
+
+		expandInfoSection: function(event)
+		{
+			$(event.target).closest('section').toggleClass('active');
+		},
+
+		changeMode(mode)
+		{
+			this.mode = mode;
+		},
+
+		addMember()
+		{
+			let username = $('#add_member_input').val();
+			alert(username);
+		},
+
+		saveChannelConfig()
+		{
+			alert("Save")
 		}
 	},
-	link: [
-      { rel: 'canonical', href: 'http://example.com/#!/contact/', id: 'canonical' },
-      { rel: 'author', href: 'author', undo: false }, // undo property - not to remove the element
-      { rel: 'icon', href: require('./path/to/icon-16.png'), sizes: '16x16', type: 'image/png' }, 
-      // with shorthand
-      { r: 'icon', h: 'path/to/icon-32.png', sz: '32x32', t: 'image/png' },
-      // ...
-    ],
+	head:
+	{
+		link:
+		[
+			{rel: "stylesheet", href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"}
+		],
+	}
 }
 </script>
 
 <template>
-	<div>
-		<div class="blur"></div>
+	<div id="chat">
 		<div class="chat_container">
+			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list">
 				<div class="list">
 					<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
@@ -118,14 +171,15 @@ export default
 						<p class="last_msg_preview">Je suis le message...</p>
 					</div>
 				</div>
-				<div id="create_channel_button" v-on:click="onCreateChannelButtonClick">
+				<div id="create_channel_button" v-on:click="changeMode('create_channel')">
 					<span>+</span>
 				</div>
 			</div>
 			<div class="chat_view">
 				<div v-if="channel.id">
 					<div class="chat_view_header">
-						<p>{{ channel.name }}</p>
+						<p id="chat_title">{{ channel.name }}</p>
+						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')"></p>
 					</div>
 					<div class="view">
 						<div class="message">
@@ -159,16 +213,43 @@ export default
 					</div>
 				</div>
 			</div>
-			<div class="popup" id="create_channel_popup">
-				<div class="header">
-					<p class="title">Create channel</p>
-				</div>
-				<div class="body">
-					<div class="new_channel_name_div">
-						<i class="fa-solid fa-magnifying-glass"></i>
-						<input type="text" id="channel_name_input">
+			<div class="input_popup" v-if="mode == 'create_channel'">
+				<input type="text" placeholder="Channel's name" id="create_channel_input"/>
+				<button id="create_channel" @click="createChannel">
+					<i class="fas fa-arrow-right"></i>
+				</button>
+			</div>
+			<div class="channel_info_container" v-if="mode == 'channel_info'">
+				<p>Info</p>
+				<section class="active">
+					<p class="title" v-on:click="expandInfoSection">
+						Name
+						<i class="arrow fas fa-chevron-left"></i>
+					</p>
+					<div class="content">
+						<input type="text" id="channel_name_input" v-bind:value="channel.name"/>
 					</div>
-				</div>
+				</section>
+				<section>
+					<p class="title" v-on:click="expandInfoSection">
+						Members
+						<i class="arrow fas fa-chevron-left"></i>
+					</p>
+					<div class="content">
+						<p v-for="member in channel.members" v-bind:key="member.id">{{ member.name }}</p>
+						<p id="add_member_button" v-on:click="changeMode('add_member')">
+							<i class="fas fa-plus-square"></i>
+							Add member
+						</p>
+					</div>
+				</section>
+				<button id="save_channel_config_button" v-on:click="saveChannelConfig">Save</button>
+			</div>
+			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
+				<input type="text" placeholder="Member's username" id="add_member_input"/>
+				<button id="add_member" @click="addMember">
+					<i class="fas fa-arrow-right"></i>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -193,6 +274,18 @@ export default
 		height: 80vh;
 		margin: 0 auto;
 		border: solid 1px black;
+		position: relative;
+	}
+
+	.chat_container .blur
+	{
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.5);
+		z-index: 9;
 	}
 
 	.chat_list
@@ -287,8 +380,9 @@ export default
 
 	.chat_view
 	{
+		position: relative;
 		color: white;
-		background-color: #00c4ff;
+		background-color: #00a1ff;
 		width: 70%;
 		height: 100%;
 	}
@@ -302,8 +396,31 @@ export default
 
 	.chat_view .chat_view_header
 	{
+		display: flex;
 		font-size: 1.25rem;
 		text-align: center;
+		padding: 0 1rem;
+	}
+
+	.chat_view #chat_title
+	{
+		width: calc(100% - 2rem);
+	}
+
+	.chat_view #chat_info_button
+	{
+		border: solid 1px white;
+		font-size: 1rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 100%;
+		transition: all 0.25s;
+	}
+	
+	.chat_view #chat_info_button:hover
+	{
+		background-color: white;
+		color: #00a1ff;
+		cursor: pointer;
 	}
 
 	.chat_view .view
@@ -386,45 +503,158 @@ export default
 		color: white;
 	}
 
-	.blur
+	.input_popup
 	{
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-		background-color: rgba(50, 50, 50, 0.55);
-		z-index: 99;
+		position: absolute;
+		top: 0%;
+		left: 50%;
+		transform: translateX(-50%);
+		width: fit-content;
+		display: flex;
+		z-index: 999;
 	}
 
-	.popup
+	.input_popup input
 	{
-		position: fixed;
+		display: block;
+		width: 30rem;
+		font-size: 1.5rem;
+		padding: 0.5rem 1rem;
+		border: none;
+		outline: none;
+	}
+
+	.input_popup input::placeholder
+	{
+		color: #b3b3b3;
+	}
+
+	.input_popup button
+	{
+		position: relative;
+		appearance: none;
+		width: 5rem;
+		border: none;
+		color: white;
+		background: #00a1ff;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.input_popup button:after
+	{
+		content: ' ';
+		position: absolute;
 		top: 50%;
 		left: 50%;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 100%;
 		transform: translate(-50%, -50%);
-		width: 60vw;
-		height: 70vh;
+		background-color: white;
+		z-index: 1;
+		transition: all 0.25s ease-out;
+	}
+
+	.input_popup button:hover:after
+	{
+		width: 100%;
+		height: 100%;
+		border-radius: 0px;
+	}
+
+	.input_popup button i
+	{
+		position: relative;
+		font-size: 1.25rem;
+		color: #00a1ff;
+		z-index: 9;
+	}
+
+	.channel_info_container
+	{
+		position: absolute;
+		width: 20rem;
+		height: 100%;
+		right: 0;
+		padding: 1rem;
 		z-index: 999;
 		background-color: white;
 	}
 
-	.popup .title
+	.channel_info_container > p
 	{
-		font-size: 1.5rem;
+		font-size: 1.25rem;
+		text-align: center;
 	}
 
-	#create_channel_popup .new_channel_name_div
+	.channel_info_container section
 	{
 		display: flex;
+		flex-direction: column;
+		border-bottom: solid 1px #e2e2e2;
+		margin: 1rem 0;
 	}
 
-	#create_channel_input
+	.channel_info_container section .title
 	{
+		display: flex;
+		justify-content: space-between;
+		cursor: pointer;
+		margin: 1rem 0;
+	}
+
+	.channel_info_container section .content
+	{
+		display: flex;
+		flex-direction: column;
+		padding-left: 1rem;
+		max-height: 0;
+		overflow: auto;
+		transition: max-height 0.25s;
+	}
+
+	.channel_info_container section.active .content
+	{
+		max-height: 15rem;
+		padding-bottom: 1rem;
+	}
+
+	.channel_info_container section .arrow
+	{
+		transition: 0.25s;
+	}
+
+	.channel_info_container section.active .arrow
+	{
+		transform: rotateZ(-90deg);
+	}
+
+	.channel_info_container #add_member_button
+	{
+		color: #00a1ff;
+		text-align: center;
+		cursor: pointer;
+	}
+
+	.channel_info_container #save_channel_config_button
+	{
+		background-color: #00a1ff;
+		color: white;
 		font-size: 1rem;
-		height: 1.2rem;
-		padding: 0.1rem 0.5rem;
-		border: none;
+		border: solid 1px white;
+		padding: 0.5rem 1rem;
+		width: 100%;
+		margin-top: auto;
+		cursor: pointer;
+		transition: all 0.25s;
+	}
+
+	.channel_info_container #save_channel_config_button:hover
+	{
+		background-color: white;
+		color: #00a1ff;
+		border-color: #00a1ff;
 	}
 
 </style>
