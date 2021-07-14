@@ -39,7 +39,20 @@ export default
 						id: 4,
 						name: 'Yass'
 					},
-				]
+				],
+				administrators:
+				[
+					{
+						id: 1,
+						name: 'Yass'
+					},
+					{
+						id: 2,
+						name: 'Naofel'
+					}
+				],
+				requirePassword: false,
+				password: ''
 			},
 			messages:
 			[	
@@ -121,7 +134,6 @@ export default
 			if (name && name.length > 0)
 			{
 				// Axios send to nestjs the name
-				
 				this.mode = 'normal';
 			}
 		},
@@ -142,9 +154,40 @@ export default
 			alert(username);
 		},
 
+		addAdmin()
+		{
+			let username = $('#add_admin_input').val();
+			alert(username);
+		},
+
 		saveChannelConfig()
 		{
-			alert("Save")
+			let name = $('#channel_name_input').val();
+
+			// Send new name
+		},
+
+		createMatch()
+		{
+			if (window.confirm("Do you want to start match with " + this.channel.name + " ?"))
+			{
+				alert("Start");
+			}
+		},
+
+		sendMessage()
+		{
+			let message = $('#msg_input').val();
+			alert('Send "' + message + '" in ' + this.channel.name);
+		},
+
+		setRequirePassword()
+		{
+			let checked = $('#active_password:checked').length != 0;
+			if (checked)
+				this.channel.requirePassword = true;
+			else
+				this.channel.requirePassword = false;
 		}
 	},
 	head:
@@ -160,7 +203,7 @@ export default
 <template>
 	<div id="chat">
 		<div class="chat_container">
-			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info'" v-on:click="changeMode('normal')"></div>
+			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list">
 				<div class="list">
 					<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
@@ -208,8 +251,9 @@ export default
 						</div>
 					</div>
 					<div class="message_bar">
-						<input id="msg_input" type="text" v-bind:placeholder="placeholder"/>
-						<button id="send_button">Envoyer</button>
+						<input id="msg_input" type="text" v-bind:placeholder="placeholder" v-on:keyup.enter="sendMessage"/>
+						<button id="send_button" v-on:click="sendMessage">Envoyer</button>
+						<p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch"></p>
 					</div>
 				</div>
 			</div>
@@ -236,11 +280,45 @@ export default
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<p v-for="member in channel.members" v-bind:key="member.id">{{ member.name }}</p>
+						<div class="flex j-sb" v-for="member in channel.members" v-bind:key="member.id">
+							<p>
+								{{ member.name }}
+							</p>
+							<div>
+								<p class="fas fa-volume-mute mute_button action_button"></p>
+								<p class="fas fa-sign-out-alt ban_button action_button"></p>
+							</div>
+						</div>
 						<p id="add_member_button" v-on:click="changeMode('add_member')">
 							<i class="fas fa-plus-square"></i>
 							Add member
 						</p>
+					</div>
+				</section>
+				<section>
+					<p class="title" v-on:click="expandInfoSection">
+						Administrators
+						<i class="arrow fas fa-chevron-left"></i>
+					</p>
+					<div class="content">
+						<p v-for="admin in channel.administrators" v-bind:key="admin.id">{{ admin.name }}</p>
+						<p id="add_member_button" v-on:click="changeMode('add_admin')">
+							<i class="fas fa-plus-square"></i>
+							Add an administrator
+						</p>
+					</div>
+				</section>
+				<section>
+					<p class="title" v-on:click="expandInfoSection">
+						Password
+						<i class="arrow fas fa-chevron-left"></i>
+					</p>
+					<div class="content">
+						<div class="flex j-sb">
+							<label for="active_password">Require password</label>
+							<input type="checkbox" v-model="channel.requirePassword" id="active_password" @change="setRequirePassword"/>
+						</div>
+						<input type="password" id="channel_password" placeholder="Password..." v-if="channel.requirePassword"/>
 					</div>
 				</section>
 				<button id="save_channel_config_button" v-on:click="saveChannelConfig">Save</button>
@@ -248,6 +326,12 @@ export default
 			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
 				<input type="text" placeholder="Member's username" id="add_member_input"/>
 				<button id="add_member" @click="addMember">
+					<i class="fas fa-arrow-right"></i>
+				</button>
+			</div>
+			<div class="input_popup" id="add_admin_popup" v-if="mode == 'add_admin'">
+				<input type="text" placeholder="New admin's username" id="add_admin_input"/>
+				<button id="add_admin" @click="addAdmin">
 					<i class="fas fa-arrow-right"></i>
 				</button>
 			</div>
@@ -503,6 +587,14 @@ export default
 		color: white;
 	}
 
+	.chat_view #play_button
+	{
+		font-size: 1.5rem;
+		margin: 0rem 1rem;
+		margin-right: auto;
+		cursor: pointer;
+	}
+
 	.input_popup
 	{
 		position: absolute;
@@ -655,6 +747,19 @@ export default
 		background-color: white;
 		color: #00a1ff;
 		border-color: #00a1ff;
+	}
+
+	.channel_info_container #channel_password
+	{
+		margin: 0.5rem 0;
+	}
+
+	.channel_info_container .action_button
+	{
+		margin: 1rem 0;
+		padding: 0 1rem;
+		cursor: pointer;
+		font-size: 1rem;
 	}
 
 </style>
