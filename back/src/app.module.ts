@@ -25,7 +25,6 @@ import { ChannelController } from './channels/channel.controller';
 			entities:
 			[
 				join(__dirname, '**', '*.entity.{ts,js}')
-
 			],
 			migrations:
 			[
@@ -37,7 +36,7 @@ import { ChannelController } from './channels/channel.controller';
 			]
 		}),
 		AuthModule,
-		UsersModule,
+		UsersModule
 	],
 	controllers: [AppController, ChannelController],
 	providers: [AppService],

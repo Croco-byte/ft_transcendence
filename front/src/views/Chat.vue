@@ -188,7 +188,17 @@ export default
 				this.channel.requirePassword = true;
 			else
 				this.channel.requirePassword = false;
-		}
+		},
+
+		muteMember(userID)
+		{
+			alert(userID)
+		},
+
+		banMember(userID)
+		{
+			alert(userID)
+		},
 	},
 	head:
 	{
@@ -280,12 +290,12 @@ export default
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<div class="flex j-sb" v-for="member in channel.members" v-bind:key="member.id">
+						<div class="flex j-sb member" v-for="member in channel.members" v-bind:key="member.id">
 							<p>
 								{{ member.name }}
 							</p>
 							<div>
-								<p class="fas fa-volume-mute mute_button action_button"></p>
+								<p class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.id)"></p>
 								<p class="fas fa-sign-out-alt ban_button action_button"></p>
 							</div>
 						</div>
@@ -756,8 +766,8 @@ export default
 
 	.channel_info_container .action_button
 	{
-		margin: 1rem 0;
-		padding: 0 1rem;
+		margin: 0.5rem 0;
+		padding: 0.5rem 1rem;
 		cursor: pointer;
 		font-size: 1rem;
 	}
