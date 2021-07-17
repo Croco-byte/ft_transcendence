@@ -1,6 +1,8 @@
 <script>
 
 import $ from 'jquery';
+import axios from 'axios';
+import io from 'socket.io-client';
 
 export default
 {
@@ -13,6 +15,7 @@ export default
 	{
 		return {
 			mode: 'normal',
+			socket: null,
 			channel:
 			{
 				id: null,
@@ -52,12 +55,9 @@ export default
 					}
 				],
 				requirePassword: false,
-				password: ''
+				password: '',
+				messages: []
 			},
-			messages:
-			[	
-			
-			],
 			friends:
 			[
 				{
@@ -116,13 +116,13 @@ export default
 			this.channel.name = this.channels[id].name;
 			// this.channel.members = this.channels[id].members;
 			if (id % 2 == 0)
-				this.messages.push(
+				this.channel.messages.push(
 				{
 					author: "Yass",
 					content: "Je suis un msg chargé avec vue.js"
 				});
 			else
-				this.messages = [];
+				this.channel.messages = [];
 			$('.view').scrollTop($('.view').scrollHeight);
 		},
 		
@@ -135,6 +135,18 @@ export default
 			{
 				// Axios send to nestjs the name
 				this.mode = 'normal';
+				alert("Create channel named '" + name + "'");
+
+				axios.post('http://localhost:3000/channel/create', {name: name})
+				.then(function(res)
+				{
+					console.log(res);
+				})
+				.catch(error =>
+				{
+					console.log(error)
+					this.errored = true
+				})
 			}
 		},
 
@@ -160,13 +172,6 @@ export default
 			alert(username);
 		},
 
-		saveChannelConfig()
-		{
-			let name = $('#channel_name_input').val();
-
-			// Send new name
-		},
-
 		createMatch()
 		{
 			if (window.confirm("Do you want to start match with " + this.channel.name + " ?"))
@@ -178,16 +183,9 @@ export default
 		sendMessage()
 		{
 			let message = $('#msg_input').val();
-			alert('Send "' + message + '" in ' + this.channel.name);
-		},
-
-		setRequirePassword()
-		{
-			let checked = $('#active_password:checked').length != 0;
-			if (checked)
-				this.channel.requirePassword = true;
-			else
-				this.channel.requirePassword = false;
+			this.socket.emit('msgToServer', message);
+			//alert('Send "' + message + '" in ' + this.channel.name);
+			$('#msg_input').val('');
 		},
 
 		muteMember(userID)
@@ -199,6 +197,28 @@ export default
 		{
 			alert(userID)
 		},
+
+		setRequirePassword()
+		{
+			let checked = $('#active_password:checked').length != 0;
+			if (checked)
+				this.channel.requirePassword = true;
+			else
+				this.channel.requirePassword = false;
+			alert("Channel require password : " + (this.channel.requirePassword ? "on" : "off"));
+		},
+
+		updateChannelName()
+		{
+			let new_name = $('#channel_name_input').val();
+			alert("Update channel name to '" + new_name + "'");
+		},
+
+		updateChannelPassword()
+		{
+			let password = $('#channel_password').val();
+			alert("Set channel password to '" + password + "'");
+		}
 	},
 	head:
 	{
@@ -206,6 +226,19 @@ export default
 		[
 			{rel: "stylesheet", href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"}
 		],
+	},
+	created()
+	{
+		this.socket = io("http://127.0.0.1:3001");
+	},
+
+	mounted()
+	{
+		this.socket.on('msgToClient', (data) =>
+		{
+			console.log(data);
+			this.channel.messages.push(JSON.parse(data));
+		})
 	}
 }
 </script>
@@ -255,7 +288,7 @@ export default
 							<p class="username">Tester</p>
 							<p class="content">Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero dolorum rem placeat, pariatur beatae alias id reiciendis? Cumque incidunt explicabo earum voluptatem temporibus eos! Fugiat, enim officia. Doloribus, adipisci voluptas.</p>
 						</div>
-						<div v-for="message in messages" v-bind:key="message" class="message">
+						<div v-for="message in channel.messages" v-bind:key="message" class="message">
 							<p class="username">{{ message.author }}</p>
 							<p class="content">{{ message.content }}</p>
 						</div>
@@ -268,7 +301,7 @@ export default
 				</div>
 			</div>
 			<div class="input_popup" v-if="mode == 'create_channel'">
-				<input type="text" placeholder="Channel's name" id="create_channel_input"/>
+				<input type="text" placeholder="Channel's name" id="create_channel_input" v-on:keyup.enter="createChannel" autofocus/>
 				<button id="create_channel" @click="createChannel">
 					<i class="fas fa-arrow-right"></i>
 				</button>
@@ -281,7 +314,8 @@ export default
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<input type="text" id="channel_name_input" v-bind:value="channel.name"/>
+						<input type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
+						<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
 					</div>
 				</section>
 				<section>
@@ -328,10 +362,10 @@ export default
 							<label for="active_password">Require password</label>
 							<input type="checkbox" v-model="channel.requirePassword" id="active_password" @change="setRequirePassword"/>
 						</div>
-						<input type="password" id="channel_password" placeholder="Password..." v-if="channel.requirePassword"/>
+						<input type="password" id="channel_password" placeholder="Password..." v-on:keyup.enter="updateChannelPassword" v-if="channel.requirePassword"/>
+						<button class="save_channel_config_button" v-on:click="updateChannelPassword" v-if="channel.requirePassword">Save</button>
 					</div>
 				</section>
-				<button id="save_channel_config_button" v-on:click="saveChannelConfig">Save</button>
 			</div>
 			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
 				<input type="text" placeholder="Member's username" id="add_member_input"/>
@@ -739,20 +773,20 @@ export default
 		cursor: pointer;
 	}
 
-	.channel_info_container #save_channel_config_button
+	.channel_info_container .save_channel_config_button
 	{
 		background-color: #00a1ff;
 		color: white;
 		font-size: 1rem;
 		border: solid 1px white;
-		padding: 0.5rem 1rem;
+		padding: 0.25rem 1rem;
 		width: 100%;
-		margin-top: auto;
+		margin-top: 0.5rem;
 		cursor: pointer;
 		transition: all 0.25s;
 	}
 
-	.channel_info_container #save_channel_config_button:hover
+	.channel_info_container .save_channel_config_button:hover
 	{
 		background-color: white;
 		color: #00a1ff;
