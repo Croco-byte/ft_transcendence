@@ -1,8 +1,8 @@
-import { Controller, Req, Logger, Get, Post, Put, Delete } from '@nestjs/common';
+import { Controller, Req, Logger, Get, Post, Patch, Delete, Query, Param, Body } from '@nestjs/common';
 import { request, Request } from 'express';
 import { AppService } from 'src/app.service';
 
-@Controller('channel')
+@Controller('channels')
 export class ChannelController
 {
 	private readonly logger = new Logger(ChannelController.name);
@@ -13,43 +13,51 @@ export class ChannelController
 	}
 
 	@Post("create")
-	createChannel(@Req() request: Request)
+	createChannel(@Body() body)
 	{
-		let name = request.query['name'];
+		let name = body.name;
 		this.logger.log("Create new channel named '" + name + "'");
-		return {message: "Channel successfully created"};
+		return {message: "Channel " + name + " successfully created"};
 	}
 
-	@Post(":channelID/users")
-	addUser(@Req() request: Request)
+	@Post(":channelID/members")
+	addUser(@Body() body)
 	{
-		let id = request.query['id'];
-		this.logger.log("Add user '" + id + "' to this channel");
-		return {message: "User added successfully"};
+		let username = body.username;
+		this.logger.log("Add user '" + username + "' to this channel");
+		return {message: "User " + username + " added successfully"};
 	}
 
-	@Post(":channelID/users/mute")
-	muteUser(@Req() request: Request)
+	@Post(":channelID/admin")
+	addAdmin(@Body() body)
 	{
-		let id = request.query['id'];
+		let username = body.username;
+		this.logger.log("New admin (user : '" + username + "') in this channel");
+		return {message: "Administrator '" + username + "' added successfully"};
+	}
+
+	@Post(":channelID/members/mute")
+	muteUser(@Body() body)
+	{
+		let id = body.id;
 		this.logger.log("Mute user '" + id + "' to this channel");
-		return {message: "User muted successfully"};
+		return {message: "User " + id + " muted successfully"};
 	}
 
-	@Post(":channelID/users/ban")
-	banUser(@Req() request: Request)
+	@Post(":channelID/members/ban")
+	banUser(@Body() body)
 	{
-		let id = request.query['id'];
+		let id = body.id;
 		this.logger.log("Mute user '" + id + "' to this channel");
-		return {message: "User banned successfully"};
+		return {message: "User " + id + " banned successfully"};
 	}
 
 	@Post(":channelID/messages")
-	addMessage(@Req() request: Request)
+	addMessage(@Body() body)
 	{
-		let message = request.query['message'];
+		let message = body.message;
 		this.logger.log("Send message '" + message + "' to this channel");
-		return {message: "Message sent successfully"};
+		return {message: "Message '" + message + "' sent successfully"};
 	}
 
 	@Get(":channelID/messages")
@@ -67,49 +75,32 @@ export class ChannelController
 		};
 	}
 
-	@Put(":channelID/name")
-	changeName(@Req() request: Request)
+	@Patch(":channelID/name")
+	changeName(@Body() body)
 	{
-		let newName = request.query['name'];
+		let newName = body.new_name;
 		this.logger.log("This channel renamed '" + newName + "'");
-		return {message: "Channel renamed successfully"};
+		return {message: "Channel renamed to '" + newName + "' successfully"};
 	}
 
-	@Post(":channelID/admin")
-	addAdmin(@Req() request: Request)
+	@Patch(":channelID/password")
+	changePassword(@Body() body)
 	{
-		let adminID = request.query['id'];
-		this.logger.log("New admin (user : '" + adminID + "') in this channel");
-		return {message: "Administrator added successfully"};
-	}
-
-	@Post(":channelID/password")
-	activePassword(@Req() request: Request)
-	{
-		let password = request.query['password'];
-		this.logger.log("Set private this channel protected by password '" + password + "'");
-		return {message: "Password added successfully"};
-	}
-
-	@Put(":channelID/password")
-	changePassword(@Req() request: Request)
-	{
-		let password = request.query['password'];
-		this.logger.log("Change password of this channel to '" + password + "'");
-		return {message: "Password changed successfully"};
+		let password = body.password;
+		this.logger.log("Set password of this channel to '" + password + "'");
+		return {message: "Password changed successfully to '" + password + "'"};
 	}
 
 	@Delete(":channelID/password")
-	removePassword(@Req() request: Request)
+	removePassword(@Body() body)
 	{
 		this.logger.log("Password removed for this channel");
 		return {message: "Password removed successfully"};
 	}
 
 	@Get()
-	getHello(@Req() request: Request)
+	getHello(@Body() body)
 	{
-		console.log(request.query['a']);
 		return {message: "Je suis le controller channel"};
 	}
 }
