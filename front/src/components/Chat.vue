@@ -83,16 +83,19 @@ export default
 					id: 1,
 					name: "Abcdef",
 					date: "05/07/21",
+					messages: [],
 				},
 				{
 					id: 2,
 					name: "Yassine",
 					date: "05/07/21",
+					messages: [],
 				},
 				{
 					id: 3,
 					name: "Groupe 13",
-					date: "05/07/21"
+					date: "05/07/21",
+					messages: [],
 				},
 			]
 		};
@@ -130,7 +133,7 @@ export default
 				this.mode = 'normal';
 				alert("Create channel named '" + name + "'");
 
-				axios.post('http://localhost:3000/channels/create', {name: name})
+				axios.post('http://localhost:3000/channels', {name: name})
 				.then(function(res)
 				{
 					console.log(res);
@@ -193,18 +196,18 @@ export default
 		sendMessage()
 		{
 			let message = $('#msg_input').val();
-			this.socket.emit('msgToServer', message);
-			//alert('Send "' + message + '" in ' + this.channel.name);
+			this.socket.emit('send_message', {channel: this.channel.id, content: message});
+			
 			$('#msg_input').val('');
-			axios.post('http://localhost:3000/channels/' + this.channel.id + '/messages', {message: message})
-			.then(function(res)
-			{
-				console.log(res);
-			})
-			.catch(error =>
-			{
-				console.log(error)
-			})
+			// axios.post('http://localhost:3000/channels/' + this.channel.id + '/messages', {message: message})
+			// .then(function(res)
+			// {
+			// 	console.log(res);
+			// })
+			// .catch(error =>
+			// {
+			// 	console.log(error)
+			// })
 		},
 
 		muteMember(userID)
@@ -301,10 +304,10 @@ export default
 
 	mounted()
 	{
-		this.socket.on('msgToClient', (data) =>
+		this.socket.on('send_message', (data) =>
 		{
-			console.log(data);
-			this.channel.messages.push(JSON.parse(data));
+			data = JSON.parse(data);
+			this.channel.messages.push(data);
 		})
 	}
 }

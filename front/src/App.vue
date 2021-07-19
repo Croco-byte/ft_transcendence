@@ -12,7 +12,7 @@ export default
 </script>
 
 <template>
-	<div id="app">
+	<div>
 		<Header/>
 		<router-view></router-view>
 	</div>

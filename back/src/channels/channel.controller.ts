@@ -12,7 +12,7 @@ export class ChannelController
 
 	}
 
-	@Post("create")
+	@Post()
 	createChannel(@Body() body)
 	{
 		let name = body.name;
@@ -52,13 +52,13 @@ export class ChannelController
 		return {message: "User " + id + " banned successfully"};
 	}
 
-	@Post(":channelID/messages")
-	addMessage(@Body() body)
-	{
-		let message = body.message;
-		this.logger.log("Send message '" + message + "' to this channel");
-		return {message: "Message '" + message + "' sent successfully"};
-	}
+	// @Post(":channelID/messages")
+	// addMessage(@Body() body)
+	// {
+	// 	let message = body.message;
+	// 	this.logger.log("Send message '" + message + "' to this channel");
+	// 	return {message: "Message '" + message + "' sent successfully"};
+	// }
 
 	@Get(":channelID/messages")
 	getMessages()
