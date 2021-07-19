@@ -25,8 +25,9 @@ import {
 		@SubscribeMessage('send_message')
 		handleMessage(client: Socket, data: any): void
 		{
+			// Verifier que l utilisateur est dans le channel de la requete et qu il n est pas mute ou ban
 			this.logger.log("Receive : " + JSON.stringify(data));
-			this.server.emit('send_message', JSON.stringify({author: "NestJS", content: data.content}));
+			this.server.to('channel_' + data.channel).emit('send_message', JSON.stringify({author: "NestJS", content: data.content}));
 		}
 	
 		afterInit(server: Server)
@@ -44,6 +45,7 @@ import {
 	
 		handleConnection(client: Socket, ...args: any[])
 		{
+			// Récupérer les channels ou l user est présent et les joins
 			for (let i = 0; i < 5; i++)
 			{
 				client.join("channel_" + i);
