@@ -30,6 +30,8 @@ services:
       - "8000:80"
     links:
       - "postgres"
+    env_file:
+      - env
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
