@@ -67,9 +67,8 @@ export class ChannelController
 		return {
 			messages: [
 				{
-					userID: 0,
-					username: "Yass",
-					message: "Je suis un test"
+					author: "Yass",
+					content: "Je suis un test !"
 				}
 			]
 		};

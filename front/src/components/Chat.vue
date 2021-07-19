@@ -20,6 +20,10 @@ export default
 			{
 				id: null,
 				name: null,
+				requirePassword: false,
+				password: '',
+				messages: [],
+				has_new_message: false,
 				members:
 				[
 					{
@@ -54,9 +58,6 @@ export default
 						name: 'Naofel'
 					}
 				],
-				requirePassword: false,
-				password: '',
-				messages: []
 			},
 			friends:
 			[
@@ -83,21 +84,26 @@ export default
 					id: 1,
 					name: "Abcdef",
 					date: "05/07/21",
+					has_new_message: false,
 					messages: [],
 				},
 				{
 					id: 2,
 					name: "Yassine",
 					date: "05/07/21",
+					has_new_message: false,
 					messages: [],
 				},
 				{
 					id: 3,
 					name: "Groupe 13",
 					date: "05/07/21",
+					has_new_message: false,
 					messages: [],
 				},
-			]
+			],
+			serverURL: "http://10.11.4.8:3000",
+			websocketServerURL: "http://10.11.4.8:3001",
 		};
 	},
 	computed:
@@ -115,10 +121,23 @@ export default
 			$('.chat_item.selected').removeClass('selected');
 			$(event.currentTarget).addClass('selected');
 
-			this.channel.id = this.channels[id].id;
-			this.channel.name = this.channels[id].name;
+			this.channel = this.channels[id];
+			this.channels[id].has_new_message = false;
+
+			axios.get(this.serverURL + "/channels/" + id + "/messages", {}).then(res =>
+			{
+				this.channel.messages = res.data.messages;
+			})
+			.catch(error =>
+			{
+				alert(error);
+			});
+
+			// this.channel.id = this.channels[id].id;
+			// this.channel.name = this.channels[id].name;
+			// this.channel.has_new_message = false;
 			// this.channel.members = this.channels[id].members;
-			this.channel.messages = [];
+			//this.channel.messages = [];
 			$('.view').scrollTop($('.view').scrollHeight);
 		},
 		
@@ -133,7 +152,7 @@ export default
 				this.mode = 'normal';
 				alert("Create channel named '" + name + "'");
 
-				axios.post('http://localhost:3000/channels', {name: name})
+				axios.post(this.serverURL + '/channels', {name: name})
 				.then(function(res)
 				{
 					console.log(res);
@@ -159,7 +178,7 @@ export default
 		{
 			let username = $('#add_member_input').val();
 			alert(username);
-			axios.post('http://localhost:3000/channels/' + this.channel.id + '/members', {username: username})
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username})
 			.then(function(res)
 			{
 				console.log(res);
@@ -174,7 +193,7 @@ export default
 		{
 			let username = $('#add_admin_input').val();
 			alert(username);
-			axios.post('http://localhost:3000/channels/' + this.channel.id + '/admin', {username: username})
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username})
 			.then(function(res)
 			{
 				console.log(res);
@@ -196,24 +215,15 @@ export default
 		sendMessage()
 		{
 			let message = $('#msg_input').val();
-			this.socket.emit('send_message', {channel: this.channel.id, content: message});
+			this.socket.emit('message', {channel: this.channel.id, content: message});
 			
 			$('#msg_input').val('');
-			// axios.post('http://localhost:3000/channels/' + this.channel.id + '/messages', {message: message})
-			// .then(function(res)
-			// {
-			// 	console.log(res);
-			// })
-			// .catch(error =>
-			// {
-			// 	console.log(error)
-			// })
 		},
 
 		muteMember(userID)
 		{
 			alert(userID);
-			axios.post('http://localhost:3000/channels/' + this.channel.id + '/members/mute', {id: userID})
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/mute', {id: userID})
 			.then(function(res)
 			{
 				console.log(res);
@@ -227,7 +237,7 @@ export default
 		banMember(userID)
 		{
 			alert(userID);
-			axios.post('http://localhost:3000/channels/' + this.channel.id + '/members/ban', {id: userID})
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/ban', {id: userID})
 			.then(function(res)
 			{
 				console.log(res);
@@ -245,26 +255,28 @@ export default
 				this.channel.requirePassword = true;
 			else
 				this.channel.requirePassword = false;
-			alert("Channel require password : " + (this.channel.requirePassword ? "on" : "off"));
+			//alert("Channel require password : " + (this.channel.requirePassword ? "on" : "off"));
 			let url;
 			if (!this.channel.requirePassword)
-				url = 'http://localhost:3000/channels/' + this.channel.id + '/password';
-			axios.delete(url)
-			.then(function(res)
 			{
-				console.log(res);
-			})
-			.catch(error =>
-			{
-				console.log(error)
-			})
+				url = this.serverURL + '/channels/' + this.channel.id + '/password';
+				axios.delete(url)
+				.then(function(res)
+				{
+					console.log(res);
+				})
+				.catch(error =>
+				{
+					console.log(error)
+				})
+			}
 		},
 
 		updateChannelPassword()
 		{
 			let password = $('#channel_password').val();
 			alert("Set channel password to '" + password + "'");
-			axios.patch('http://localhost:3000/channels/' + this.channel.id + '/password', {password: password})
+			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password})
 			.then(function(res)
 			{
 				console.log(res);
@@ -279,7 +291,7 @@ export default
 		{
 			let new_name = $('#channel_name_input').val();
 			alert("Update channel name to '" + new_name + "'");
-			axios.patch('http://localhost:3000/channels/' + this.channel.id + '/name', {new_name: new_name})
+			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/name', {new_name: new_name})
 			.then(function(res)
 			{
 				console.log(res);
@@ -299,15 +311,27 @@ export default
 	},
 	created()
 	{
-		this.socket = io("http://127.0.0.1:3001");
+		this.socket = io(this.websocketServerURL);
 	},
 
 	mounted()
 	{
-		this.socket.on('send_message', (data) =>
+		this.socket.on('message', (data) =>
 		{
-			data = JSON.parse(data);
-			this.channel.messages.push(data);
+			let channel = null;
+			if (data.channel !== this.channel.id)
+			{
+				for (let i = 0; i < this.channels.length; i++)
+				{
+					if (this.channels[i].id === data.channel)
+					{
+						this.channels[i].has_new_message = true;
+						this.channels[i].messages.push(data);
+					}
+				}
+			}
+			else
+				this.channel.messages.push(data);
 		})
 	}
 }
@@ -319,12 +343,13 @@ export default
 			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list">
 				<div class="list">
-					<div @click="switchChat" v-for="(channel, index) in channels" v-bind:key="channel.id" class="chat_item" v-bind:data-id="index">
+					<div @click="switchChat" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
 						<div class="flex j-sb">
-							<p class="title">{{ channel.name }}</p>
-							<p class="date">{{ channel.date }}</p>
+							<p class="title">{{ chan.name }}</p>
+							<p class="date">{{ chan.date }}</p>
 						</div>
 						<p class="last_msg_preview">Je suis le message...</p>
+						<div class="new_sticker" v-if="chan.has_new_message"></div>
 					</div>
 				</div>
 				<div id="create_channel_button" v-on:click="changeMode('create_channel')">
@@ -503,8 +528,9 @@ export default
 		width: 30%;
 		height: 100%;
 		background-color: white;
-		border-right: solid 1px black;
 		color: black;
+		box-shadow: 5px 0px 13px -4px rgb(0 0 0 / 61%);
+		z-index: 1;
 	}
 
 	.chat_list .list
@@ -520,6 +546,17 @@ export default
 		padding: 1rem;
 		border-bottom: solid 1px rgb(242, 242, 242);
 		cursor: pointer;
+	}
+
+	.chat_list .chat_item .new_sticker
+	{
+		position: absolute;
+		top: 50%;
+		right: 1rem;
+		width: 1rem;
+		height: 1rem;
+		background: #01c4ff;
+		border-radius: 100%;
 	}
 
 	.chat_list .chat_item.selected
@@ -589,7 +626,7 @@ export default
 	{
 		position: relative;
 		color: white;
-		background-color: #e2e2e2;
+		background-color: #efefef;
 		width: 70%;
 		height: 100%;
 	}
@@ -672,7 +709,7 @@ export default
 	{
 		display: flex;
 		flex-direction: column;
-		padding: 0 0.5rem;
+		padding: 0 1rem;
 		overflow-y: auto;
 	}
 
