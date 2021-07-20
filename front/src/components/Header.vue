@@ -14,13 +14,14 @@ export default
 
 <template>
 	<header>
-		<NavLink url="/" text="Ft_transcendance" class="brand"/>
+		<NavLink url="/" text="Ft_transcendence" class="brand"/>
 		<div class="links_container">
-			<NavLink url="/" text="Dashboard"/>
+			<NavLink url="/" text="Home"/>
 			<NavLink url="/friends" text="Friends"/>
 			<NavLink url="/chat" text="Chat"/>
 			<NavLink url="/game" text="Game"/>
-			<router-link to="/profile" id="profile_div"></router-link>
+			<NavLink url="/login" text="Login"/>
+			<router-link to="/account" id="profile_div"></router-link>
 		</div>
 	</header>
 </template>

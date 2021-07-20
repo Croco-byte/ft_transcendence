@@ -51,7 +51,7 @@ services:
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: root
-      POSTGRES_DB: ft_transcendance
+      POSTGRES_DB: ft_transcendence
       PG_DATA: /var/lib/postgresql/data
     ports:
       - 5432:5432
@@ -67,7 +67,7 @@ services:
       - ./front:/usr/src/app
       - /usr/src/app/node_modules
     ports:
-      - 80:8080
+      - 8080:8080
       - 9228:9228
     environment:
       - CHOKIDAR_USEPOLLING=true

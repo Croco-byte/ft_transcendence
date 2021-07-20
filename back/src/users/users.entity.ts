@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, BaseEntity } from 'typeorm';
 
-@Entity('User')
-export class User
+@Entity()
+export class User extends BaseEntity
 {
   @PrimaryGeneratedColumn()
   id: number;
@@ -9,14 +9,14 @@ export class User
   @Column()
   username: string;
 
-  @Column()
-  avatar: string;
+//@Column()
+//avatar: string;
 
-  @Column({ type: "text"})
-  stat: string;
+//  @Column({ type: "text"})
+//  stat: string;
 
-  @Column({ type: "integer" })
-  score: number
+//  @Column({ type: "integer" })
+//  score: number
 
   @Column({ type: "boolean", default: false })
   DFA: boolean
@@ -24,7 +24,7 @@ export class User
   @Column({type: "boolean", default: true})
   online: boolean
 
-  @ManyToMany(() => User)
-  @JoinTable()
-  friends: User[];
+//  @ManyToMany(() => User)
+//  @JoinTable()
+//  friends: User[];
 };
