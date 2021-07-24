@@ -7,6 +7,14 @@ class AccountService {
 	getAccountInfo() {
 		return axios.get(API_URL + 'profile', { headers: authHeader() });
 	}
+
+	uploadAvatar(formData) {
+		return axios.post(API_URL + 'profile/avatar', formData, { headers: authHeader() });
+	}
+
+	getUserAvatar() {
+		return axios.get(API_URL + 'profile/avatar', { headers: authHeader(), responseType: 'blob' });
+	}
 }
 
 export default new AccountService();

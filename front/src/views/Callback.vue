@@ -23,8 +23,11 @@ export default {
 	methods: {
 		handleLogin: async function() {
 			try {
-				await this.$store.dispatch('auth/login', this.code, this.state);
-				this.$router.push('/account');
+				await this.$store.dispatch('auth/login', this.code, this.state).then(
+					result => {
+						if (result.twoFARedirect === true) { this.$router.push('/twoFA'); }
+						else { this.$router.push('/account'); }
+						});
 			} catch(error) {
 				this.$router.push({name: 'Login', params: { message: 'Something went wrong. Please try again later' }});
 			}

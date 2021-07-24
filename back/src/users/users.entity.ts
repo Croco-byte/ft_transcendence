@@ -9,8 +9,8 @@ export class User extends BaseEntity
   @Column()
   username: string;
 
-//@Column()
-//avatar: string;
+  @Column({ default: "default" })
+  avatar: string;
 
 //  @Column({ type: "text"})
 //  stat: string;
@@ -18,11 +18,14 @@ export class User extends BaseEntity
 //  @Column({ type: "integer" })
 //  score: number
 
-  @Column({ type: "boolean", default: false })
-  DFA: boolean
+  @Column({ default: false })
+  isTwoFactorAuthenticationEnabled: boolean
+
+  @Column({ nullable: true})
+  twoFactorAuthenticationSecret?: string;
 
   @Column({type: "boolean", default: true})
-  online: boolean
+  online: boolean;
 
 //  @ManyToMany(() => User)
 //  @JoinTable()

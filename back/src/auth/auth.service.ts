@@ -21,18 +21,20 @@ export class AuthService {
 			const result = await this.httpService.post(url, postData).pipe(map(resp => resp.data)).toPromise();
 
 			const infos = await this.getUserInfo(result.access_token);
-			const user = await User.findOne({ where: { username: infos.username } });
-			if (!user) {
+			const existingUser = await User.findOne({ where: { username: infos.username } });
+			if (!existingUser) {
 				console.log("We don\'t have the user " + infos.username + ". Creating it in database.");
 				const newUser = User.create();
 				newUser.username = infos.username;
 				await User.save(newUser);
 			}
-			const userUuid = (await User.findOne({ where: { username: infos.username } })).id;
-
+			const user = await User.findOne({ where: { username: infos.username } });
 			var returnObject: any = {};
 			returnObject.username = infos.username;
-			returnObject.accessToken = this.jwtService.sign({ user_id: userUuid }, { expiresIn: '24h' });
+			returnObject.accessToken = this.jwtService.sign({ user_id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
+			if (user.isTwoFactorAuthenticationEnabled === true) {
+				returnObject.twoFARedirect = true;
+			}
 
 			return returnObject;
 		} catch(e) {

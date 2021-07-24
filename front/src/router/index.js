@@ -37,6 +37,12 @@ const routes = [
 	  name: 'Chat',
 	  component: () => import('../views/Chat.vue'),
 	  beforeEnter: ifAuthenticated
+  },
+  {
+	  path: '/twoFA',
+	  name: 'TwoFA',
+	  component: () => import('../views/TwoFA.vue'),
+	  beforeEnter: ifAuthenticated
   }
 ]
 

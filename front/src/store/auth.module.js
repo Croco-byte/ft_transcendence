@@ -19,6 +19,16 @@ export const auth = {
 			}
 		},
 
+		async twoFALogin({ commit }, twoFACode) {
+			try {
+				const user = await AuthService.twoFALogin(twoFACode);
+				commit('loginSuccess', user);
+				return Promise.resolve(user);
+			} catch(error) {
+				return Promise.reject(error);
+			}
+		},
+
 		logout({ commit }) {
 			AuthService.logout();
 			commit('logout');
