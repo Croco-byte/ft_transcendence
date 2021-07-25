@@ -42,7 +42,6 @@ const routes = [
 	  path: '/twoFA',
 	  name: 'TwoFA',
 	  component: () => import('../views/TwoFA.vue'),
-	  beforeEnter: ifAuthenticated
   }
 ]
 

@@ -24,7 +24,7 @@ export class ProfileService {
 				this.usersRepository.update(user_id, { avatar: filename });
 			}
 			else {
-				unlink("./images/" + user.avatar, () => { console.log("Successfully deleted previous avatar with path ./images/" + user.avatar) });
+				await unlink("./images/" + user.avatar, () => { console.log("Successfully deleted previous avatar with path ./images/" + user.avatar) });
 				this.usersRepository.update(user_id, { avatar: filename });
 			}
 		} catch {

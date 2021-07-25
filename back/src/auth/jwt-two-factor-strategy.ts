@@ -21,6 +21,6 @@ export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-fa
 		if (payload.isSecondFactorAuthenticated) {
 			return { user_id: payload.user_id, username: payload.username };
 		}
-		console.log("2FA enabled, but the user isn't logged in via 2FA. Bouncing him !")
+		console.log("Token expired, or 2FA enabled, but the user isn't logged in via 2FA. Bouncing him !")
 	}
 }

@@ -6,9 +6,9 @@
  	 <br/><br/>
 	 </div>
 
-	 <div id="avatar-display" v-if="avatar" style="text-align: center;">
+	 <div id="avatar-display" v-if="$store.state.auth.avatar" style="text-align: center;">
  	 <h3 style="text-align: center;">This is your avatar</h3>
- 	 <img :src="avatar" fluid alt="User avatar" width="200" height="200"/>
+ 	 <img :src="$store.state.auth.avatar" fluid alt="User avatar" width="200" height="200"/>
  	 </div>
   </div>
 
@@ -70,8 +70,6 @@ export default {
 		  showPreview: false,
 		  successfullUpload: '',
 		  failedUpload: '',
-
-		  avatar: ''
 	  };
   },
   methods:	{
@@ -121,7 +119,7 @@ export default {
 				 AccountService.getUserAvatar().then(
 					 response => {
 						 const urlCreator = window.URL || window.webkitURL;
-						 this.avatar = urlCreator.createObjectURL(response.data);
+						 this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
 						 },
 					 error => { console.log("Couldn't get user avatar from backend"); })
 			 },
@@ -145,7 +143,7 @@ export default {
 	  AccountService.getUserAvatar().then(
 		  response => {
 			  const urlCreator = window.URL || window.webkitURL;
-			  this.avatar = urlCreator.createObjectURL(response.data);
+			  this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
 		  },
 		  error => { console.log("Couldn't get user avatar from backend"); }
 	  )

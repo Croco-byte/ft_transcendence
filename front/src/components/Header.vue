@@ -1,17 +1,3 @@
-<script>
-
-import NavLink from './NavLink.vue';
-
-export default
-{
-	name: 'Header',
-	components:
-	{
-		NavLink
-	}
-}
-</script>
-
 <template>
 	<header>
 		<NavLink url="/" text="Ft_transcendence" class="brand"/>
@@ -21,10 +7,46 @@ export default
 			<NavLink url="/chat" text="Chat"/>
 			<NavLink url="/game" text="Game"/>
 			<NavLink url="/login" text="Login"/>
-			<router-link to="/account" id="profile_div"></router-link>
+			<!---   --->
+			<router-link to="/account" id="profile_div" v-if="$store.state.auth.status.loggedIn === true">
+				<img width="100" height="100" :src="$store.state.auth.avatar" style="border-radius: 50%; max-width: 100%; max-height: 100%;"/>
+			</router-link>
 		</div>
 	</header>
 </template>
+
+<script>
+
+import NavLink from './NavLink.vue';
+import AccountService from '../services/account.service'
+
+export default
+{
+	name: 'Header',
+	components:
+	{
+		NavLink,
+		AccountService
+	},
+
+	data() {
+		return {
+		}
+	},
+
+	mounted() {
+		if (this.$store.state.auth.status.loggedIn === true) {
+			AccountService.getUserAvatar().then(
+			  response => {
+				  const urlCreator = window.URL || window.webkitURL;
+				  this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
+			  },
+			  error => { console.log("Couldn't get user avatar from backend"); }
+		  )
+		}
+	}
+}
+</script>
 
 <style>
 	header

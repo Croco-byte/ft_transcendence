@@ -1,7 +1,7 @@
 import AuthService from '../services/auth.service';
 
 const user = JSON.parse(localStorage.getItem('user'));
-const initialState = user ? { status: { loggedIn: true }, user } : { status: { loggedIn: false }, user: null };
+const initialState = user ? { status: { loggedIn: true }, user, avatar: '' } : { status: { loggedIn: false }, user: null, avatar: '' };
 
 export const auth = {
 	namespaced: true,
@@ -11,7 +11,6 @@ export const auth = {
 		async login({ commit }, code, state) {
 			try {
 				const user = await AuthService.login(code, state);
-				commit('loginSuccess', user);
 				return Promise.resolve(user);
 			} catch(error) {
 				commit('loginFailure');
@@ -22,7 +21,6 @@ export const auth = {
 		async twoFALogin({ commit }, twoFACode) {
 			try {
 				const user = await AuthService.twoFALogin(twoFACode);
-				commit('loginSuccess', user);
 				return Promise.resolve(user);
 			} catch(error) {
 				return Promise.reject(error);
@@ -37,6 +35,7 @@ export const auth = {
 
 	mutations: {
 		loginSuccess(state, user) {
+			console.log("Logging success !");
 			state.status.loggedIn = true;
 			state.user = user;
 		},
@@ -47,6 +46,10 @@ export const auth = {
 		logout(state) {
 			state.status.loggedIn = false;
 			state.user = null;
+		},
+
+		updateAvatar(state, avatar) {
+			state.avatar = avatar;
 		}
 	}
 };

@@ -32,7 +32,7 @@ export default {
 			try {
 				let twoFACode = new FormData(document.getElementById("TwoFAForm"));
 				await this.$store.dispatch('auth/twoFALogin', twoFACode.get('TwoFACode')).then(
-					result => { this.$router.push('/account'); })
+					result => { this.$store.commit('auth/loginSuccess', result); this.$router.push('/account'); })
 			} catch {
 				this.error = "Wrong 2FA authentication code";
 			}
