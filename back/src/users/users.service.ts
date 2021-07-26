@@ -21,4 +21,10 @@ export class UsersService {
 		console.log("Turning off 2FA for user with id " + id);
 		return this.usersRepository.update(id, { isTwoFactorAuthenticationEnabled: false });
 	}
+
+	async findUserById(id: number) {
+		const user = await this.usersRepository.findOne({ where: { id: id } });
+		delete user.isTwoFactorAuthenticationEnabled, user.avatar, user.receivedFriendRequests, user.sentFriendRequests, user.twoFactorAuthenticationSecret;
+		return user;
+	}
 }

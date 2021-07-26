@@ -1,0 +1,4 @@
+	Quentin :
+
+>> Ajouter un check de file extension / de taille de fichier sur l'upload des avatars utilisateurs.
+>> 

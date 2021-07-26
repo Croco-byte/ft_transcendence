@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, BaseEntity } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinTable, BaseEntity } from 'typeorm';
+import { FriendRequestEntity } from './friends-request.entity';
 
 @Entity()
 export class User extends BaseEntity
@@ -12,12 +13,6 @@ export class User extends BaseEntity
   @Column({ default: "default" })
   avatar: string;
 
-//  @Column({ type: "text"})
-//  stat: string;
-
-//  @Column({ type: "integer" })
-//  score: number
-
   @Column({ default: false })
   isTwoFactorAuthenticationEnabled: boolean
 
@@ -27,7 +22,9 @@ export class User extends BaseEntity
   @Column({type: "boolean", default: true})
   online: boolean;
 
-//  @ManyToMany(() => User)
-//  @JoinTable()
-//  friends: User[];
+  @OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.creator)
+  sentFriendRequests: FriendRequestEntity[];
+
+  @OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.receiver)
+  receivedFriendRequests: FriendRequestEntity[];
 };
