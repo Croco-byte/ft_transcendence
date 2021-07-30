@@ -133,7 +133,7 @@ export default {
 		  )
 	  }
   },
-  beforeMount() {
+  beforeCreate() {
 	  AccountService.getAccountInfo().then(
 		  response => {
 		  this.name = response.data.username;

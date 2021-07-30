@@ -31,7 +31,7 @@ export class AuthService {
 			const user = await User.findOne({ where: { username: infos.username } });
 			var returnObject: any = {};
 			returnObject.username = infos.username;
-			returnObject.accessToken = this.jwtService.sign({ user_id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
+			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
 			if (user.isTwoFactorAuthenticationEnabled === true) {
 				returnObject.twoFARedirect = true;
 			}

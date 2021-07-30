@@ -23,14 +23,14 @@ export class TwoFactorAuthenticationController {
 	@UseGuards(JwtAuthenticationGuard)
 	async turnOnTwoFactorAuthentication(@Body('twoFactorAuthenticationCode') twoFactorAuthenticationCode : string, @Req() req) {
 		try {
-			await this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode, req.user.user_id);
+			await this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode, req.user.id);
 		} catch {
 			throw new ForbiddenException("Wrong authentication code to turn on 2FA");
 		}
-		await this.usersService.turnOnTwoFactorAuthentication(req.user.user_id);
+		await this.usersService.turnOnTwoFactorAuthentication(req.user.id);
 		var returnObject: any = {};
 		returnObject.username = req.user.username;
-		returnObject.accessToken = this.jwtService.sign({ user_id: req.user.user_id, username: req.user.username, isSecondFactorAuthenticated: true }, { expiresIn: '24h' });
+		returnObject.accessToken = this.jwtService.sign({ id: req.user.id, username: req.user.username, isSecondFactorAuthenticated: true }, { expiresIn: '24h' });
 		return (returnObject);
 	}
 
@@ -38,7 +38,7 @@ export class TwoFactorAuthenticationController {
 	@HttpCode(200)
 	@UseGuards(JwtTwoFactorGuard)
 	async turnOffTwoFactorAuthentication(@Req() req) {
-		await this.usersService.turnOffTwoFactorAuthentication(req.user.user_id);
+		await this.usersService.turnOffTwoFactorAuthentication(req.user.id);
 	}
 
 	@Post('authenticate')
@@ -46,14 +46,14 @@ export class TwoFactorAuthenticationController {
 	@UseGuards(JwtAuthenticationGuard)
 	async authenticate(@Body('twoFactorAuthenticationCode') twoFactorAuthenticationCode: string, @Req() req) {
 		try {
-			await this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode, req.user.user_id);
+			await this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode, req.user.id);
 		} catch {
 			throw new ForbiddenException("Wrong authentication code to logging with 2FA");
 		}
 
 		var returnObject: any = {};
 		returnObject.username = req.user.username;
-		returnObject.accessToken = this.jwtService.sign({ user_id: req.user.user_id, username: req.user.username, isSecondFactorAuthenticated: true }, { expiresIn: '24h' });
+		returnObject.accessToken = this.jwtService.sign({ id: req.user.id, username: req.user.username, isSecondFactorAuthenticated: true }, { expiresIn: '24h' });
 		return (returnObject);
 	}
 }

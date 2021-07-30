@@ -11,20 +11,20 @@ export class User extends BaseEntity
   username: string;
 
   @Column({ default: "default" })
-  avatar: string;
+  avatar?: string;
 
   @Column({ default: false })
-  isTwoFactorAuthenticationEnabled: boolean
+  isTwoFactorAuthenticationEnabled?: boolean
 
   @Column({ nullable: true})
   twoFactorAuthenticationSecret?: string;
 
   @Column({type: "boolean", default: true})
-  online: boolean;
+  online?: boolean;
 
   @OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.creator)
-  sentFriendRequests: FriendRequestEntity[];
+  sentFriendRequests?: FriendRequestEntity[];
 
   @OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.receiver)
-  receivedFriendRequests: FriendRequestEntity[];
+  receivedFriendRequests?: FriendRequestEntity[];
 };

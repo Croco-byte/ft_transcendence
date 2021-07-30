@@ -42,6 +42,18 @@ const routes = [
 	  path: '/twoFA',
 	  name: 'TwoFA',
 	  component: () => import('../views/TwoFA.vue'),
+  },
+  {
+	  path: '/user/:id',
+	  name: 'User',
+	  component: () => import('../views/User.vue'),
+	  beforeEnter: ifAuthenticated
+  },
+  {
+	  path: '/friends',
+	  name: 'Friends',
+	  component: () => import('../views/Friends.vue'),
+	  beforeEnter: ifAuthenticated
   }
 ]
 

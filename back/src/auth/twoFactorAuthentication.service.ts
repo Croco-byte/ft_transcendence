@@ -10,9 +10,9 @@ import { User } from '../users/users.entity';
 export class TwoFactorAuthenticationService {
 	constructor(private readonly usersService: UsersService, private readonly configService: ConfigService) {}
 
-	async generateTwoFactorAuthenticationSecret(user: {user_id: number, username: string }) {
+	async generateTwoFactorAuthenticationSecret(user: User) {
 		let secret: string;
-		const existingUser = await User.findOne({ where: { id: user.user_id } });
+		const existingUser = await User.findOne({ where: { id: user.id } });
 		if (existingUser && existingUser.twoFactorAuthenticationSecret) {
 			console.log("Using existing secret");
 			secret = existingUser.twoFactorAuthenticationSecret;
@@ -20,7 +20,7 @@ export class TwoFactorAuthenticationService {
 		else {
 			console.log("Generating a new secret");
 			secret = authenticator.generateSecret();
-			await this.usersService.setTwoFactorAuthenticationSecret(secret, user.user_id);
+			await this.usersService.setTwoFactorAuthenticationSecret(secret, user.id);
 		}
 		const otpauthUrl = authenticator.keyuri(user.username, this.configService.get('TWO_FACTOR_AUTHENTICATION_APP_NAME'), secret);
 
@@ -31,8 +31,8 @@ export class TwoFactorAuthenticationService {
 		return toFileStream(stream, otpauthUrl);
 	}
 
-	async isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user_id: number) {
-		const user = await User.findOne({ where: { id: user_id } });
+	async isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, id: number) {
+		const user = await User.findOne({ where: { id: id } });
 		if (!user) {
 			throw new UnauthorizedException();
 		}

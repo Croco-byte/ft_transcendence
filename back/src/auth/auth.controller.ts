@@ -9,7 +9,7 @@ export class AuthController {
 	@Post()
 	authenticateUser(@Body('code') code: string, @Body('state') state: string) {
 		if (code == '' || state == '') {
-			return new BadRequestException();
+			throw new BadRequestException();
 		} else {
 			return this.authService.authenticateUser(code, state);
 		}

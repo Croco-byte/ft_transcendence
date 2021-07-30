@@ -1,7 +1,7 @@
 import { User } from "./users.entity";
 
 
-export type FriendRequest_Status = 'pending' | 'declined' | 'accepted';
+export type FriendRequest_Status = 'not-sent' | 'pending' | 'declined' | 'accepted' | 'waiting-for-current-user-response';
 
 export interface FriendRequestStatus {
 	status?: FriendRequest_Status;
