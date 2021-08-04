@@ -16,8 +16,8 @@ class UserService {
 		return axios.post(API_URL + 'user/avatar', { path: path }, { headers: authHeader(), responseType: 'blob' });
 	}
 
-	getFriends() {
-		return axios.get(API_URL + 'user/friend-request/me/friends', { headers: authHeader() });
+	getFriends(page = 1) {
+		return axios.get(API_URL + 'user/friend-request/me/friends?limit=2&page=' + page, { headers: authHeader() });
 	}
 
 	getFriendRequestStatusFromCurrUser(userId) {
@@ -28,12 +28,12 @@ class UserService {
 		return axios.post(API_URL + "user/friend-request/send/" + userId, {}, { headers: authHeader() });
 	}
 
-	getFriendRequestsFromRecipients() {
-		return axios.get(API_URL + "user/friend-request/me/received-requests", { headers: authHeader() });
+	getFriendRequestsFromRecipients(page = 1) {
+		return axios.get(API_URL + "user/friend-request/me/received-requests?limit=2&page=" + page, { headers: authHeader() });
 	}
 
-	getFriendRequestsToRecipients() {
-		return axios.get(API_URL + "user/friend-request/me/sent-requests", { headers: authHeader() });
+	getFriendRequestsToRecipients(page = 1) {
+		return axios.get(API_URL + "user/friend-request/me/sent-requests?limit=2&page=" + page, { headers: authHeader() });
 	}
 
 	acceptFriendRequest(friendRequestId) {
@@ -44,8 +44,20 @@ class UserService {
 		return axios.put(API_URL + "user/friend-request/response/" + friendRequestId, { status: 'declined' }, { headers: authHeader() });
 	}
 
+	unfriendUser(friendId) {
+		return axios.post(API_URL + "user/unfriend/" + friendId, {}, { headers: authHeader() });
+	}
+
 	searchUser(username, page = 1) {
-		return axios.get(API_URL + "user/all?limit=2&page=" + page + "&username=" + username, { headers: authHeader() });
+		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
+	}
+
+	getOnline() {
+		return axios.post(API_URL + "user/change-status", { status: 'online' }, { headers: authHeader() });
+	}
+
+	getOffline() {
+		return axios.post(API_URL + "user/change-status", { status: 'offline' }, { headers: authHeader() });
 	}
 }
 

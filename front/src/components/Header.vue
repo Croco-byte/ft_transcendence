@@ -7,7 +7,6 @@
 			<NavLink url="/chat" text="Chat"/>
 			<NavLink url="/game" text="Game"/>
 			<NavLink url="/login" text="Login"/>
-			<!---   --->
 			<router-link to="/account" id="profile_div" v-if="$store.state.auth.status.loggedIn === true">
 				<img width="100" height="100" :src="$store.state.auth.avatar" style="border-radius: 50%; max-width: 100%; max-height: 100%;"/>
 			</router-link>

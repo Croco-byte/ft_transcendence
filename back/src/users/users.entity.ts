@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinTable, BaseEntity } from 'typeorm';
 import { FriendRequestEntity } from './friends-request.entity';
+import { UserStatus } from './status/status.interface';
 
 @Entity()
 export class User extends BaseEntity
@@ -19,8 +20,8 @@ export class User extends BaseEntity
   @Column({ nullable: true})
   twoFactorAuthenticationSecret?: string;
 
-  @Column({type: "boolean", default: true})
-  online?: boolean;
+  @Column({ default: 'offline' })
+  status?: string;
 
   @OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.creator)
   sentFriendRequests?: FriendRequestEntity[];

@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query } from "@nestjs/common";
+import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException } from "@nestjs/common";
 import { Pagination } from "nestjs-typeorm-paginate";
 import { Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
 import { FriendRequest, FriendRequestStatus } from "./friend-request.interface";
+import { UserStatus } from "./status/status.interface";
 import { User } from "./users.entity";
 import { UsersService } from "./users.service";
 
@@ -16,30 +17,73 @@ export class UserController {
 		return {id: req.user.id};
 	}
 
-	@Get('all')
+	@Get('/friend-request/me/friends')
 	@UseGuards(JwtTwoFactorGuard)
-	index(
+	paginatedFriends(
+		@Query('limit') limit: number = 10,
+		@Query('page') page: number = 1,
+		@Req() req): Observable<Pagination<User>> {
+		limit = limit > 100 ? 100 : limit;
+		
+		return this.userService.paginateFriends({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/friend-request/me/friends' }, req.user);
+	}
+
+	@Get('/friend-request/me/received-requests')
+	@UseGuards(JwtTwoFactorGuard)
+	paginatedFriendRequestsFromRecipients(
+		@Query('limit') limit: number = 10,
+		@Query('page') page: number = 1,
+		@Req() req): Observable<Pagination<FriendRequest>> {
+		return this.userService.paginateFriendRequestsFromRecipients({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/friend-request/me/received-requests' }, req.user);
+	}
+
+	@Get('/friend-request/me/sent-requests')
+	@UseGuards(JwtTwoFactorGuard)
+	paginatedFriendRequestsToRecipients(
+		@Query('limit') limit: number = 10,
+		@Query('page') page: number = 1,
+		@Req() req): Observable<Pagination<FriendRequest>> {
+			return this.userService.paginateFriendRequestsToRecipients({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/friend-request/me/sent-requests' }, req.user);
+	}
+
+	@Get('users')
+	@UseGuards(JwtTwoFactorGuard)
+	paginatedUsers(
 		@Query('limit') limit: number = 10,
 		@Query('page') page: number = 1,
 		@Query('username') username: string
 		): Observable<Pagination<User>> {
 		limit = limit > 100 ? 100 : limit;
 		if (username == null) {
-			return this.userService.paginate({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/all' });
+			return this.userService.paginateUsers({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' });
 		} else {
-			return this.userService.paginateFilterByUsername({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/all' }, username);
+			return this.userService.paginateUsersFilterByUsername({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
+		}
+	}
+
+	@Post('unfriend/:friendId')
+	@UseGuards(JwtTwoFactorGuard)
+	unfriendUser(@Param('friendId') friendStringId, @Req() req) {
+		try {
+			const friendId = parseInt(friendStringId);
+			if (!friendId) {
+				throw new BadRequestException();
+			}
+			this.userService.unfriendUser(req.user, friendId);
+		} catch(e) {
+			throw e;
 		}
 
 	}
+
+
 
 	@Get(':userId')
 	@UseGuards(JwtTwoFactorGuard)
 	findUserById(@Param('userId') userStringId: string) {
 		try {
 			const userId = parseInt(userStringId);
-			if (!userId) {
-				throw new NotFoundException();
-			}
+			if (!userId) throw new BadRequestException();
 			return this.userService.findUserById(userId);
 		} catch(e) {
 			throw(e);
@@ -68,6 +112,7 @@ export class UserController {
 	@UseGuards(JwtTwoFactorGuard)
 	getFriendRequestStatus(@Param('receiverId') receiverStringId: string, @Req() req): Observable<FriendRequestStatus> {
 		const receiverId = parseInt(receiverStringId);
+		if (!receiverId) throw new BadRequestException();
 		return this.userService.getFriendRequestStatus(receiverId, req.user);
 	}
 
@@ -78,21 +123,23 @@ export class UserController {
 		return this.userService.respondToFriendRequest(friendRequestId, responseStatus.status);
 	}
 
-	@Get('/friend-request/me/received-requests')
+	@Get('status/me')
 	@UseGuards(JwtTwoFactorGuard)
-	getFriendRequestsFromRecipients(@Req() req): Observable<FriendRequest[]> {
-		return this.userService.getFriendRequestsFromRecipients(req.user);
+	getCurrUserStatus(@Req() req): Observable<UserStatus> {
+		return this.userService.getCurrUserStatus(req.user);
 	}
 
-	@Get('/friend-request/me/sent-requests')
+	@Get('status/:userid')
 	@UseGuards(JwtTwoFactorGuard)
-	getFriendRequestsToRecipients(@Req() req): Observable<FriendRequest[]> {
-		return this.userService.getFriendRequestsToRecipients(req.user);
+	getUserStatus(@Param('userid') userStringId: string): Observable<UserStatus> {
+		const userId = parseInt(userStringId);
+		if (!userId) throw new BadRequestException();
+		return this.userService.getUserStatus(userId);
 	}
 
-	@Get('/friend-request/me/friends')
+	@Post('change-status')
 	@UseGuards(JwtTwoFactorGuard)
-	getFriends(@Req() req): Observable<User[]> {
-		return this.userService.getFriends(req.user);
+	changeCurrUserStatus(@Body('status') targetStatus: UserStatus, @Req() req): void {
+		this.userService.changeCurrUserStatus(targetStatus, req.user.id)
 	}
 }

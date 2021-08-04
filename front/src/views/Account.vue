@@ -3,6 +3,7 @@
 	<div id="basic">
  	 <h1>Your account informations</h1>
  	 <br/><p>Your username :	--> {{ name }}</p>
+	  <p>Status :	--> {{ status }}</p>
  	 <br/><br/>
 	 </div>
 
@@ -62,6 +63,7 @@ export default {
   data() {
 	  return {
 		  name: '',
+		  status: '',
 		  TwoFA: false,
 		  wrongTwoFACode: '',
 
@@ -106,38 +108,40 @@ export default {
 	  },
 
 	  submitForm: function() {
+		  var ref = this;
 		  let formData = new FormData();
-
 		  formData.append('avatar', this.picture);
 		  AccountService.uploadAvatar(formData).then(
 			 response => {
-				 this.picture = '';
-				 this.showPreview = false;
-				 this.imagePreview = null;
-				 this.failedUpload = '';
-				 this.successfullUpload = 'Successfully uploaded your avatar';
+				 ref.picture = '';
+				 ref.showPreview = false;
+				 ref.imagePreview = null;
+				 ref.failedUpload = '';
+				 ref.successfullUpload = 'Successfully uploaded your avatar';
 				 AccountService.getUserAvatar().then(
 					 response => {
 						 const urlCreator = window.URL || window.webkitURL;
-						 this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
+						 ref.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
 						 },
 					 error => { console.log("Couldn't get user avatar from backend"); })
 			 },
 			 error => { 
-				 this.picture = '';
-				 this.showPreview = false;
-				 this.imagePreview = null;
-				 this.successfullUpload = '';
-				 this.failedUpload = 'Failed to upload your avatar. Try again later';
+				 ref.picture = '';
+				 ref.showPreview = false;
+				 ref.imagePreview = null;
+				 ref.successfullUpload = '';
+				 ref.failedUpload = 'Failed to upload your avatar. Try again later';
 			  } 
 		  )
 	  }
   },
   beforeCreate() {
+	  console.log("HEHE " + this.$store.state.auth.id);			// [DEBUG]
 	  AccountService.getAccountInfo().then(
 		  response => {
 		  this.name = response.data.username;
 		  this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
+		  this.status = response.data.status;
 	  },
 	  error => { return ; })
 	  AccountService.getUserAvatar().then(

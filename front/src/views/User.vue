@@ -18,11 +18,16 @@
 			</div>
 			<div v-if="friendRequestStatus === 'declined'">
 			<button type="button" disabled>Send friend request</button>
-			<p>This friend request has been declined</p>
+			<p>This friend request has been declined. Only the other user can send you a friend request now</p>
+			</div>
+			<div v-if="friendRequestStatus === 'declined-by-me'">
+			<button type="button" v-on:click="sendFriendRequest">Send friend request</button>
+			<p>You have already declined a friend request coming from this user. Only you can re-send this user a friend request</p>
 			</div>
 			<div v-if="friendRequestStatus === 'accepted'">
 			<button type="button" disabled>Send friend request</button>
 			<p>This friend request has been accepted : you're already friends !</p>
+			<button v-on:click="unfriendUser">Unfriend</button>
 			</div>
 			<div v-if="friendRequestStatus === 'waiting-for-current-user-response'">
 			<button type="button" disabled>Send friend request</button>
@@ -62,12 +67,20 @@ export default {
 				},
 				error => { console.log("Couldn't send the friend request !")}
 			)
+		},
+
+		unfriendUser: function() {
+			var ref = this;
+			UserService.unfriendUser(ref.userId).then(
+			  () => { ref.friendRequestStatus = 'not-sent' },
+			  () => { console.log("Error while trying to unfriend user " + friendId)}
+		  )
 		}
 	},
 
 	async beforeCreate() {
 		const currUserId = await UserService.getCurrUserId();
-		if (currUserId.data.id === parseInt(this.$route.params.id)) {
+		if (currUserId.data.id == parseInt(this.$route.params.id)) {
 			this.$router.push('/account');
 		}
 		UserService.getUserInfo(this.$route.params.id).then(

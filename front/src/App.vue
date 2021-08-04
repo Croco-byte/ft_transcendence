@@ -7,6 +7,9 @@ export default
 	components:
 	{
 		Header
+	},
+	created () {
+		console.log("hi :)");
 	}
 }
 </script>

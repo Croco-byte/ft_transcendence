@@ -3,9 +3,10 @@ import router from './router/index'
 import store from './store/index'
 import Swal from 'sweetalert2'
 
+const instance = axios.create();
+
 window.Swal = Swal;
 
-const instance = axios.create();
 
 instance.interceptors.response.use(function (response) {
     return response;

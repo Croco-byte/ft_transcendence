@@ -1,7 +1,11 @@
 import AuthService from '../services/auth.service';
+import authHeader from '../services/auth-header';
+import axios from 'axios';
 
 const user = JSON.parse(localStorage.getItem('user'));
-const initialState = user ? { status: { loggedIn: true }, user, avatar: '' } : { status: { loggedIn: false }, user: null, avatar: '' };
+let id;
+
+const initialState = user ? { status: { loggedIn: true }, user, avatar: '', id } : { status: { loggedIn: false }, user: null, avatar: '', id };
 
 export const auth = {
 	namespaced: true,
@@ -34,8 +38,11 @@ export const auth = {
 	},
 
 	mutations: {
+		setId(state, id) {
+			console.log("Setting user id");
+			state.id = id;
+		},
 		loginSuccess(state, user) {
-			console.log("Logging success !");
 			state.status.loggedIn = true;
 			state.user = user;
 		},
