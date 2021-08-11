@@ -4,6 +4,16 @@ import authHeader from './auth-header';
 const API_URL = "http://127.0.0.1:3000/";
 
 class LoginService {
+	parseJwt() {
+		try {
+			const user = JSON.parse(localStorage.getItem('user'));
+			const accessToken = user.accessToken;
+			return JSON.parse(atob(accessToken.split('.')[1]));
+		} catch (e) {
+		  return null;
+		}
+	  };
+
 	async login(code, state) {
 		try {
 			const response = await axios.post(API_URL + 'login', { code: code, state: state });
@@ -12,8 +22,7 @@ class LoginService {
 			}
 			return response.data;
 		} catch (e) {
-			console.log("Caught an error when trying to login !");
-			throw new Error("Login failure");
+			throw e;
 		}
 	}
 

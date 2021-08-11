@@ -3,7 +3,7 @@ import { Pagination } from "nestjs-typeorm-paginate";
 import { Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
 import { FriendRequest, FriendRequestStatus } from "./friend-request.interface";
-import { UserStatus } from "./status/status.interface";
+import { UserStatus, User_Status } from "./status.interface";
 import { User } from "./users.entity";
 import { UsersService } from "./users.service";
 
@@ -61,23 +61,6 @@ export class UserController {
 		}
 	}
 
-	@Post('unfriend/:friendId')
-	@UseGuards(JwtTwoFactorGuard)
-	unfriendUser(@Param('friendId') friendStringId, @Req() req) {
-		try {
-			const friendId = parseInt(friendStringId);
-			if (!friendId) {
-				throw new BadRequestException();
-			}
-			this.userService.unfriendUser(req.user, friendId);
-		} catch(e) {
-			throw e;
-		}
-
-	}
-
-
-
 	@Get(':userId')
 	@UseGuards(JwtTwoFactorGuard)
 	findUserById(@Param('userId') userStringId: string) {
@@ -103,14 +86,14 @@ export class UserController {
 
 	@Post('friend-request/send/:receiverId')
 	@UseGuards(JwtTwoFactorGuard)
-	sendFriendRequest(@Param('receiverId') receiverStringId: string, @Req() req): Observable<FriendRequest | { error: string }> {
+	sendFriendRequest(@Param('receiverId') receiverStringId: string, @Req() req): Promise<FriendRequest> {
 		const receiverId = parseInt(receiverStringId);
 		return this.userService.sendFriendRequest(receiverId, req.user);
 	}
 
 	@Get('/friend-request/status/:receiverId')
 	@UseGuards(JwtTwoFactorGuard)
-	getFriendRequestStatus(@Param('receiverId') receiverStringId: string, @Req() req): Observable<FriendRequestStatus> {
+	getFriendRequestStatus(@Param('receiverId') receiverStringId: string, @Req() req): Promise<FriendRequestStatus> {
 		const receiverId = parseInt(receiverStringId);
 		if (!receiverId) throw new BadRequestException();
 		return this.userService.getFriendRequestStatus(receiverId, req.user);
@@ -118,7 +101,7 @@ export class UserController {
 
 	@Put('/friend-request/response/:friendRequestId')
 	@UseGuards(JwtTwoFactorGuard)
-	respondToFriendRequest(@Param('friendRequestId') friendRequestStringId: string, @Body() responseStatus: FriendRequestStatus): Observable<FriendRequestStatus> {
+	respondToFriendRequest(@Param('friendRequestId') friendRequestStringId: string, @Body() responseStatus: FriendRequestStatus): Promise<FriendRequestStatus> {
 		const friendRequestId = parseInt(friendRequestStringId);
 		return this.userService.respondToFriendRequest(friendRequestId, responseStatus.status);
 	}
@@ -137,9 +120,16 @@ export class UserController {
 		return this.userService.getUserStatus(userId);
 	}
 
-	@Post('change-status')
+	@Post('change-status/:userid')
 	@UseGuards(JwtTwoFactorGuard)
-	changeCurrUserStatus(@Body('status') targetStatus: UserStatus, @Req() req): void {
-		this.userService.changeCurrUserStatus(targetStatus, req.user.id)
+	changeUserStatus(@Param('userid') userStringId: string, @Body('status') targetStatus: User_Status): void {
+		try {
+			const userId = parseInt(userStringId);
+			if (!userId) throw new BadRequestException();
+			this.userService.changeUserStatus(userId, targetStatus);
+		} catch(e) {
+			throw e;
+		}
+		
 	}
 }

@@ -3,7 +3,11 @@
 	<div id="basic">
  	 <h1>Your account informations</h1>
  	 <br/><p>Your username :	--> {{ name }}</p>
-	  <p>Status :	--> {{ status }}</p>
+	  <p>STATUS  
+		  <span v-if="status === 'online'" class="green-dot"></span>
+		  <span v-if="status === 'offline'" class="red-dot"></span>
+		  <span v-if="status === 'in-game'" class="orange-dot"></span>
+		    ({{ status }})</p>
  	 <br/><br/>
 	 </div>
 
@@ -55,6 +59,7 @@ import AccountService from '../services/account.service'
 import AuthService from '../services/auth.service'
 import QRCode from '../components/QRCode.vue'
 
+
 export default {
   name: 'Account',
   components: {
@@ -62,6 +67,7 @@ export default {
   },
   data() {
 	  return {
+		  id: '',
 		  name: '',
 		  status: '',
 		  TwoFA: false,
@@ -135,13 +141,13 @@ export default {
 		  )
 	  }
   },
-  beforeCreate() {
-	  console.log("HEHE " + this.$store.state.auth.id);			// [DEBUG]
+  mounted() {
 	  AccountService.getAccountInfo().then(
 		  response => {
 		  this.name = response.data.username;
 		  this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
 		  this.status = response.data.status;
+		  this.id = response.data.id;
 	  },
 	  error => { return ; })
 	  AccountService.getUserAvatar().then(
@@ -151,6 +157,16 @@ export default {
 		  },
 		  error => { console.log("Couldn't get user avatar from backend"); }
 	  )
+	  
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+		  if (userId == this.id) this.status = 'online';
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  if (userId == this.id) this.status = 'offline';
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  if (userId == this.id) this.status = 'in game';
+	  })
 	}
 
 }
@@ -201,6 +217,33 @@ export default {
 		margin-right: auto;
 		margin-left: auto;
 		width: max-content;
+	}
+
+	.green-dot {
+		height: 25px;
+		width: 25px;
+		background-color: green;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.red-dot {
+		height: 25px;
+		width: 25px;
+		background-color: red;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.orange-dot {
+		height: 25px;
+		width: 25px;
+		background-color: orange;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
 	}
 
 </style>

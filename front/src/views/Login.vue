@@ -22,7 +22,8 @@ export default {
 	},
 	data () {
 		return {
-			unauthRedirectMessage: this.$route.params.message || ''
+			unauthRedirectMessage: this.$route.params.message || '',
+			socket: null
 		}
 	},
 	updated() {

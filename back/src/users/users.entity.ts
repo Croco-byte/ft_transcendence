@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinTable, BaseEntity } from 'typeorm';
 import { FriendRequestEntity } from './friends-request.entity';
-import { UserStatus } from './status/status.interface';
+import { UserStatus } from './status.interface';
 
 @Entity()
 export class User extends BaseEntity

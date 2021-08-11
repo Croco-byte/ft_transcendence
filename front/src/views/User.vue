@@ -6,8 +6,12 @@
 		<h2>Profile page of {{ username }}</h2>
 		<img :src="avatar" fluid alt="User avatar" width="200" height="200"/>
 		<p>Username --> {{ username }}</p>
-		<p v-if="online">Status --> ONLINE</p>
-		<p v-else>Status --> OFFLINE</p>
+		
+		<span v-if="status === 'online'" class="green-dot"></span>
+		<span v-if="status === 'offline'" class="red-dot"></span>
+		<span v-if="status === 'in-game'" class="orange-dot"></span>
+		({{status}})
+
 		<div v-if="friendRequestStatus">
 			<div v-if="friendRequestStatus === 'not-sent'">
 			<button type="button" v-on:click="sendFriendRequest">Send friend request</button>
@@ -43,14 +47,16 @@
 
 <script>
 import UserService from '../services/user.service'
+import authService from '../services/auth.service'
 
 export default {
   name: 'Home',
   	data () {
 		return {
+			currUserId: 0,
 			userId: this.$route.params.id,
 			username: '',
-			online: false,
+			status: '',
 			avatar: '',
 
 			userNotFound: '',
@@ -59,34 +65,37 @@ export default {
 		}
 	},
 
-	methods: {
-		sendFriendRequest: async function() {
-			UserService.sendFriendRequest(this.$route.params.id).then(
-				response => {
-					this.friendRequestStatus = response.data.status;
-				},
-				error => { console.log("Couldn't send the friend request !")}
-			)
-		},
-
-		unfriendUser: function() {
-			var ref = this;
-			UserService.unfriendUser(ref.userId).then(
-			  () => { ref.friendRequestStatus = 'not-sent' },
-			  () => { console.log("Error while trying to unfriend user " + friendId)}
-		  )
+	computed: {
+		isDataLoaded() {
+			return this.username && this.avatar && this.friendRequestStatus;
 		}
 	},
 
-	async beforeCreate() {
-		const currUserId = await UserService.getCurrUserId();
-		if (currUserId.data.id == parseInt(this.$route.params.id)) {
-			this.$router.push('/account');
+	methods: {
+		sendFriendRequest: function() {
+			this.$store.state.auth.websockets.friendRequestsSocket.emit('sendFriendRequest', { receiverId: this.userId, user: null });
+		},
+
+		unfriendUser: function() {
+			this.$store.state.auth.websockets.friendRequestsSocket.emit('unfriendUser', { friendId: this.userId, user: null });
+		},
+
+		getFriendRequestStatusFromCurrUser: function() {
+			var ref = this;
+			UserService.getFriendRequestStatusFromCurrUser(this.$route.params.id).then(
+			response => { ref.friendRequestStatus = response.data.status; },
+			error => { console.log("Couldn't get friend request status from backend for specified user") })
 		}
+	},
+
+	async created() {
+		this.currUserId = authService.parseJwt().id;
+		if (this.currUserId == parseInt(this.$route.params.id)) this.$router.push('/account');
+
 		UserService.getUserInfo(this.$route.params.id).then(
 			response => {
 				this.username = response.data.username;
-				this.online = response.data.online;
+				this.status = response.data.status;
 				UserService.getUserAvatar(response.data.avatar).then(
 					response => {
 						const urlCreator = window.URL || window.webkitURL;
@@ -97,19 +106,73 @@ export default {
 			},
 			error => { this.userNotFound = "This user doesn't exist" }
 		)
-		UserService.getFriendRequestStatusFromCurrUser(this.$route.params.id).then(
-			response => {
-				this.friendRequestStatus = response.data.status;
-			},
-			error => { console.log("Couldn't get friend request status from backend for specified user") }
-		)
+
+		this.getFriendRequestStatusFromCurrUser();
 	},
 
-	computed: {
-		isDataLoaded() {
-			return this.username && this.avatar && this.friendRequestStatus;
-		}
+	mounted() {
+	  // ----- Listeners to update the target user connection status -----
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+			if (userId == this.userId) this.status = "online";
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  if (userId == this.userId) this.status = "offline";
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  if (userId == this.userId) this.status = "in-game";
+	  })
+
+	  // ----- Listeners to update friend request status on user page -----
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
+		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
+			  this.getFriendRequestStatusFromCurrUser();
+		  }
+	  })
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
+		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
+			  this.getFriendRequestStatusFromCurrUser();
+		  }
+	  })
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (friendRequest) => {
+		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
+			  this.getFriendRequestStatusFromCurrUser();
+		  }
+	  })
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('userUnfriended', (result) => {
+		  if ((this.userId == result.userOne && this.currUserId == result.userTwo) || (this.userId == result.userTwo && this.currUserId == result.userOne)) {
+			  this.getFriendRequestStatusFromCurrUser();
+		  }
+	  })
 	}
 
 }
 </script>
+
+<style scoped>
+	.green-dot {
+		height: 25px;
+		width: 25px;
+		background-color: green;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.red-dot {
+		height: 25px;
+		width: 25px;
+		background-color: red;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.orange-dot {
+		height: 25px;
+		width: 25px;
+		background-color: orange;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+</style>

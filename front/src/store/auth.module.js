@@ -1,11 +1,26 @@
 import AuthService from '../services/auth.service';
+import UserService from '../services/user.service';
 import authHeader from '../services/auth-header';
-import axios from 'axios';
+import io from 'socket.io-client'
 
 const user = JSON.parse(localStorage.getItem('user'));
-let id;
+let initialState;
 
-const initialState = user ? { status: { loggedIn: true }, user, avatar: '', id } : { status: { loggedIn: false }, user: null, avatar: '', id };
+if (user) {
+	const statusSocket =  io.connect('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+	statusSocket.on('exception', (error) => {
+		console.log("Caught an exception while interacting with Connection Status Websocket. Disconnecting client.")
+		statusSocket.disconnect();
+	})
+	statusSocket.emit('getOnline', {});
+
+	const friendSocket = io.connect('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+
+	initialState = { status: { loggedIn: true }, user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
+
+} else {
+	initialState = { status: { loggedIn: false }, user: null, avatar: '', websockets: { connectionStatusSocket: null, friendRequestsSocket: null } };
+}
 
 export const auth = {
 	namespaced: true,
@@ -31,32 +46,53 @@ export const auth = {
 			}
 		},
 
-		logout({ commit }) {
+		logout({ commit }) {			
 			AuthService.logout();
 			commit('logout');
 		}
 	},
 
 	mutations: {
-		setId(state, id) {
-			console.log("Setting user id");
-			state.id = id;
-		},
 		loginSuccess(state, user) {
 			state.status.loggedIn = true;
 			state.user = user;
+			
+			if (!state.websockets.connectionStatusSocket) {
+				state.websockets.connectionStatusSocket = io('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+			}
+			state.websockets.connectionStatusSocket.on('exception', (error) => {
+				console.log("Caught an exception while interacting with Connection Status Websocket. Disconnecting client.")
+				state.websockets.connectionStatusSocket.disconnect();
+			})
+			state.websockets.connectionStatusSocket.emit('getOnline', {});
+
+			if (!state.websockets.friendRequestsSocket) {
+				state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+			}
 		},
 		loginFailure(state) {
+			localStorage.removeItem('user');
 			state.status.loggedIn = false;
 			state.user = null;
+			state.avatar = '';
+			if (state.websockets.connectionStatusSocket) {
+				state.websockets.connectionStatusSocket.disconnect();
+			}
 		},
 		logout(state) {
+			if (state.websockets.connectionStatusSocket) {
+				state.websockets.connectionStatusSocket.disconnect();
+			}
 			state.status.loggedIn = false;
 			state.user = null;
+			state.avatar = '';
 		},
 
 		updateAvatar(state, avatar) {
 			state.avatar = avatar;
-		}
+		},
+	},
+
+	getters: {
 	}
 };

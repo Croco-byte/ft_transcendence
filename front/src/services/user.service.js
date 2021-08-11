@@ -52,12 +52,14 @@ class UserService {
 		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
 	}
 
-	getOnline() {
-		return axios.post(API_URL + "user/change-status", { status: 'online' }, { headers: authHeader() });
+	// Should be replaced by signals to the websocket
+	setOnline(currUserId) {
+		return axios.post(API_URL + "user/change-status/" + currUserId, { status: 'online' }, { headers: authHeader() });
 	}
 
-	getOffline() {
-		return axios.post(API_URL + "user/change-status", { status: 'offline' }, { headers: authHeader() });
+	// Should be replaced by signals to the websocket
+	setOffline(currUserId) {
+		return axios.post(API_URL + "user/change-status/" + currUserId, { status: 'offline' }, { headers: authHeader() });
 	}
 }
 

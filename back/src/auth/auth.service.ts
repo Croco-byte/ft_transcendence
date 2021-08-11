@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { HttpService } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +29,9 @@ export class AuthService {
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });
+			if (user.status != "offline") {
+				throw new ForbiddenException();
+			}
 			var returnObject: any = {};
 			returnObject.username = infos.username;
 			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
@@ -38,8 +41,7 @@ export class AuthService {
 
 			return returnObject;
 		} catch(e) {
-			console.log(e);
-			throw new BadRequestException();
+			throw e;
 		}
 	}
 
@@ -54,5 +56,15 @@ export class AuthService {
 		infos.username = info.login;
 
 		return infos;
+	}
+
+	async validateToken(access_token: string): Promise<{id: number, username: string}> {
+		try {
+			access_token = access_token.trim();
+			const decoded = this.jwtService.verify(access_token);
+			return { id: decoded.id, username: decoded.username }
+		} catch {
+			throw new UnauthorizedException();
+		}
 	}
 }

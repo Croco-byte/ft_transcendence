@@ -9,6 +9,11 @@
 		<ul>
 			<li v-for="result in searchResults" :key="result.username">
 				<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.username }}</router-link>
+				<br/>
+				<span v-if="result.status === 'online'" class="green-dot"></span>
+				<span v-if="result.status === 'offline'" class="red-dot"></span>
+				<span v-if="result.status === 'in-game'" class="orange-dot"></span>
+				({{result.status}})
 				<br/><br/>
 			</li>
 		</ul>
@@ -88,6 +93,30 @@ export default {
 			  () => { console.log("Failed to change search result page") }
 		  )
 	  },
+  },
+
+  mounted() {
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+		  for(var i=0; i < this.searchResults.length; i++) {
+			  if (this.searchResults[i].id == userId) {
+				  this.searchResults[i].status = 'online';
+			  }
+		  }
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  for(var i=0; i < this.searchResults.length; i++) {
+			  if (this.searchResults[i].id == userId) {
+				  this.searchResults[i].status = 'offline';
+			  }
+		  }
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  for(var i=0; i < this.searchResults.length; i++) {
+			  if (this.searchResults[i].id == userId) {
+				  this.searchResults[i].status = 'in-game';
+			  }
+		  }
+	  })
   }
 
 
@@ -105,5 +134,32 @@ export default {
 	li a {
 		text-decoration: underline;
 		color: blue;
+	}
+
+	.green-dot {
+		height: 25px;
+		width: 25px;
+		background-color: green;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.red-dot {
+		height: 25px;
+		width: 25px;
+		background-color: red;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
+	}
+
+	.orange-dot {
+		height: 25px;
+		width: 25px;
+		background-color: orange;
+		border-radius: 50%;
+		display: inline-block;
+		margin-top: 5px;
 	}
 </style>

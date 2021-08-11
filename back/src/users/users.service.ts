@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, Observable, of, map, switchMap } from 'rxjs';
+import { from, Observable, of, map, switchMap, throwError } from 'rxjs';
 import { Like, Raw, Repository } from 'typeorm';
 import { FriendRequest, FriendRequestStatus, FriendRequest_Status } from './friend-request.interface';
 import { FriendRequestEntity } from './friends-request.entity';
 import { User } from './users.entity';
 import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
-import { UserStatus, User_Status } from './status/status.interface';
+import { UserStatus, User_Status } from './status.interface';
 
 @Injectable()
 export class UsersService {
@@ -34,74 +34,66 @@ export class UsersService {
 		return user;
 	}
 
-	hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Observable<string> {
-		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				if (!friendRequest) return of("false");
-				if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return of("allow-resend");
-				return of("true");
-			}))
+	async hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Promise<string> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
+			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
+			relations: ['creator', 'receiver']});
+		if (!friendRequest) return ("false");
+		if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return ("allow-resend");
+		return ("true");
 	}
 
-	reSendFriendRequest(creator: User, receiver: User): Observable<FriendRequest> {
-		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				friendRequest.creator = creator;
-				friendRequest.receiver = receiver;
-				friendRequest.status = "pending";
-				return from(this.friendRequestRepository.save(friendRequest));
-			}))
+	async reSendFriendRequest(creator: User, receiver: User): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
+			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
+			relations: ['creator', 'receiver']})
+		friendRequest.creator = receiver;
+		friendRequest.receiver = creator;
+		friendRequest.status = "pending";
+		return this.friendRequestRepository.save(friendRequest);
 	}
 
-	sendFriendRequest(receiverId: number, creator: User): Observable<FriendRequest | { error: string }> {
-		if (receiverId === creator.id) {
-			return of({ error: "You can't send a friend request to yourself !" });
+	async sendFriendRequest(receiverId: number, creatorId: number): Promise<FriendRequest> {
+		if (receiverId === creatorId) {
+			throw new Error("You can't send a friend request to yourself !")
 		}
-		return from(this.findUserById(receiverId)).pipe(
-			switchMap((receiver: User) => {
-				return this.hasFriendRequestBeenSentOrReceived(creator, receiver).pipe(
-					switchMap((hasFriendRequestBeenSentOrReceived: string) => {
-						if (hasFriendRequestBeenSentOrReceived === "true") return of({ error: "A friend request from or to this user has already been made"});
-						if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
-						let friendRequest: FriendRequest = {
-							creator,
-							receiver,
-							status: 'pending'
-						}
-						return from(this.friendRequestRepository.save(friendRequest));
-					})
-				)
-			})
-		)
+
+		const receiver: User = await this.findUserById(receiverId);
+		const creator: User = await this.findUserById(creatorId);
+		const hasFriendRequestBeenSentOrReceived: string = await this.hasFriendRequestBeenSentOrReceived(creator, receiver);
+		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("A friend request already exists from or to this user");
+		if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
+
+		let friendRequest: FriendRequest = {
+			creator,
+			receiver,
+			status: 'pending'
+		}
+		return this.friendRequestRepository.save(friendRequest);
 	}
 
-	getFriendRequestStatus(receiverId: number, currentUser: User): Observable<FriendRequestStatus> {
-		return from(this.findUserById(receiverId)).pipe(
-			switchMap((receiver: User) => {
-				return from(this.friendRequestRepository.findOne({
-					where: [
-						{ creator: currentUser, receiver: receiver },
-						{ creator: receiver, receiver: currentUser}
-					],
-					relations: ['creator', 'receiver']
-				})).pipe(
-					switchMap((friendRequest: FriendRequest) => {
-						if (friendRequest?.receiver.id === currentUser.id && friendRequest?.status !== "accepted" && friendRequest?.status !== "declined") {
-							return of({ status: 'waiting-for-current-user-response' as FriendRequest_Status })
-						}
-						if (friendRequest?.receiver.id == currentUser.id && friendRequest?.status === "declined") {
-							return of({ status: 'declined-by-me' as FriendRequest_Status })
-						}
-						return of({ status: friendRequest?.status || 'not-sent' })
-					})
-				)
-			}) 
-		)
+	async getFriendRequestStatus(receiverId: number, currentUser: User): Promise<FriendRequestStatus> {
+		const receiver: User = await this.findUserById(receiverId);
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
+		[
+			{ creator: currentUser, receiver: receiver},
+			{ creator: receiver, receiver: currentUser}
+		],
+		relations: ['creator', 'receiver']});
+		console.log("[DEBUG] Receiver id is : " + friendRequest.receiver.id + " | currentUser id is : " + currentUser.id + " | status is : " + friendRequest.status);
+		if (friendRequest?.receiver.id === currentUser.id && friendRequest?.status !== "accepted" && friendRequest?.status !== "declined") {
+			return ({ status: 'waiting-for-current-user-response' });
+		}
+		if (friendRequest?.receiver.id == currentUser.id && friendRequest?.status === "declined") {
+			return ({ status: 'declined-by-me' });
+		}
+		return { status: friendRequest?.status || 'not-sent' };
 	}
 
-	async unfriendUser(currentUser: User, friendId: number) {
+	async unfriendUser(currUserId: number, friendId: number): Promise<{ userOne: number, userTwo: number }> {
 		try {
 			var friend = await this.findUserById(friendId);
+			var currentUser = await this.findUserById(currUserId);
 			var friendRequest = await this.friendRequestRepository.findOne({
 				where: [
 					{ creator: currentUser, receiver: friend, status: 'accepted'},
@@ -110,25 +102,29 @@ export class UsersService {
 				relations: ['creator', 'receiver']
 			});
 			this.friendRequestRepository.delete(friendRequest.id);
+			return { userOne: friendRequest.creator.id, userTwo: friendRequest.receiver.id }
 		} catch {
 			throw new NotFoundException();
 		}
 	}
 
-	getFriendRequestById(friendRequestId: number): Observable<FriendRequest> {
-		return from(this.friendRequestRepository.findOne({where: { id: friendRequestId}}));
+	async getFriendRequestById(friendRequestId: number): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({where: [{ id: friendRequestId}], relations: ['creator', 'receiver']});
+		return friendRequest;
 	}
 
-	respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Observable<FriendRequestStatus> {
-		return from(this.getFriendRequestById(friendRequestId)).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				return from(this.friendRequestRepository.save(
-					{ ...friendRequest,
-					status: responseStatus }
-				))
-			})
-		)
+	async respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.getFriendRequestById(friendRequestId);
+		return this.friendRequestRepository.save(
+			{
+				...friendRequest,
+				status: responseStatus
+			}
+		);
 	}
+
+
+
 
 	paginateFriendRequestsFromRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
 		return from(paginate(this.friendRequestRepository, options, {
@@ -213,7 +209,7 @@ export class UsersService {
 			skip: (options.page - 1) * options.limit || 0,
 			take: options.limit || 10,
 			order: {username: 'ASC'},
-			select: ['id', 'username'],
+			select: ['id', 'username', 'status'],
 			where: { username: Raw(alias =>`LOWER(${alias}) Like ('%${username.toLowerCase()}%')`) }
 		})).pipe(
 			map(([users, totalUsers]) => {
@@ -254,11 +250,11 @@ export class UsersService {
 		)
 	}
 
-	async changeCurrUserStatus(targetStatus: UserStatus, userId: number): Promise<void> {
+	async changeUserStatus(userId: number, targetStatus: User_Status): Promise<void> {
 		try {
-			const currUser = await this.usersRepository.findOne(userId);
-			currUser.status = targetStatus.status;
-			await this.usersRepository.save(currUser);
+			const user = await this.usersRepository.findOne(userId);
+			user.status = targetStatus;
+			await this.usersRepository.save(user);
 		} catch {
 			throw new NotFoundException();
 		}
@@ -331,6 +327,91 @@ getFriends(currentUser: User): Observable<User[]> {
 			})
 		);
 	}
+
+
+
+	--- DEPRECATED FUNCTIONS : FRIEND REQUESTS HANDLING WITH OBSERVABLES, SWITCHING TO PLAIN PROMISES ---
+
+	hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Observable<string> {
+		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
+			switchMap((friendRequest: FriendRequest) => {
+				if (!friendRequest) return of("false");
+				if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return of("allow-resend");
+				return of("true");
+			}))
+	}
+
+	sendFriendRequest(receiverId: number, creator: User): Observable<FriendRequest> {
+		if (receiverId === creator.id) {
+			throw new Error("You can't send a friend request to yourself !")
+		}
+		return from(this.findUserById(receiverId)).pipe(
+			switchMap((receiver: User) => {
+				return this.hasFriendRequestBeenSentOrReceived(creator, receiver).pipe(
+					switchMap((hasFriendRequestBeenSentOrReceived: string) => {
+						if (hasFriendRequestBeenSentOrReceived === "true")  throw new Error("A friend request already exists from or to this user");
+						if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
+						let friendRequest: FriendRequest = {
+							creator,
+							receiver,
+							status: 'pending'
+						}
+						return from(this.friendRequestRepository.save(friendRequest));
+					})
+				)
+			})
+		)
+	}
+
+	reSendFriendRequest(creator: User, receiver: User): Observable<FriendRequest> {
+		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
+			switchMap((friendRequest: FriendRequest) => {
+				friendRequest.creator = creator;
+				friendRequest.receiver = receiver;
+				friendRequest.status = "pending";
+				return from(this.friendRequestRepository.save(friendRequest));
+			}))
+	}
+
+	getFriendRequestStatus(receiverId: number, currentUser: User): Observable<FriendRequestStatus> {
+		return from(this.findUserById(receiverId)).pipe(
+			switchMap((receiver: User) => {
+				return from(this.friendRequestRepository.findOne({
+					where: [
+						{ creator: currentUser, receiver: receiver },
+						{ creator: receiver, receiver: currentUser}
+					],
+					relations: ['creator', 'receiver']
+				})).pipe(
+					switchMap((friendRequest: FriendRequest) => {
+						if (friendRequest?.receiver.id === currentUser.id && friendRequest?.status !== "accepted" && friendRequest?.status !== "declined") {
+							return of({ status: 'waiting-for-current-user-response' as FriendRequest_Status })
+						}
+						if (friendRequest?.receiver.id == currentUser.id && friendRequest?.status === "declined") {
+							return of({ status: 'declined-by-me' as FriendRequest_Status })
+						}
+						return of({ status: friendRequest?.status || 'not-sent' })
+					})
+				)
+			}) 
+		)
+	}
+
+	getFriendRequestById(friendRequestId: number): Observable<FriendRequest> {
+		return from(this.friendRequestRepository.findOne({where: [{ id: friendRequestId}], relations: ['creator', 'receiver']}));
+	}
+
+	respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Observable<FriendRequest> {
+		return from(this.getFriendRequestById(friendRequestId)).pipe(
+			switchMap((friendRequest: FriendRequest) => {
+				return from(this.friendRequestRepository.save(
+					{ ...friendRequest,
+					status: responseStatus }
+				))
+			})
+		)
+	}
+
 
 
 */

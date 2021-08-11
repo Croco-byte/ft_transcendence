@@ -23,12 +23,14 @@
 </template>
 
 <script>
+import authService from '../services/auth.service';
 import UserService from '../services/user.service'
 
 export default {
 	name: 'FriendList',
 	data() {
 		return {
+			currUserId: 0,
 			friends: [],
 			friendsMeta: {},
 
@@ -74,25 +76,26 @@ export default {
 	  },
 
 	  unfriendUser: function(friendId) {
-		  var ref = this;
-		  UserService.unfriendUser(friendId).then(
-			  () => { ref.getFriends(ref.friendsMeta.currentPage) },
-			  () => { console.log("Error while trying to unfriend user " + friendId)}
-		  )
+		  this.$store.state.auth.websockets.friendRequestsSocket.emit('unfriendUser', { friendId, user: null });
 	  }
 	},
 
 	created() {
 		this.getFriends();
+		this.currUserId = authService.parseJwt().id;
   },
 
   mounted() {
-	  this.emitter.on("REFRESH_FRIEND_LIST", () => { this.getFriends(this.friendsMeta.currentPage); });
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
+			if (friendRequest.creatorId == this.currUserId || friendRequest.receiverId == this.currUserId) {
+				this.getFriends(this.friendsMeta.currentPage);
+			}
+		})
+	  
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('userUnfriended', (result) => {
+		  if (this.currUserId == result.userOne || this.currUserId == result.userTwo) this.getFriends(this.friendsMeta.currentPage);
+	  })
   },
-
-  beforeUnmount() {
-	  this.emitter.off("REFRESH_FRIEND_LIST");
-  }
 }
 </script>
 

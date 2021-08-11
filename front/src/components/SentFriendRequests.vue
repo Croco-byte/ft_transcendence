@@ -28,12 +28,14 @@
 </template>
 
 <script>
+import authService from '../services/auth.service';
 import UserService from "../services/user.service"
 
 export default {
 	name: "SentFriendRequests",
 	data() {
 		return {
+			currUserId: 0,
 			sentRequests: [],
 			sentRequestsMeta: {},
 		}
@@ -81,14 +83,22 @@ export default {
 
 	created() {
 		this.getFriendRequestsToRecipients();
+		this.currUserId = authService.parseJwt().id;
 	},
+
 	mounted() {
-		this.emitter.on("REFRESH_TO_REQUESTS", () => { this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage); });
-		},
-	
-	beforeUnmount() {
-	  this.emitter.off("REFRESH_TO_REQUESTS");
-  }
+		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
+			if (friendRequest.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+		})
+
+		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
+			if (friendRequest.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+		})
+
+		this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (result) => {
+			if (result.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+		})
+	}
 
 
 }

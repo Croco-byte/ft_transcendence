@@ -11,7 +11,7 @@ window.Swal = Swal;
 instance.interceptors.response.use(function (response) {
     return response;
   }, function (error) {
-	  if (error.response.status === 401) {
+	  if (error && error.response.status === 401) {
 	new Swal({
 		title: "Session Expired",
 		text: "Session expired or invalid token. You are being redirected to the login page",

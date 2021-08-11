@@ -8,9 +8,6 @@ export default
 	{
 		Header
 	},
-	created () {
-		console.log("hi :)");
-	}
 }
 </script>
 

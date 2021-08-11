@@ -19,3 +19,20 @@
 
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywidXNlcm5hbWUiOiJxcm9sYW5kIiwiaXNTZWNvbmRGYWN0b3JBdXRoZW50aWNhdGVkIjpmYWxzZSwiaWF0IjoxNjI3NTY1Mjg2LCJleHAiOjE2Mjc2NTE2ODZ9.sqoGCK0zsWKuBGD3UwIo89Ls58bizU7upzA9mtaZ34M
 [=) lors du logout, reset également la variable "id" stockée dans le store
+
+
+>> Quand je suis 'online' avec un utilisateur, et que j'ai 2 fenêtres où je suis connecté avec cet utilisateur, si je ferme une fenêtre, alors ça me marquera offline sur la fenêtre où je suis encore connecté.
+	2 solutions :
+		> Essayer d'éviter de set "offline".
+		> Empêcher un utilisateur d'être connecté simultanément sur plusieurs fenêtres.
+
+Pour l'option 1 :
+https://stackoverflow.com/questions/13364243/websocketserver-node-js-how-to-differentiate-clients
+
+>> Pour les websockets des statuts utilisateurs, sur le front, retirer les listeners quand le composant qui l'utilise est
+destroyed.
+
+>> Pour empêcher qu'un utilisateur soit login sur deux fenêtres différentes, vérifier que l'utilisateur n'est pas déjà online en cas de re-connexion automatique au démarrage de l'application
+	HINT : envoyer un signal au websocket à la connexion, et si l'utilisateur est déjà online, renvoyer une exception au client + le logout (sans le faire passer offline tho)
+
+>> Envoyer un signal websocket à l'envoi d'une friendrequest

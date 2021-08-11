@@ -11,7 +11,11 @@ export class AuthController {
 		if (code == '' || state == '') {
 			throw new BadRequestException();
 		} else {
-			return this.authService.authenticateUser(code, state);
+			try {
+				return this.authService.authenticateUser(code, state);
+			} catch(e) {
+				throw e;
+			}
 		}
 	}
 }

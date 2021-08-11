@@ -8,7 +8,7 @@
 					From: <router-link v-bind:to="'/user/' + request.creator.id" style="text-decoration: underlined;">{{ request.creator.username }}</router-link>
 				</p>
 				<p>
-					<button @click="acceptFriendRequest(request)">Accept</button>
+					<button @click="acceptFriendRequest(request.id)">Accept</button>
 					<button @click="declineFriendRequest(request.id)">Decline</button>
 				</p>
 				<br/>
@@ -29,12 +29,14 @@
 </template>
 
 <script>
+import authService from '../services/auth.service';
 import UserService from "../services/user.service"
 
 export default {
 	name: "ReceivedFriendRequests",
 	data() {
 		return {
+			currUserId: 0,
 			receivedRequests: [],
 			receivedRequestsMeta: {},
 		}
@@ -78,42 +80,34 @@ export default {
 		  }
 	  },
 
-	  acceptFriendRequest: function(request) {
+	  acceptFriendRequest: function(friendRequestId) {
 		  var ref = this;
-		  let friendRequestId = request.id;
-		  UserService.acceptFriendRequest(friendRequestId).then(
-			  () => { ref.sendFriendListRefreshSignal();
-			  ref.getFriendRequestsFromRecipients(ref.receivedRequestsMeta.currentPage) },
-			  () => { console.log("Error encountered while accepting friend request " + friendRequestId) }
-		  )
+		  this.$store.state.auth.websockets.friendRequestsSocket.emit('acceptFriendRequest', { friendRequestId });
 	  },
 
 	  declineFriendRequest: function(friendRequestId) {
 		  var ref = this;
-		  UserService.declineFriendRequest(friendRequestId).then(
-			  () => { ref.getFriendRequestsFromRecipients(ref.receivedRequestsMeta.currentPage) },
-			  () => { console.log("Error encountered while declining friend request " + friendRequestId) }
-		  )
+		  this.$store.state.auth.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
 	  },
-
-	  sendFriendListRefreshSignal: function() {
-		  this.emitter.emit("REFRESH_FRIEND_LIST");
-	  }
-
 	},
 
 	created() {
 		this.getFriendRequestsFromRecipients();
+		this.currUserId = authService.parseJwt().id;
 	},
 	mounted() {
-		this.emitter.on("REFRESH_FROM_REQUESTS", () => { this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage); });
-		},
-	
-	beforeUnmount() {
-	  this.emitter.off("REFRESH_FROM_REQUESTS");
-  }
+		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
+			if (friendRequest.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
+		})
 
+		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
+			if (friendRequest.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
+		})
 
+		this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (result) => {
+			if (result.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
+		})
+	},
 }
 </script>
 

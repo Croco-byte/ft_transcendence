@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt-strategy';
 import { JwtTwoFactorStrategy } from './jwt-two-factor-strategy';
+import { WsJwtGuard } from './ws-jwt-strategy';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TwoFactorAuthenticationController } from './twoFactorAuthentication.controller';
@@ -14,7 +15,8 @@ import { UsersModule } from 'src/users/users.module';
 
 @Module({
 	imports: [HttpModule, JwtModule.register({ secret: 'sup3r_secret_JWT_s3cret_strIng' }), ConfigModule, PassportModule, UsersModule],
+	exports: [AuthService],
 	controllers: [AuthController, TwoFactorAuthenticationController],
-	providers: [AuthService, JwtStrategy, JwtTwoFactorStrategy, TwoFactorAuthenticationService],
+	providers: [AuthService, JwtStrategy, JwtTwoFactorStrategy, WsJwtGuard, TwoFactorAuthenticationService],
 })
 export class AuthModule {}

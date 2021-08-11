@@ -33,12 +33,6 @@ const routes = [
 	  beforeEnter: ifAuthenticated
   },
   {
-	  path: '/chat',
-	  name: 'Chat',
-	  component: () => import('../views/Chat.vue'),
-	  beforeEnter: ifAuthenticated
-  },
-  {
 	  path: '/twoFA',
 	  name: 'TwoFA',
 	  component: () => import('../views/TwoFA.vue'),
@@ -54,7 +48,7 @@ const routes = [
 	  name: 'Friends',
 	  component: () => import('../views/Friends.vue'),
 	  beforeEnter: ifAuthenticated
-  }
+  },
 ]
 
 const router = createRouter({
