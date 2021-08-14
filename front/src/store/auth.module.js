@@ -1,20 +1,35 @@
 import AuthService from '../services/auth.service';
-import UserService from '../services/user.service';
 import authHeader from '../services/auth-header';
 import io from 'socket.io-client'
+import router from '../router/index';
+import store from '../store/index';
+import userService from '../services/user.service';
 
 const user = JSON.parse(localStorage.getItem('user'));
 let initialState;
 
 if (user) {
 	const statusSocket =  io.connect('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
-	statusSocket.on('exception', (error) => {
-		console.log("Caught an exception while interacting with Connection Status Websocket. Disconnecting client.")
-		statusSocket.disconnect();
-	})
-	statusSocket.emit('getOnline', {});
-
 	const friendSocket = io.connect('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+
+	statusSocket.on('exception', (error) => {
+		console.log("Caught an exception while interacting with Connection Status Websocket.")
+	})
+	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
+		const result = await userService.getCurrUserId();
+		console.log(result.data.id);
+		if (data.userId == result.data.id) {
+			localStorage.removeItem('user');
+			store.state.auth.status.loggedIn = false;
+			store.state.auth.user = null;
+			store.state.auth.avatar = '';
+			store.state.auth.websockets.connectionStatusSocket.disconnect();
+			store.state.auth.websockets.friendRequestsSocket.disconnect();
+			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+		}
+	})
+	
+	statusSocket.emit('getOnline', {});
 
 	initialState = { status: { loggedIn: true }, user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
 
@@ -46,7 +61,8 @@ export const auth = {
 			}
 		},
 
-		logout({ commit }) {			
+		logout({ commit }) {
+			console.log("Logging the user out");
 			AuthService.logout();
 			commit('logout');
 		}
@@ -57,32 +73,37 @@ export const auth = {
 			state.status.loggedIn = true;
 			state.user = user;
 			
-			if (!state.websockets.connectionStatusSocket) {
-				state.websockets.connectionStatusSocket = io('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
-			}
-			state.websockets.connectionStatusSocket.on('exception', (error) => {
-				console.log("Caught an exception while interacting with Connection Status Websocket. Disconnecting client.")
-				state.websockets.connectionStatusSocket.disconnect();
+			state.websockets.connectionStatusSocket = io('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+			state.websockets.connectionStatusSocket.on('exception', (error) => { console.log("Caught an exception while interacting with Connection Status Websocket.") })
+			state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
+				const result = await userService.getCurrUserId();
+				console.log(result.data.id);
+				if (data.userId == result.data.id) {
+					localStorage.removeItem('user');
+					state.status.loggedIn = false;
+					state.user = null;
+					state.avatar = '';
+					state.websockets.connectionStatusSocket.disconnect();
+					state.websockets.friendRequestsSocket.disconnect();
+					router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+				}
 			})
+			console.log("Trying to get current user online");
 			state.websockets.connectionStatusSocket.emit('getOnline', {});
-
-			if (!state.websockets.friendRequestsSocket) {
-				state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
-			}
+			state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
+			router.push('/account');
 		},
 		loginFailure(state) {
+			state.websockets.connectionStatusSocket.disconnect();
+			state.websockets.friendRequestsSocket.disconnect();
 			localStorage.removeItem('user');
 			state.status.loggedIn = false;
 			state.user = null;
 			state.avatar = '';
-			if (state.websockets.connectionStatusSocket) {
-				state.websockets.connectionStatusSocket.disconnect();
-			}
 		},
 		logout(state) {
-			if (state.websockets.connectionStatusSocket) {
-				state.websockets.connectionStatusSocket.disconnect();
-			}
+			state.websockets.connectionStatusSocket.disconnect();
+			state.websockets.friendRequestsSocket.disconnect();
 			state.status.loggedIn = false;
 			state.user = null;
 			state.avatar = '';

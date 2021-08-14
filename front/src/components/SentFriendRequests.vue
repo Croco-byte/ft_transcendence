@@ -5,8 +5,9 @@
 		<ul>
 			<li v-for="request in sentRequests" :key="request.id">
 				<p>
-					To: <router-link v-bind:to="'/user/' + request.receiver.id" style="text-decoration: underlined;">{{ request.receiver.username }}</router-link>
+					To: <router-link v-bind:to="'/user/' + request.receiver.id" style="text-decoration: underlined;">{{ request.receiver.displayName }}</router-link>
 				</p>
+				<UserStatus :status="request.receiver.status"/>
 				<p>
 					[Still Pending]
 				</p>
@@ -29,10 +30,14 @@
 
 <script>
 import authService from '../services/auth.service';
-import UserService from "../services/user.service"
+import UserService from '../services/user.service';
+import UserStatus from '../components/UserStatus.vue'
 
 export default {
 	name: "SentFriendRequests",
+	components: {
+		UserStatus
+	},
 	data() {
 		return {
 			currUserId: 0,
@@ -97,6 +102,28 @@ export default {
 
 		this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (result) => {
 			if (result.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+		})
+
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+		  for(var i=0; i < this.sentRequests.length; i++) {
+			  if (this.sentRequests[i].receiver.id == userId) {
+				  this.sentRequests[i].receiver.status = 'online';
+			  }
+		  }
+		})
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  for(var i=0; i < this.sentRequests.length; i++) {
+			  if (this.sentRequests[i].receiver.id == userId) {
+				  this.sentRequests[i].receiver.status = 'offline';
+			  }
+		  }
+		})
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  for(var i=0; i < this.sentRequests.length; i++) {
+			  if (this.sentRequests[i].receiver.id == userId) {
+				  this.sentRequests[i].receiver.status = 'in-game';
+			  }
+		  }
 		})
 	}
 

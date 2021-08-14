@@ -57,7 +57,7 @@ export class UserController {
 		if (username == null) {
 			return this.userService.paginateUsers({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' });
 		} else {
-			return this.userService.paginateUsersFilterByUsername({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
+			return this.userService.paginateUsersFilterByDisplayName({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
 		}
 	}
 
@@ -131,5 +131,16 @@ export class UserController {
 			throw e;
 		}
 		
+	}
+
+	@Post('displayName')
+	@UseGuards(JwtTwoFactorGuard)
+	changeUserDisplayName(@Body('displayName') newDisplayName: string, @Req() req): Promise<string> {
+		try {
+			return this.userService.changeUserDisplayName(req.user.id, newDisplayName);
+		} catch (e) {
+			throw e;
+		}
+
 	}
 }

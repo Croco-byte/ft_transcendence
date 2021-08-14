@@ -2,12 +2,13 @@
 <div id="accountInfos">
 	<div id="basic">
  	 <h1>Your account informations</h1>
- 	 <br/><p>Your username :	--> {{ name }}</p>
-	  <p>STATUS  
-		  <span v-if="status === 'online'" class="green-dot"></span>
-		  <span v-if="status === 'offline'" class="red-dot"></span>
-		  <span v-if="status === 'in-game'" class="orange-dot"></span>
-		    ({{ status }})</p>
+ 	 <br/><p>Your 42 login : {{ name }}</p>
+	  <p v-if="displayNameErrorMessage != ''" style="color:#FF0000;"> {{ displayNameErrorMessage }}</p>
+	  <p v-if="!displayNameEditMode">Your display name : {{ displayName }} <button @click="displayNameEditMode = true">Edit</button></p>
+	  <form v-else id="changeDisplayNameForm">Your display name : <input name="changeDisplayNameInput" v-model="displayNameInput"><button type="button" v-on:click="changeDisplayName()">Update</button><button @click="displayNameEditMode = false; displayNameInput = displayName; displayNameErrorMessage = '';">Cancel</button></form>
+	  <br/>
+	  <p>STATUS </p>
+	  <UserStatus :status="status"/>
  	 <br/><br/>
 	 </div>
 
@@ -58,17 +59,24 @@
 import AccountService from '../services/account.service'
 import AuthService from '../services/auth.service'
 import QRCode from '../components/QRCode.vue'
+import UserStatus from '../components/UserStatus.vue'
+import userService from '../services/user.service'
 
 
 export default {
   name: 'Account',
   components: {
-	  QRCode
+	  QRCode,
+	  UserStatus
   },
   data() {
 	  return {
 		  id: '',
 		  name: '',
+		  displayNameErrorMessage: '',
+		  displayName: '',
+		  displayNameEditMode: false,
+		  displayNameInput: '',
 		  status: '',
 		  TwoFA: false,
 		  wrongTwoFACode: '',
@@ -97,6 +105,24 @@ export default {
 				  this.TwoFA = false;
 			  },
 			  () => { return ; })
+	  },
+
+	  changeDisplayName: function() {
+		  var ref = this;
+		  let formData = new FormData(document.getElementById("changeDisplayNameForm"));
+		  userService.changeDisplayName(formData.get('changeDisplayNameInput')).then(
+			  response => {
+				  ref.displayNameErrorMessage = '';
+				  ref.displayNameEditMode = false;
+				  ref.displayName = ref.displayNameInput = response.data;
+			  },
+			  (e) => {
+				  ref.displayNameInput = ref.displayName;
+				  ref.displayNameEditMode = false;
+				  if (e.response.status == 403) ref.displayNameErrorMessage = 'Error in updating display name : Unauthorized characters or name too long';
+				  if (e.response.status == 400) ref.displayNameErrorMessage = 'Error in updating display name : Name already taken';
+				}
+		  )
 	  },
 
 	  onFileChange: function(event) {
@@ -145,6 +171,7 @@ export default {
 	  AccountService.getAccountInfo().then(
 		  response => {
 		  this.name = response.data.username;
+		  this.displayName = this.displayNameInput = response.data.displayName;
 		  this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
 		  this.status = response.data.status;
 		  this.id = response.data.id;
@@ -217,33 +244,6 @@ export default {
 		margin-right: auto;
 		margin-left: auto;
 		width: max-content;
-	}
-
-	.green-dot {
-		height: 25px;
-		width: 25px;
-		background-color: green;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
-
-	.red-dot {
-		height: 25px;
-		width: 25px;
-		background-color: red;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
-
-	.orange-dot {
-		height: 25px;
-		width: 25px;
-		background-color: orange;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
 	}
 
 </style>

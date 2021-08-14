@@ -19,15 +19,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	handleDisconnect(client: any) {
-		if (client.data) {
-			this.logger.log(`Client disconnected from FriendRequests Gateway. User ID: ${client.data.userId}`)
-			if (client.data) this.wss.emit('userOffline', client.data.userId);
-			if (client.data) this.userService.changeUserStatus(client.data.userId, 'offline');
+			this.logger.log(`Client disconnected from FriendRequests Gateway`)
 		}
-		else {
-			this.logger.log(`Client disconnected from FriendRequests Gateway: ${client.id}`)
-		}
-	}
 
 	async handleConnection(client: Socket, args: any[]) {
 		try {

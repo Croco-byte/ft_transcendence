@@ -4,8 +4,8 @@
 		<div v-if="friends.length > 0">
 			<ul>
 				<li v-for="friend in friends" :key="friend.id">
-					Friend: <router-link v-bind:to="'/user/' + friend.id">{{ friend.username }}</router-link>&nbsp;&nbsp;&nbsp;&nbsp;<button v-on:click="unfriendUser(friend.id)">Unfriend</button>
-					<br/><br/>
+					Friend: <router-link v-bind:to="'/user/' + friend.id">{{ friend.displayName }}</router-link>&nbsp;&nbsp;&nbsp;&nbsp;<button v-on:click="unfriendUser(friend.id)">Unfriend</button>
+					<UserStatus :status="friend.status"/>
 				</li>
 			</ul>
 		<div id="paginationMenu" v-if="friends.length > 0">
@@ -24,10 +24,14 @@
 
 <script>
 import authService from '../services/auth.service';
-import UserService from '../services/user.service'
+import UserService from '../services/user.service';
+import UserStatus from '../components/UserStatus.vue';
 
 export default {
 	name: 'FriendList',
+	components: {
+		UserStatus
+	},
 	data() {
 		return {
 			currUserId: 0,
@@ -59,12 +63,12 @@ export default {
 		  if (ref.friendsMeta.totalPages > 0 && (Number.isNaN(page) || page < 1 || page > this.friendsMeta.totalPages)) return ;
 		  UserService.getFriends(page).then(
 			  response => {
-				  ref.friends = response.data.items; ref.friendsMeta = response.data.meta
+				  ref.friends = response.data.items; ref.friendsMeta = response.data.meta;
 				  if (ref.friendsMeta.itemCount < 1 && ref.friendsMeta.currentPage > 1) {
 					  ref.getFriends(ref.friendsMeta.currentPage - 1);
 				  }
 				},
-			  () => { console.log("Couldn't retrieve friends from backend"); clearInterval(ref.friendsAutoUpdate); })
+			  () => { console.log("Couldn't retrieve friends from backend"); })
 	  },
 
 	  goToFriendsPage: function() {
@@ -81,8 +85,8 @@ export default {
 	},
 
 	created() {
-		this.getFriends();
 		this.currUserId = authService.parseJwt().id;
+		this.getFriends();
   },
 
   mounted() {
@@ -94,6 +98,28 @@ export default {
 	  
 	  this.$store.state.auth.websockets.friendRequestsSocket.on('userUnfriended', (result) => {
 		  if (this.currUserId == result.userOne || this.currUserId == result.userTwo) this.getFriends(this.friendsMeta.currentPage);
+	  })
+
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+		  for(var i=0; i < this.friends.length; i++) {
+			  if (this.friends[i].id == userId) {
+				  this.friends[i].status = 'online';
+			  }
+		  }
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  for(var i=0; i < this.friends.length; i++) {
+			  if (this.friends[i].id == userId) {
+				  this.friends[i].status = 'offline';
+			  }
+		  }
+	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  for(var i=0; i < this.friends.length; i++) {
+			  if (this.friends[i].id == userId) {
+				  this.friends[i].status = 'in-game';
+			  }
+		  }
 	  })
   },
 }

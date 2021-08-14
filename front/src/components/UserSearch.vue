@@ -7,21 +7,17 @@
 		</form>
 		<div v-if="searchResults.length > 0">
 		<ul>
-			<li v-for="result in searchResults" :key="result.username">
-				<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.username }}</router-link>
+			<li v-for="result in searchResults" :key="result.displayName">
+				<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
 				<br/>
-				<span v-if="result.status === 'online'" class="green-dot"></span>
-				<span v-if="result.status === 'offline'" class="red-dot"></span>
-				<span v-if="result.status === 'in-game'" class="orange-dot"></span>
-				({{result.status}})
-				<br/><br/>
+				<UserStatus :status="result.status"/>
 			</li>
 		</ul>
 		<div id="paginationMenu" v-if="searchResults.length > 0">
 			<p style="display: flex; justify-content: space-around;">
-				<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchUsername, searchMeta.currentPage - 1)">Previous</button>
+				<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
 				<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToSearchPage"><input name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ searchMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-				<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchUsername, searchMeta.currentPage + 1)">Next</button>
+				<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
 			</p>
 		</div>
 		</div>
@@ -33,14 +29,18 @@
 
 <script>
 import UserService from '../services/user.service'
+import UserStatus from '../components/UserStatus.vue'
 
 export default {
 	name: "UserSearch",
+	components: {
+		UserStatus
+	},
 	data() {
 		return {
 			searchResults: [],
 			searchMeta: {},
-			searchUsername: ''
+			searchDisplayName: ''
 		}
 	},
 
@@ -64,13 +64,13 @@ export default {
 	  searchUser: function() {
 		  var ref = this;
 		  let data = new FormData(document.getElementById("userSearchForm"));
-		  this.searchUsername = data.get('searchUserInput');
-		  UserService.searchUser(this.searchUsername).then(
+		  this.searchDisplayName = data.get('searchUserInput');
+		  UserService.searchUser(this.searchDisplayName).then(
 			  response => {
 				  ref.searchResults = response.data.items;
 				  ref.searchMeta = response.data.meta;
 				},
-			  () => { ref.searchUsername = ''; console.log("Couldn't get search results from backend") }
+			  () => { ref.searchDisplayName = ''; console.log("Couldn't get search results from backend") }
 		  )
 	  },
 
@@ -78,7 +78,7 @@ export default {
 		  let data = new FormData(document.getElementById("goToSearchPage"));
 		  const destinationPage = data.get('goToSearchPageInput');
 		  if (!Number.isNaN(destinationPage) && destinationPage >= 1 && destinationPage <= this.searchMeta.totalPages) {
-			  this.changeSearchPage(this.searchUsername, destinationPage);
+			  this.changeSearchPage(this.searchDisplayName, destinationPage);
 		  }
 	  },
 

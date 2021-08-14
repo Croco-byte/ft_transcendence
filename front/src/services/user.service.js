@@ -61,6 +61,10 @@ class UserService {
 	setOffline(currUserId) {
 		return axios.post(API_URL + "user/change-status/" + currUserId, { status: 'offline' }, { headers: authHeader() });
 	}
+
+	changeDisplayName(newDisplayName) {
+		return axios.post(API_URL + 'user/displayName', { displayName: newDisplayName }, { headers: authHeader() });
+	}
 }
 
 export default new UserService();

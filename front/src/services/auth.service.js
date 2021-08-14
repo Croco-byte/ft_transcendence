@@ -18,6 +18,7 @@ class LoginService {
 		try {
 			const response = await axios.post(API_URL + 'login', { code: code, state: state });
 			if (response.data.accessToken) {
+				console.log("Setting local storage in LOGIN function");
 				localStorage.setItem('user', JSON.stringify(response.data));
 			}
 			return response.data;

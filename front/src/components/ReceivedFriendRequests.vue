@@ -5,8 +5,9 @@
 		<ul>
 			<li v-for="request in receivedRequests" :key="request.id">
 				<p>
-					From: <router-link v-bind:to="'/user/' + request.creator.id" style="text-decoration: underlined;">{{ request.creator.username }}</router-link>
+					From: <router-link v-bind:to="'/user/' + request.creator.id" style="text-decoration: underlined;">{{ request.creator.displayName }}</router-link>
 				</p>
+				<UserStatus :status="request.creator.status"/>
 				<p>
 					<button @click="acceptFriendRequest(request.id)">Accept</button>
 					<button @click="declineFriendRequest(request.id)">Decline</button>
@@ -30,10 +31,14 @@
 
 <script>
 import authService from '../services/auth.service';
-import UserService from "../services/user.service"
+import UserService from '../services/user.service';
+import UserStatus from '../components/UserStatus.vue'
 
 export default {
 	name: "ReceivedFriendRequests",
+	components: {
+		UserStatus
+	},
 	data() {
 		return {
 			currUserId: 0,
@@ -99,13 +104,33 @@ export default {
 		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
 			if (friendRequest.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
 		})
-
 		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
 			if (friendRequest.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
 		})
-
 		this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (result) => {
 			if (result.receiverId == this.currUserId) this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
+		})
+
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
+		  for(var i=0; i < this.receivedRequests.length; i++) {
+			  if (this.receivedRequests[i].creator.id == userId) {
+				  this.receivedRequests[i].creator.status = 'online';
+			  }
+		  }
+		})
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
+		  for(var i=0; i < this.receivedRequests.length; i++) {
+			  if (this.receivedRequests[i].creator.id == userId) {
+				  this.receivedRequests[i].creator.status = 'offline';
+			  }
+		  }
+		})
+		this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
+		  for(var i=0; i < this.receivedRequests.length; i++) {
+			  if (this.receivedRequests[i].creator.id == userId) {
+				  this.receivedRequests[i].creator.status = 'in-game';
+			  }
+		  }
 		})
 	},
 }

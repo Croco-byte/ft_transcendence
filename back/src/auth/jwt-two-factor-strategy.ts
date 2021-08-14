@@ -16,10 +16,10 @@ export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-fa
 	async validate(payload: any) {
 		const user = await User.findOne({ where: { id: payload.id } });
 		if (!user.isTwoFactorAuthenticationEnabled) {
-			return { id: payload.id, username: payload.username };
+			return { id: user.id, username: user.username };
 		}
 		if (payload.isSecondFactorAuthenticated) {
-			return { id: payload.id, username: payload.username };
+			return { id: user.id, username: user.username };
 		}
 		console.log("Token expired, or 2FA enabled, but the user isn't logged in via 2FA. Bouncing him.")
 	}

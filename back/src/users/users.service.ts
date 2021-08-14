@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { from, Observable, of, map, switchMap, throwError } from 'rxjs';
 import { Like, Raw, Repository } from 'typeorm';
@@ -24,6 +24,19 @@ export class UsersService {
 		return this.usersRepository.update(id, { isTwoFactorAuthenticationEnabled: false });
 	}
 
+	async changeUserDisplayName(id: number, newDisplayName: string): Promise<string> {
+		// Ajouter une vérification de caractères spéciaux / unicité du nom / longueur du nom
+		const invalidChars = /^[a-zA-Z0-9-_]+$/;
+		if (newDisplayName.search(invalidChars) === -1 || newDisplayName.length > 15) { throw new ForbiddenException(); }
+		const duplicate = await this.usersRepository.findOne({ where: { displayName: newDisplayName } });
+		if (duplicate) { throw new BadRequestException(); }
+
+		const user = await this.usersRepository.findOne({ where: {id: id} });
+		user.displayName = newDisplayName;
+		this.usersRepository.save(user);
+		return user.displayName;
+	}
+
 	async findUserById(id: number): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { id: id } });
 		if (!user) {
@@ -47,8 +60,8 @@ export class UsersService {
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
 			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
 			relations: ['creator', 'receiver']})
-		friendRequest.creator = receiver;
-		friendRequest.receiver = creator;
+		friendRequest.creator = creator;
+		friendRequest.receiver = receiver;
 		friendRequest.status = "pending";
 		return this.friendRequestRepository.save(friendRequest);
 	}
@@ -80,7 +93,6 @@ export class UsersService {
 			{ creator: receiver, receiver: currentUser}
 		],
 		relations: ['creator', 'receiver']});
-		console.log("[DEBUG] Receiver id is : " + friendRequest.receiver.id + " | currentUser id is : " + currentUser.id + " | status is : " + friendRequest.status);
 		if (friendRequest?.receiver.id === currentUser.id && friendRequest?.status !== "accepted" && friendRequest?.status !== "declined") {
 			return ({ status: 'waiting-for-current-user-response' });
 		}
@@ -204,22 +216,22 @@ export class UsersService {
 		)
 	}
 
-	paginateUsersFilterByUsername(options: IPaginationOptions, username: string): Observable<Pagination<User>> {
+	paginateUsersFilterByDisplayName(options: IPaginationOptions, displayName: string): Observable<Pagination<User>> {
 		return from(this.usersRepository.findAndCount({
 			skip: (options.page - 1) * options.limit || 0,
 			take: options.limit || 10,
-			order: {username: 'ASC'},
-			select: ['id', 'username', 'status'],
-			where: { username: Raw(alias =>`LOWER(${alias}) Like ('%${username.toLowerCase()}%')`) }
+			order: {displayName: 'ASC'},
+			select: ['id', 'username', 'displayName', 'status'],
+			where: { displayName: Raw(alias =>`LOWER(${alias}) Like ('%${displayName.toLowerCase()}%')`) }
 		})).pipe(
 			map(([users, totalUsers]) => {
 				const usersPageable: Pagination<User> = {
 					items: users,
 					links: {
-						first: options.route + `?limit=${options.limit}&username=${username}`,
-						previous: options.route + `?limit=${options.limit}&?page=${options.page > 0 ? options.page - 1 : 0}&username=${username}`,
-						next: options.route + `?limit=${options.limit}&?page=${options.page < Math.ceil(totalUsers / options.limit) ? options.page + 1 : options.page}&username=${username}`,
-						last: options.route + `?limit=${options.limit}&page=${Math.ceil(totalUsers / options.limit)}&username=${username}`
+						first: options.route + `?limit=${options.limit}&username=${displayName}`,
+						previous: options.route + `?limit=${options.limit}&?page=${options.page > 0 ? options.page - 1 : 0}&username=${displayName}`,
+						next: options.route + `?limit=${options.limit}&?page=${options.page < Math.ceil(totalUsers / options.limit) ? options.page + 1 : options.page}&username=${displayName}`,
+						last: options.route + `?limit=${options.limit}&page=${Math.ceil(totalUsers / options.limit)}&username=${displayName}`
 					},
 					meta: {
 						currentPage: options.page,

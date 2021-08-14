@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { WsException } from '@nestjs/websockets'
 import { Socket } from 'socket.io'
 import { AuthService } from './auth.service'
+import { User } from 'src/users/users.entity'
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -11,7 +12,7 @@ export class WsJwtGuard implements CanActivate {
 		try {
 			const client: Socket = context.switchToWs().getClient<Socket>();
 			const access_token: string | string[] = client.handshake.query.token as string;
-			const user: { id: number, username: string } = await this.authService.validateToken(access_token);
+			const user: User = await this.authService.validateToken(access_token);
 			context.switchToWs().getData().user = user;
 			return Boolean(user);
 		} catch(err) {

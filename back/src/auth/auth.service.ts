@@ -26,12 +26,10 @@ export class AuthService {
 				console.log("We don\'t have the user " + infos.username + ". Creating it in database.");
 				const newUser = User.create();
 				newUser.username = infos.username;
+				newUser.displayName = infos.username;
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });
-			if (user.status != "offline") {
-				throw new ForbiddenException();
-			}
 			var returnObject: any = {};
 			returnObject.username = infos.username;
 			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
@@ -58,11 +56,12 @@ export class AuthService {
 		return infos;
 	}
 
-	async validateToken(access_token: string): Promise<{id: number, username: string}> {
+	async validateToken(access_token: string): Promise<User> {
 		try {
 			access_token = access_token.trim();
 			const decoded = this.jwtService.verify(access_token);
-			return { id: decoded.id, username: decoded.username }
+			const user = User.findOne(decoded.id);
+			return user;
 		} catch {
 			throw new UnauthorizedException();
 		}

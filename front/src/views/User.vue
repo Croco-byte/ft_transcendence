@@ -3,9 +3,9 @@
 		<h2>{{ userNotFound }}</h2>
 	</div>
 	<div v-else-if="isDataLoaded" style="text-align: center;">
-		<h2>Profile page of {{ username }}</h2>
+		<h2>Profile page of {{ displayName }}</h2>
 		<img :src="avatar" fluid alt="User avatar" width="200" height="200"/>
-		<p>Username --> {{ username }}</p>
+		<p>Display name chosen by user : {{ displayName }}</p>
 		
 		<span v-if="status === 'online'" class="green-dot"></span>
 		<span v-if="status === 'offline'" class="red-dot"></span>
@@ -55,7 +55,7 @@ export default {
 		return {
 			currUserId: 0,
 			userId: this.$route.params.id,
-			username: '',
+			displayName: '',
 			status: '',
 			avatar: '',
 
@@ -67,7 +67,7 @@ export default {
 
 	computed: {
 		isDataLoaded() {
-			return this.username && this.avatar && this.friendRequestStatus;
+			return this.displayName && this.avatar && this.friendRequestStatus;
 		}
 	},
 
@@ -94,7 +94,7 @@ export default {
 
 		UserService.getUserInfo(this.$route.params.id).then(
 			response => {
-				this.username = response.data.username;
+				this.displayName = response.data.displayName;
 				this.status = response.data.status;
 				UserService.getUserAvatar(response.data.avatar).then(
 					response => {
