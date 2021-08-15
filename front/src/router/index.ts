@@ -16,11 +16,11 @@ const routes = [
   //   name: 'Home',
   //   component: Home
   // },
-  // {
-  //   path: '/game',
-  //   name: 'Game',
-  //   component: () => import('../views/Game.vue')
-  // },
+  {
+    path: '/game',
+    name: 'Game',
+    component: () => import('../views/Game.vue')
+  },
   // {
 	//   path: '/login',
 	//   name: 'Login',

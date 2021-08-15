@@ -30,12 +30,12 @@ export default defineComponent({
 
   methods: {
     updatePosition(event) {
-      if (event.x < this.canvas.width && event.y < this.canvas.height){
-        if (event.y > this.player1.y)
-				this.userMoveDown(this.player1);
-				else if (event.y < this.player1.y) 
-				this.userMoveUp(this.player1);
-      }
+      // if (event.x < this.canvas.width && event.y < this.canvas.height){
+      //   if (event.y > this.player1.y)
+			// 	this.userMoveDown(this.player1);
+			// 	else if (event.y < this.player1.y) 
+			// 	this.userMoveUp(this.player1);
+      // }
     },
     // ----------------------------------------
 		// ---------------- DRAWINGS --------------
@@ -104,17 +104,17 @@ export default defineComponent({
           }
         }
       })
-		}
+		},
   },
 
   mounted() {
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-     watch(()=> this.room, () => {
-        requestAnimationFrame(()=>this.drawGame(this.room));
-    })
+    //  watch(()=> this.room, () => {
+    //     requestAnimationFrame(()=>this.drawGame(this.room));
+    // })
 
-    this.position.x = room.game.p;
+    // this.position.x = this.room.game.p;
     this.position.y = this.canvas.height * 0.5;
 
     // console.log(t

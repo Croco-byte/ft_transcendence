@@ -30,6 +30,7 @@ export default defineComponent({
       ctx: null as CanvasRenderingContext2D | null,
       canvas: null as HTMLCanvasElement | null,
       socket: null as any,
+      gameID: 0 as number,
       windowSize: {
         width : window.innerHeight, 
         height: window.innerWidth
@@ -42,7 +43,7 @@ export default defineComponent({
   
     // ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
-		joinRoom(room: RoomInterface) {
+		joinRoom(obj: SocketDataInterface) {
       this.isWaiting = true;
       if (this.ctx && this.canvas) {
         console.log(`in joinRoom function`);
@@ -53,28 +54,28 @@ export default defineComponent({
       }
 		},
 
-		actualizeSetupScreen(room: RoomInterface) {
+		actualizeSetupScreen(obj: SocketDataInterface) {
       this.optGame = true;
 		},
 
 
-		displaySetupChoose(room: RoomInterface) {
+		displaySetupChoose(obj: SocketDataInterface) {
 			if (this.ctx && this.canvas) {
-        console.log(room.game.p1Left.setup);
-        console.log(room.game.p2Right.setup);
+        console.log(obj.room.game.p1Left.setup);
+        console.log(obj.room.game.p2Right.setup);
 			}
 		},
 
-	startingGame(obj: SocketDataInterface) : void
-  {
-    if (!this.isSpec(obj))
-      this.pongEvent();
-  },
+    // startingGame(obj: SocketDataInterface) : void
+    // {
+    //   if (!this.isSpec(obj))
+    //     this.pongEvent();
+    // },
 
-  actualizeGameScreen(obj: SocketDataInterface) {
-    if (this.ctx && this.canvas)
-      this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
-  },
+    // actualizeGameScreen(obj: SocketDataInterface) {
+    //   if (this.ctx && this.canvas)
+    //     this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
+    // },
 
   gameEnded(obj: SocketDataInterface) : void
   {
@@ -169,14 +170,14 @@ export default defineComponent({
 				this.displaySetupChoose(obj);
 			})
 
-			this.socket.on('startingGame', (obj: SocketDataInterface) => {
-				this.startingGame(obj);
-			});
+			// this.socket.on('startingGame', (obj: SocketDataInterface) => {
+			// 	this.startingGame(obj);
+			// });
 
 			// ecran de rendu du jeu
-			this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
-				this.actualizeGameScreen(obj);
-			});
+			// this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
+			// 	this.actualizeGameScreen(obj);
+			// });
 			
 			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
 			this.socket.on('gameEnded', (obj: SocketDataInterface) => {
