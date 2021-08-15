@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   back:
-    container_name: back-nest
+    container_name: back
     build:
       context: ./back
       target: development
@@ -23,6 +23,7 @@ services:
       - webnet
     depends_on:
       - postgres
+
   phppgadmin:
     container_name: phppgadmin
     image: neimheadh/phppgadmin:7.13.0
@@ -59,7 +60,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   front:
-    container_name: front-vue
+    container_name: front
     build:
       context: ./front
       target: development

@@ -153,11 +153,16 @@ export default defineComponent({
 
 	created() 
 	{ 
+		console.log('http://localhost:3000/game');
 		this.socket = io('http://localhost:3000/game');
+		console.log(this.socket);
+		this.socket.connected ? console.log('is connected') : console.log(`isn't connected`);
+		
 		if (this.socket) {
 
 			// ecran waiting en attendant un autre joueur
 			this.socket.on('joinRoom', (obj: SocketDataInterface) => {
+				console.log('room joined');
 				this.joinRoom(obj);
 			});
 
@@ -166,10 +171,12 @@ export default defineComponent({
 				this.actualizeSetupScreen(obj);
 			});
 
+			// ecran qui montre pendant quelques secondes les options choisies
 			this.socket.on('displaySetupChoose', (obj: SocketDataInterface) => {
 				this.displaySetupChoose(obj);
 			})
 
+			// event qui permet de lancer la game apres que les options aient ete choisi
 			// this.socket.on('startingGame', (obj: SocketDataInterface) => {
 			// 	this.startingGame(obj);
 			// });
