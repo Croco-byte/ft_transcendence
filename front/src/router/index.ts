@@ -1,20 +1,65 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import Home from '../views/Home.vue'
+import { createRouter, createWebHistory } from 'vue-router'
+// import Home from '../views/Home.vue'
+// import store from '../store'
 
-const routes: Array<RouteRecordRaw> = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-  }
+// const ifAuthenticated = (from, to, next) => {
+// 	if (store.state.auth.status.loggedIn === true) {
+// 		next();
+// 		return ;
+// 	}
+// 	next({name: 'Login', params: { message: 'Please login first !' }} );
+// }
+
+const routes = [
+  // {
+  // path: '/',
+  //   name: 'Home',
+  //   component: Home
+  // },
+  // {
+  //   path: '/game',
+  //   name: 'Game',
+  //   component: () => import('../views/Game.vue')
+  // },
+  // {
+	//   path: '/login',
+	//   name: 'Login',
+	//   component: () => import('../views/Login.vue')
+  // },
+  // {
+	//   path: '/auth/oauth_callback',
+	//   name: 'Callback',
+	//   component: () => import('../views/Callback.vue')
+  // },
+  // {
+	//   path: '/account',
+	//   name: 'Account',
+	//   component: () => import('../views/Account.vue'),
+	//   beforeEnter: ifAuthenticated
+  // },
+  // {
+	//   path: '/chat',
+	//   name: 'Chat',
+	//   component: () => import('../views/Chat.vue'),
+	//   beforeEnter: ifAuthenticated
+  // },
+  // {
+	//   path: '/twoFA',
+	//   name: 'TwoFA',
+	//   component: () => import('../views/TwoFA.vue'),
+  // },
+  // {
+	//   path: '/user/:id',
+	//   name: 'User',
+	//   component: () => import('../views/User.vue'),
+	//   beforeEnter: ifAuthenticated
+  // },
+  // {
+	//   path: '/friends',
+	//   name: 'Friends',
+	//   component: () => import('../views/Friends.vue'),
+	//   beforeEnter: ifAuthenticated
+  // }
 ]
 
 const router = createRouter({
