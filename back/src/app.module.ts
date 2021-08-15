@@ -9,10 +9,11 @@ import { HttpModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { ProfileModule } from './profile/profile.module';
+import { GameModule } from './game/game.module';
 
 @Module(
 {
-	imports: [ HttpModule, AuthModule, UsersModule, DatabaseModule, ConfigModule.forRoot(), ProfileModule ],
+	imports: [ HttpModule, AuthModule, UsersModule, DatabaseModule, ConfigModule.forRoot(), ProfileModule, GameModule ],
 	controllers: [AppController, ChannelController],
 	providers: [AppService, AppGateway],
 })
