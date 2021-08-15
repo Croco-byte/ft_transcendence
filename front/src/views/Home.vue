@@ -1,27 +1,18 @@
 <template>
   <div class="home">
-    <h1>WELCOME</h1>
-	</div>
-	<div v-if="$store.state.auth.status.loggedIn === true">
-		<p>You're logged in :)</p>
-		<button v-on:click="logout">Logout</button>
-	</div>
-	<div v-else>
-		<p>You're not logged in yet :(</p>
-	</div>
+    <img alt="Vue logo" src="../assets/logo.png">
+    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+import HelloWorld from '@/components/HelloWorld.vue'; // @ is an alias to /src
 
-export default {
+export default defineComponent({
   name: 'Home',
-  	methods: {
-		  logout: function() {
-			  this.$store.dispatch('auth/logout').then(() => {
-				  this.$router.push('/login');
-				  })
-		}
-	}
-
-}
+  components: {
+    HelloWorld,
+  },
+});
 </script>
