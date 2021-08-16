@@ -1,16 +1,22 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, Observable, of, map, switchMap, throwError } from 'rxjs';
+import { from, Observable, map } from 'rxjs';
 import { Like, Raw, Repository } from 'typeorm';
 import { FriendRequest, FriendRequestStatus, FriendRequest_Status } from './friend-request.interface';
 import { FriendRequestEntity } from './friends-request.entity';
 import { User } from './users.entity';
 import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { UserStatus, User_Status } from './status.interface';
+import { unlink } from 'fs';
 
 @Injectable()
 export class UsersService {
 	constructor(@InjectRepository(User) private usersRepository: Repository<User>, @InjectRepository(FriendRequestEntity) private friendRequestRepository: Repository<FriendRequestEntity>) {}
+
+
+	/*
+	** ==== Functions related to the Two Factor Authentication ====
+	*/
 
 	async setTwoFactorAuthenticationSecret(secret: string, id: number) {
 		return this.usersRepository.update(id, { twoFactorAuthenticationSecret: secret });
@@ -24,18 +30,10 @@ export class UsersService {
 		return this.usersRepository.update(id, { isTwoFactorAuthenticationEnabled: false });
 	}
 
-	async changeUserDisplayName(id: number, newDisplayName: string): Promise<string> {
-		// Ajouter une vérification de caractères spéciaux / unicité du nom / longueur du nom
-		const invalidChars = /^[a-zA-Z0-9-_]+$/;
-		if (newDisplayName.search(invalidChars) === -1 || newDisplayName.length > 15) { throw new ForbiddenException(); }
-		const duplicate = await this.usersRepository.findOne({ where: { displayName: newDisplayName } });
-		if (duplicate) { throw new BadRequestException(); }
 
-		const user = await this.usersRepository.findOne({ where: {id: id} });
-		user.displayName = newDisplayName;
-		this.usersRepository.save(user);
-		return user.displayName;
-	}
+	/*
+	** ==== Functions retrieving information about a user ====
+	*/
 
 	async findUserById(id: number): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { id: id } });
@@ -47,23 +45,76 @@ export class UsersService {
 		return user;
 	}
 
-	async hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Promise<string> {
-		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
-			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
-			relations: ['creator', 'receiver']});
-		if (!friendRequest) return ("false");
-		if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return ("allow-resend");
-		return ("true");
+	getCurrUserStatus(currUser: User): Observable<UserStatus> {
+		return from(this.usersRepository.findOne(currUser.id)).pipe(
+			map((user: User) => {
+				return { status: user.status as User_Status }
+			})
+		)
 	}
 
-	async reSendFriendRequest(creator: User, receiver: User): Promise<FriendRequest> {
-		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
-			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
-			relations: ['creator', 'receiver']})
-		friendRequest.creator = creator;
-		friendRequest.receiver = receiver;
-		friendRequest.status = "pending";
-		return this.friendRequestRepository.save(friendRequest);
+	getUserStatus(userId: number): Observable<UserStatus> {
+		return from(this.usersRepository.findOne(userId)).pipe(
+			map((user: User) => {
+				return { status: user.status as User_Status }
+			})
+		)
+	}
+
+
+	/*
+	** ==== Functions updating information for a user ====
+	*/
+
+	async changeUserDisplayName(id: number, newDisplayName: string): Promise<string> {
+		const invalidChars = /^[a-zA-Z0-9-_]+$/;
+		if (newDisplayName.search(invalidChars) === -1 || newDisplayName.length > 15) { throw new ForbiddenException(); }
+		const duplicate = await this.usersRepository.findOne({ where: { displayName: newDisplayName } });
+		if (duplicate) { throw new BadRequestException(); }
+
+		const user = await this.usersRepository.findOne({ where: {id: id} });
+		user.displayName = newDisplayName;
+		this.usersRepository.save(user);
+		return user.displayName;
+	}
+
+	async updateAvatar(id: number, filename: string) {
+		try {
+			const user = await User.findOne({ where: { id: id } });
+			if (user.avatar === "default") {
+				this.usersRepository.update(id, { avatar: filename });
+			}
+			else {
+				unlink("./images/" + user.avatar, () => { console.log("Successfully deleted previous avatar with path ./images/" + user.avatar) });
+				this.usersRepository.update(id, { avatar: filename });
+			}
+		} catch {
+			console.log("Couldn't find user with id " + id + " to update avatar");
+			throw new UnauthorizedException();
+		}
+	}
+
+	async changeUserStatus(userId: number, targetStatus: User_Status): Promise<void> {
+		try {
+			const user = await this.usersRepository.findOne(userId);
+			user.status = targetStatus;
+			await this.usersRepository.save(user);
+		} catch {
+			throw new NotFoundException();
+		}
+	}
+
+
+	/*
+	** ==== Functions allowing to interact with friend requests ====
+	*/
+
+	async getFriendRequestById(friendRequestId: number): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({where:
+			[{ id: friendRequestId}],
+			relations: ['creator', 'receiver']
+		});
+		return friendRequest;
 	}
 
 	async sendFriendRequest(receiverId: number, creatorId: number): Promise<FriendRequest> {
@@ -85,6 +136,35 @@ export class UsersService {
 		return this.friendRequestRepository.save(friendRequest);
 	}
 
+	async reSendFriendRequest(creator: User, receiver: User): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
+			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
+			relations: ['creator', 'receiver']})
+		friendRequest.creator = creator;
+		friendRequest.receiver = receiver;
+		friendRequest.status = "pending";
+		return this.friendRequestRepository.save(friendRequest);
+	}
+
+	async respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Promise<FriendRequest> {
+		const friendRequest: FriendRequest = await this.getFriendRequestById(friendRequestId);
+		return this.friendRequestRepository.save(
+			{
+				...friendRequest,
+				status: responseStatus
+			}
+		);
+	}
+
+	async hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Promise<string> {
+		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
+			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
+			relations: ['creator', 'receiver']});
+		if (!friendRequest) return ("false");
+		if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return ("allow-resend");
+		return ("true");
+	}
+
 	async getFriendRequestStatus(receiverId: number, currentUser: User): Promise<FriendRequestStatus> {
 		const receiver: User = await this.findUserById(receiverId);
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
@@ -102,7 +182,7 @@ export class UsersService {
 		return { status: friendRequest?.status || 'not-sent' };
 	}
 
-	async unfriendUser(currUserId: number, friendId: number): Promise<{ userOne: number, userTwo: number }> {
+	async unfriendUser(currUserId: number, friendId: number): Promise<{ creatorId: number, receiverId: number }> {
 		try {
 			var friend = await this.findUserById(friendId);
 			var currentUser = await this.findUserById(currUserId);
@@ -114,98 +194,16 @@ export class UsersService {
 				relations: ['creator', 'receiver']
 			});
 			this.friendRequestRepository.delete(friendRequest.id);
-			return { userOne: friendRequest.creator.id, userTwo: friendRequest.receiver.id }
+			return { creatorId: friendRequest.creator.id, receiverId: friendRequest.receiver.id }
 		} catch {
 			throw new NotFoundException();
 		}
 	}
 
-	async getFriendRequestById(friendRequestId: number): Promise<FriendRequest> {
-		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({where: [{ id: friendRequestId}], relations: ['creator', 'receiver']});
-		return friendRequest;
-	}
 
-	async respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Promise<FriendRequest> {
-		const friendRequest: FriendRequest = await this.getFriendRequestById(friendRequestId);
-		return this.friendRequestRepository.save(
-			{
-				...friendRequest,
-				status: responseStatus
-			}
-		);
-	}
-
-
-
-
-	paginateFriendRequestsFromRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
-		return from(paginate(this.friendRequestRepository, options, {
-			where: { receiver: currentUser, status: "pending" },
-			relations: ['creator', 'receiver']
-		})).pipe(
-			map((friendRequestPageable: Pagination<FriendRequest>) => {
-				friendRequestPageable.items.forEach(function(element) {
-					delete element.creator.twoFactorAuthenticationSecret;
-					delete element.receiver.twoFactorAuthenticationSecret;
-					delete element.creator.isTwoFactorAuthenticationEnabled;
-					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
-				});
-				return friendRequestPageable;
-			}) 
-		)
-	}
-
-	paginateFriendRequestsToRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
-		return from(paginate(this.friendRequestRepository, options, {
-			where: { creator: currentUser, status: "pending" },
-			relations: ['creator', 'receiver']
-		})).pipe(
-			map((friendRequests: Pagination<FriendRequest>) => {
-				friendRequests.items.forEach(element => {
-					delete element.creator.twoFactorAuthenticationSecret;
-					delete element.receiver.twoFactorAuthenticationSecret;
-					delete element.creator.isTwoFactorAuthenticationEnabled;
-					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
-				});
-				return friendRequests;
-			})
-		);
-	}
-
-	paginateFriends(options: IPaginationOptions, currentUser: User): Observable<Pagination<User>> {
-		return from(paginate(this.friendRequestRepository, options, {
-			where: [{ creator: currentUser, status: "accepted" }, { receiver: currentUser, status: "accepted"}],
-			relations: ['receiver', 'creator'],
-			select: ['id', 'receiver', 'creator']
-		})).pipe(
-			map((friendRequestPageable: Pagination<FriendRequest>) => {
-				var items = [];
-				friendRequestPageable.items.forEach(function(element) { 
-					if (element.creator.id != currentUser.id) {
-						delete element.creator.twoFactorAuthenticationSecret;
-						delete element.creator.isTwoFactorAuthenticationEnabled;
-						delete element.creator.avatar;
-						items.push(element.creator);
-					} else {
-						delete element.receiver.twoFactorAuthenticationSecret;
-						delete element.receiver.isTwoFactorAuthenticationEnabled;
-						delete element.receiver.avatar;
-						items.push(element.receiver);
-					}
-				});
-				var usersPageable: Pagination<User> = {
-					items: items,
-					links: friendRequestPageable.links,
-					meta: friendRequestPageable.meta
-				};
-				return usersPageable;
-			})
-		)
-	}
+	/*
+	** === Functions allowing to display users, in a paginated way ====
+	*/
 
 	paginateUsers(options: IPaginationOptions): Observable<Pagination<User>> {
 		return from(paginate(this.usersRepository, options)).pipe(
@@ -246,32 +244,90 @@ export class UsersService {
 		)
 	}
 
-	getCurrUserStatus(currUser: User): Observable<UserStatus> {
-		return from(this.usersRepository.findOne(currUser.id)).pipe(
-			map((user: User) => {
-				return { status: user.status as User_Status }
+
+	/*
+	** ==== Functions allowing to display the friends of a user and its friend requests, in a paginated way ====
+	*/
+
+	paginateFriends(options: IPaginationOptions, currentUser: User): Observable<Pagination<User>> {
+		return from(paginate(this.friendRequestRepository, options, {
+			where: [{ creator: currentUser, status: "accepted" }, { receiver: currentUser, status: "accepted"}],
+			relations: ['receiver', 'creator'],
+			select: ['id', 'receiver', 'creator']
+		})).pipe(
+			map((friendRequestPageable: Pagination<FriendRequest>) => {
+				var items = [];
+				friendRequestPageable.items.forEach(function(element) { 
+					if (element.creator.id != currentUser.id) {
+						delete element.creator.twoFactorAuthenticationSecret;
+						delete element.creator.isTwoFactorAuthenticationEnabled;
+						delete element.creator.avatar;
+						items.push(element.creator);
+					} else {
+						delete element.receiver.twoFactorAuthenticationSecret;
+						delete element.receiver.isTwoFactorAuthenticationEnabled;
+						delete element.receiver.avatar;
+						items.push(element.receiver);
+					}
+				});
+				var usersPageable: Pagination<User> = {
+					items: items,
+					links: friendRequestPageable.links,
+					meta: friendRequestPageable.meta
+				};
+				return usersPageable;
 			})
 		)
 	}
 
-	getUserStatus(userId: number): Observable<UserStatus> {
-		return from(this.usersRepository.findOne(userId)).pipe(
-			map((user: User) => {
-				return { status: user.status as User_Status }
-			})
+	paginateFriendRequestsFromRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
+		return from(paginate(this.friendRequestRepository, options, {
+			where: { receiver: currentUser, status: "pending" },
+			relations: ['creator', 'receiver']
+		})).pipe(
+			map((friendRequestPageable: Pagination<FriendRequest>) => {
+				friendRequestPageable.items.forEach(function(element) {
+					delete element.creator.twoFactorAuthenticationSecret;
+					delete element.receiver.twoFactorAuthenticationSecret;
+					delete element.creator.isTwoFactorAuthenticationEnabled;
+					delete element.receiver.isTwoFactorAuthenticationEnabled;
+					delete element.creator.avatar;
+					delete element.receiver.avatar;
+				});
+				return friendRequestPageable;
+			}) 
 		)
 	}
 
-	async changeUserStatus(userId: number, targetStatus: User_Status): Promise<void> {
-		try {
-			const user = await this.usersRepository.findOne(userId);
-			user.status = targetStatus;
-			await this.usersRepository.save(user);
-		} catch {
-			throw new NotFoundException();
-		}
+	paginateFriendRequestsToRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
+		return from(paginate(this.friendRequestRepository, options, {
+			where: { creator: currentUser, status: "pending" },
+			relations: ['creator', 'receiver']
+		})).pipe(
+			map((friendRequests: Pagination<FriendRequest>) => {
+				friendRequests.items.forEach(element => {
+					delete element.creator.twoFactorAuthenticationSecret;
+					delete element.receiver.twoFactorAuthenticationSecret;
+					delete element.creator.isTwoFactorAuthenticationEnabled;
+					delete element.receiver.isTwoFactorAuthenticationEnabled;
+					delete element.creator.avatar;
+					delete element.receiver.avatar;
+				});
+				return friendRequests;
+			})
+		);
 	}
 }
+
+
+
+
+
+
+
+
+
+
 
 
 /*

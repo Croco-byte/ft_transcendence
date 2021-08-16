@@ -5,6 +5,13 @@ import router from '../router/index';
 import store from '../store/index';
 import userService from '../services/user.service';
 
+/* When the application loads, we check if the user already has a JWT in the local storage.
+** If this is the case, the user is already connected from his last session. We initialize
+** the websockets and the variables that indicates that the user is online.
+** If there was no JWT, the said variables are initilized as empty or null, including the
+** websockets.
+*/
+
 const user = JSON.parse(localStorage.getItem('user'));
 let initialState;
 
@@ -28,7 +35,6 @@ if (user) {
 			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 		}
 	})
-	
 	statusSocket.emit('getOnline', {});
 
 	initialState = { status: { loggedIn: true }, user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
@@ -62,22 +68,20 @@ export const auth = {
 		},
 
 		logout({ commit }) {
-			console.log("Logging the user out");
-			AuthService.logout();
 			commit('logout');
 		}
 	},
 
 	mutations: {
+
+		/* On logging success, we set the variables that indicate that the user is online ; we also set the websocket listeners. */
 		loginSuccess(state, user) {
 			state.status.loggedIn = true;
 			state.user = user;
 			
 			state.websockets.connectionStatusSocket = io('http://localhost:3000/connectionStatus', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
-			state.websockets.connectionStatusSocket.on('exception', (error) => { console.log("Caught an exception while interacting with Connection Status Websocket.") })
 			state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
 				const result = await userService.getCurrUserId();
-				console.log(result.data.id);
 				if (data.userId == result.data.id) {
 					localStorage.removeItem('user');
 					state.status.loggedIn = false;
@@ -88,7 +92,6 @@ export const auth = {
 					router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 				}
 			})
-			console.log("Trying to get current user online");
 			state.websockets.connectionStatusSocket.emit('getOnline', {});
 			state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', {query: `token=${authHeader().Authorization.split(' ')[1]}`});
 			router.push('/account');
@@ -102,6 +105,7 @@ export const auth = {
 			state.avatar = '';
 		},
 		logout(state) {
+			localStorage.removeItem('user');
 			state.websockets.connectionStatusSocket.disconnect();
 			state.websockets.friendRequestsSocket.disconnect();
 			state.status.loggedIn = false;
@@ -113,7 +117,4 @@ export const auth = {
 			state.avatar = avatar;
 		},
 	},
-
-	getters: {
-	}
 };

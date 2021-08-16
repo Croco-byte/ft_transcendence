@@ -4,13 +4,12 @@ import { UsersModule } from './users/users.module';
 import { HttpModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
-import { ProfileModule } from './profile/profile.module';
 import { StatusGateway } from './users/status.gateway';
 import { FriendRequestsGateway } from './users/friend-request.gateway';
 
 @Module(
 {
-	imports: [HttpModule, AuthModule, UsersModule, DatabaseModule, ConfigModule.forRoot(), ProfileModule],
+	imports: [HttpModule, AuthModule, UsersModule, DatabaseModule, ConfigModule.forRoot()],
 	controllers: [],
 	providers: [StatusGateway, FriendRequestsGateway],
 })

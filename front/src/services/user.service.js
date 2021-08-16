@@ -12,8 +12,20 @@ class UserService {
 		return axios.get(API_URL + 'user/' + userId, { headers: authHeader() });
 	}
 
+	getCurrUserInfo() {
+		return axios.get(API_URL + 'user/info/me', { headers: authHeader() });
+	}
+
 	getUserAvatar(path) {
 		return axios.post(API_URL + 'user/avatar', { path: path }, { headers: authHeader(), responseType: 'blob' });
+	}
+
+	getCurrUserAvatar() {
+		return axios.get(API_URL + 'user/avatar/me', { headers: authHeader(), responseType: 'blob' });
+	}
+
+	uploadAvatar(formData) {
+		return axios.post(API_URL + 'user/avatar/update', formData, { headers: authHeader() });
 	}
 
 	getFriends(page = 1) {
@@ -50,16 +62,6 @@ class UserService {
 
 	searchUser(username, page = 1) {
 		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
-	}
-
-	// Should be replaced by signals to the websocket
-	setOnline(currUserId) {
-		return axios.post(API_URL + "user/change-status/" + currUserId, { status: 'online' }, { headers: authHeader() });
-	}
-
-	// Should be replaced by signals to the websocket
-	setOffline(currUserId) {
-		return axios.post(API_URL + "user/change-status/" + currUserId, { status: 'offline' }, { headers: authHeader() });
 	}
 
 	changeDisplayName(newDisplayName) {

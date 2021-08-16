@@ -10,6 +10,11 @@ import { User } from '../users/users.entity';
 export class TwoFactorAuthenticationService {
 	constructor(private readonly usersService: UsersService, private readonly configService: ConfigService) {}
 
+	/* This function generates a new secret, that is required to register our app to Google Authenticator
+	** (either with the secret itself, or with a QR code generated with this secret).
+	** If the user already generated a secret, we use the existing secret.
+	*/
+
 	async generateTwoFactorAuthenticationSecret(user: User) {
 		let secret: string;
 		const existingUser = await User.findOne({ where: { id: user.id } });
@@ -27,10 +32,12 @@ export class TwoFactorAuthenticationService {
 		return { secret, otpauthUrl };
 	}
 
+	/* This function creates then returns a QR Code from a secret */
 	async pipeQrCodeStream(stream: Response, otpauthUrl: string) {
 		return toFileStream(stream, otpauthUrl);
 	}
 
+	/* This function verifies the validity of a 2FA code */
 	async isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, id: number) {
 		const user = await User.findOne({ where: { id: id } });
 		if (!user) {

@@ -29,6 +29,14 @@
 </template>
 
 <script>
+
+/* This component displays the sent friend requests from the current User.
+** The list is paginated : the user can click on "Previous" or "Next" to go to change the result page.
+** It is also possible to enter a number to go directly to the specified page.
+** It also displays the current status of all the friends in the list.
+** The displayed users are links leading to their profile pages
+*/
+
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
 import UserStatus from '../components/UserStatus.vue'
@@ -47,14 +55,14 @@ export default {
 	},
 
 	computed: {
+		/* These computed properties disable the "Previous" button if there is no previous page (we are at page 1, or the page number is invalid). Same for the "Next" button */
 		hidePreviousPageButton: function() {
 		  if(typeof(this.sentRequestsMeta.currentPage) !== 'number' || this.sentRequestsMeta.currentPage <= 1 || this.sentRequestsMeta.currentPage > this.sentRequestsMeta.totalPages) {
 			  return true;
 		  }
 		  return false;
-	  },
-	  
-	    hideNextPageButton: function() {
+		},
+		hideNextPageButton: function() {
 		  if(typeof(this.sentRequestsMeta.currentPage) !== 'number' || this.sentRequestsMeta.currentPage >= this.sentRequestsMeta.totalPages || this.sentRequestsMeta.currentPage < 1) {
 			  return true;
 		  }
@@ -63,68 +71,68 @@ export default {
 	  },
 
 	methods: {
+		
+		/* This method uses the UserService to get the list of the sent friend requests, for the specified page (default to 1, does nothing if the page number is invalid).
+		** The function retrieves all the accessible informations about the target user ; we use it to display his displayName, and status.
+		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
+		*/
 		getFriendRequestsToRecipients: function(page = 1) {
 			var ref = this;
 			if (this.sentRequestsMeta.totalPages > 0 && (Number.isNaN(page) || page < 1 || page > this.sentRequestsMeta.totalPages)) return ;
 			UserService.getFriendRequestsToRecipients(page).then(
 				response => {
-					ref.sentRequests = response.data.items; ref.sentRequestsMeta = response.data.meta;
-					if (ref.sentRequestsMeta.itemCount < 1 && ref.sentRequestsMeta.currentPage > 1) {
-					  ref.getFriendRequestsToRecipients(ref.sentRequestsMeta.currentPage - 1);
-				  }
+					ref.sentRequests = response.data.items;
+					ref.sentRequestsMeta = response.data.meta;
+					if (ref.sentRequestsMeta.itemCount < 1 && ref.sentRequestsMeta.currentPage > 1) ref.getFriendRequestsToRecipients(ref.sentRequestsMeta.currentPage - 1);
 				},
 				() => { console.log("Couldn't retrieve sent friend requests from backend")})
 		},
 
-	  goTosentRequestsPage: function() {
+		/* This function allow the user to type a page number to directly go to the specified page, if the number is valid and within the result range */
+		goToSentRequestsPage: function() {
 		  let data = new FormData(document.getElementById("goToSentRequestsPage"));
 		  const destinationPage = data.get('goToSentRequestsPageInput');
 		  if (!Number.isNaN(destinationPage) && destinationPage >= 1 && destinationPage <= this.sentRequestsMeta.totalPages) {
 			  this.getFriendRequestsToRecipients(destinationPage);
 		  }
-	  },
+		},
+	  
+		/* This functon is fired upon reception of a "statusChange" signal, which means that a user of our app changed his status.
+		** If the user ID of this user corresponds to a friend that we are currently displaying, we update the friend's status accordingly.
+		*/
+		changeUserStatus: function(data) {
+		  for(var i=0; i < this.sentRequests.length; i++) {
+			  if (this.sentRequests[i].receiver.id == data.userId) {
+				  this.sentRequests[i].receiver.status = data.status;
+				}
+		  }
+		},
+
+		/* This functon is fired upon reception of a "friendStatusChange" signal, which means that a user of our app interacted with a friend request.
+		** If we were the creator of this request, we update the sent friendrequests list.
+		*/
+		changeFriendRequestStatus: function(data) {
+		  if (data.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+		}
 
 	},
 
 	created() {
+		/* Getting initial informations */
 		this.getFriendRequestsToRecipients();
 		this.currUserId = authService.parseJwt().id;
 	},
 
 	mounted() {
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
-			if (friendRequest.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
-		})
+		/* Starting listeners to automatically update users' status and friendrequests */
+		this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+	},
 
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
-			if (friendRequest.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
-		})
-
-		this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (result) => {
-			if (result.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
-		})
-
-		this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
-		  for(var i=0; i < this.sentRequests.length; i++) {
-			  if (this.sentRequests[i].receiver.id == userId) {
-				  this.sentRequests[i].receiver.status = 'online';
-			  }
-		  }
-		})
-		this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
-		  for(var i=0; i < this.sentRequests.length; i++) {
-			  if (this.sentRequests[i].receiver.id == userId) {
-				  this.sentRequests[i].receiver.status = 'offline';
-			  }
-		  }
-		})
-		this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
-		  for(var i=0; i < this.sentRequests.length; i++) {
-			  if (this.sentRequests[i].receiver.id == userId) {
-				  this.sentRequests[i].receiver.status = 'in-game';
-			  }
-		  }
-		})
+	beforeUnmount() {
+		/* Stopping listeners to avoid catching signals after leaving this component */
+		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
 
 

@@ -15,6 +15,11 @@
 
 
 <script>
+
+/* This is the view of the login page. The only purpose it to allow the user to reach the
+** OAuth page on the 42 API for our application.
+*/
+
 export default {
 	name: 'Login',
 	components: {

@@ -28,6 +28,12 @@
 </template>
 
 <script>
+
+/* This component allows to search for users by displayName. If no displayName is provided, all the users are returned.
+** The results are displayed paginated, just like the friend list and the friend requests.
+** The search is case-insensitive. Typing "a" returns all usernames with a "a" in it. "au" all usernames with "au" in it. Etc...
+*/
+
 import UserService from '../services/user.service'
 import UserStatus from '../components/UserStatus.vue'
 
@@ -45,22 +51,24 @@ export default {
 	},
 
   computed: {
-	  hidePreviousPageButton: function() {
+		
+		/* These computed properties disable the "Previous" button if there is no previous page (we are at page 1, or the page number is invalid). Same for the "Next" button */
+		hidePreviousPageButton: function() {
 		  if(typeof(this.searchMeta.currentPage) !== 'number' || this.searchMeta.currentPage <= 1 || this.searchMeta.currentPage > this.searchMeta.totalPages) {
 			  return true;
 		  }
 		  return false;
-	  },
-
-	  hideNextPageButton: function() {
+		},
+		hideNextPageButton: function() {
 		  if(typeof(this.searchMeta.currentPage) !== 'number' || this.searchMeta.currentPage >= this.searchMeta.totalPages || this.searchMeta.currentPage < 1) {
 			  return true;
 		  }
 		  return false;
-	  }
+		}
   },
 
   methods: {
+	  /* This function uses the UserService to return the corresponding displayName when the user clicks on "Search". */
 	  searchUser: function() {
 		  var ref = this;
 		  let data = new FormData(document.getElementById("userSearchForm"));
@@ -73,7 +81,8 @@ export default {
 			  () => { ref.searchDisplayName = ''; console.log("Couldn't get search results from backend") }
 		  )
 	  },
-
+	  
+	  /* This function allow the user to type a page number to directly go to the specified page, if the number is valid and within the result range */
 	  goToSearchPage: function() {
 		  let data = new FormData(document.getElementById("goToSearchPage"));
 		  const destinationPage = data.get('goToSearchPageInput');
@@ -82,6 +91,10 @@ export default {
 		  }
 	  },
 
+	  /* This function is fired when the user changes a page (with the Previous or Next button, or specifying a correct page).
+	  ** We're not using the "searchUser" directly because of a bug (or "feature") of the backend, that defines the totalPages
+	  ** by the rest of the users (switching to page 2 reduces the "totalPages" of 1, etc...) when filtering by usernames
+	  */
 	  changeSearchPage: function(username, page) {
 		  var ref = this;
 		  if (Number.isNaN(page) || page < 1 || page > this.searchMeta.totalPages) return ;
@@ -93,30 +106,26 @@ export default {
 			  () => { console.log("Failed to change search result page") }
 		  )
 	  },
+
+	  /* This functon is fired upon reception of a "statusChange" signal, which means that a user of our app changed his status.
+	  ** If the user ID of this user corresponds to a user that we are currently displaying, we update the user's status accordingly.
+	  */
+	  changeUserStatus: function(data) {
+		  for(var i=0; i < this.searchResults.length; i++) {
+			  if (this.searchResults[i].id == data.userId) {
+				  this.searchResults[i].status = data.status;
+			  }
+		  }
+	  }
   },
 
+  /* Starting then stopping the listeners that handle the status change of displayed users */
   mounted() {
-	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
-		  for(var i=0; i < this.searchResults.length; i++) {
-			  if (this.searchResults[i].id == userId) {
-				  this.searchResults[i].status = 'online';
-			  }
-		  }
-	  })
-	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
-		  for(var i=0; i < this.searchResults.length; i++) {
-			  if (this.searchResults[i].id == userId) {
-				  this.searchResults[i].status = 'offline';
-			  }
-		  }
-	  })
-	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
-		  for(var i=0; i < this.searchResults.length; i++) {
-			  if (this.searchResults[i].id == userId) {
-				  this.searchResults[i].status = 'in-game';
-			  }
-		  }
-	  })
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+  },
+
+  beforeUnmount() {
+	  this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
   }
 
 

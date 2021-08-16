@@ -8,6 +8,9 @@
 </template>
 
 <script>
+
+/* The view for the "Friends" page. Everything is implemented in the components. */
+
 import FriendList from "../components/FriendList.vue"
 import UserSearch from "../components/UserSearch.vue"
 import ReceivedFriendRequests from "../components/ReceivedFriendRequests.vue"
@@ -20,18 +23,7 @@ export default {
 	  UserSearch,
 	  ReceivedFriendRequests,
 	  SentFriendRequests
-  },
-  data() {
-	  return {
-	  }
-  },
-
-  methods: {
-  },
-
-  created() {
-  },
-  
+  }
 }
 </script>
 

@@ -14,8 +14,13 @@
 </template>
 
 <script>
-import QRCode from '../components/QRCode.vue'
 
+/* This is the page on which the user will be redirected after logging with the 42 OAuth system, if
+** the said user has 2FA activated. If the user enters a valid code from Google Authenticator, a request
+** for a 2FA JWT will be made to the backend, allowing the user to login.
+*/
+
+import QRCode from '../components/QRCode.vue'
 
 export default {
 	name: "TwoFA",

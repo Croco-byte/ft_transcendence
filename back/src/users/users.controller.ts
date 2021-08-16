@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException } from "@nestjs/common";
+import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { Pagination } from "nestjs-typeorm-paginate";
 import { Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
@@ -6,6 +6,9 @@ import { FriendRequest, FriendRequestStatus } from "./friend-request.interface";
 import { UserStatus, User_Status } from "./status.interface";
 import { User } from "./users.entity";
 import { UsersService } from "./users.service";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+
 
 @Controller('/user')
 export class UserController {
@@ -142,5 +145,34 @@ export class UserController {
 			throw e;
 		}
 
+	}
+
+	@Get('info/me')
+	@UseGuards(JwtTwoFactorGuard)
+	async getCurrUserInfo(@Req() req) {
+		try {
+			return await this.userService.findUserById(req.user.id);
+		} catch (e) {
+			throw e;
+		}
+	}
+
+	@Post('avatar/update')
+	@UseGuards(JwtTwoFactorGuard)
+	@UseInterceptors(FileInterceptor('avatar', {
+		storage: diskStorage({
+			destination: './images',
+		})
+	}))
+	async saveAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
+		await this.userService.updateAvatar(req.user.id, file.filename);
+		console.log("Updated avatar");
+	}
+
+	@Get('avatar/me')
+	@UseGuards(JwtTwoFactorGuard)
+	async getCurrentUserAvatar(@Req() req, @Res() res) {
+		const user = await User.findOne(({ where: { id: req.user.id } }));
+		res.sendFile(user.avatar, { root: 'images' });
 	}
 }

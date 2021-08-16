@@ -10,6 +10,14 @@
 
 <script>
 
+/* This component has a path that corresponds to the CALLBACK ADDRESS of the API 42.
+** This means that if the OAuth process of 42 executed correctly, the user will be
+** redirected here with two variables (code, and state), that the user can't bruteforce.
+** When the user reaches this page, we launch the authentication process. If the code and state
+** variables are correct, the login will be a success, and the user will be redirected to
+** his profile page.
+*/
+
 export default {
 	name: 'Callback',
 	components: {

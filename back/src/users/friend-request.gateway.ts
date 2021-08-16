@@ -4,7 +4,6 @@ import { WsJwtGuard } from '../auth/ws-jwt-strategy'
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
-import { User } from './users.entity';
 
 @WebSocketGateway({ namespace: '/friendRequests' })
 export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -19,14 +18,14 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	handleDisconnect(client: any) {
-			this.logger.log(`Client disconnected from FriendRequests Gateway`)
-		}
+			this.logger.log(`Client disconnected to FriendRequests Gateway. ${client.id}`)
+	}
 
 	async handleConnection(client: Socket, args: any[]) {
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			client.data = { userId: user.id, username: user.username };
-			this.logger.log(`Client connected to FriendRequests Gateway. User ID: ${client.data.userId}`);
+			this.logger.log(`Client connected to FriendRequests Gateway. ${client.id}`);
 		} catch(e) {
 			client.disconnect();
 			console.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
@@ -39,7 +38,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleAcceptFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "accepted");
-			this.wss.emit('friendRequestAccepted', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 		} catch(e) {
 			throw new WsException(e.message);
 		}
@@ -50,7 +49,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleDeclineFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "declined");
-			this.wss.emit('friendRequestDeclined', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 		} catch(e) {
 			throw new WsException(e.message);
 		}
@@ -61,7 +60,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleSendFriendRequest(client: Socket, data: { receiverId: number, user: { id: number, username: string } }) {
 		try {
 			const result = await this.userService.sendFriendRequest(data.receiverId, data.user.id);
-			this.wss.emit('sentFriendRequest', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 		} catch(e) {
 			console.log(e.message);
 			throw e;
@@ -74,7 +73,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleUnfriendUser(client: Socket, data: { friendId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
 			const result = await this.userService.unfriendUser(data.user.id, data.friendId);
-			this.wss.emit('userUnfriended', result);
+			this.wss.emit('friendStatusChanged', result);
 		} catch(e) {
 			throw new WsException(e.message);
 		}

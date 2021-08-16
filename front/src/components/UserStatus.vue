@@ -8,6 +8,9 @@
 </template>
 
 <script>
+	/* Small component that takes 1 property from the parent component, the status of the user. It then displays a green dot if the
+	** user is online, a yellow dot if he's in game, and a red dot if he's offline
+	*/
 	export default {
 		name: 'UserStatus',
 		props: { status }

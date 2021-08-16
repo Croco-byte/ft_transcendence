@@ -1,11 +1,18 @@
+<template>
+	<router-link :to="url"> {{ text }} </router-link>
+</template>
+
+
 <script>
+
+/* This component handles the router links and their appearance */
+
 import { RouterLink } from 'vue-router'
 
 export default
 {
 	name: 'NavLink',
-	props:
-	{
+	props: {
 		url:
 		{
 			type: String,
@@ -17,26 +24,18 @@ export default
 			default: 'Default text'
 		}
 	},
-	components:
-	{
+	components: {
 		RouterLink
 	}
 }
 </script>
 
-<template>
-	<router-link :to="url"> {{ text }} </router-link>
-	
-</template>
-
 <style>
-	a
-	{
+	a {
 		text-decoration: none;
 	}
 
-	a.brand
-	{
+	a.brand {
 		font-size: 2rem;
 	}
 </style>

@@ -46,6 +46,12 @@
 
 
 <script>
+
+/* This view displays informations about a particular user. For example, this route : "/user/3" will display
+** informations about the user with the ID "3".
+** This page allows to see the status of the user, send him friend requests, or unfriend the user.
+*/
+
 import UserService from '../services/user.service'
 import authService from '../services/auth.service'
 
@@ -84,8 +90,19 @@ export default {
 			var ref = this;
 			UserService.getFriendRequestStatusFromCurrUser(this.$route.params.id).then(
 			response => { ref.friendRequestStatus = response.data.status; },
-			error => { console.log("Couldn't get friend request status from backend for specified user") })
+			() => { console.log("Couldn't get friend request status from backend for specified user") })
+		},
+
+		changeUserStatus: function(data) {
+			if (data.userId == this.userId) this.status = data.status;
+		},
+
+		changeFriendRequestStatus: function(data) {
+			if ((this.userId == data.creatorId && this.currUserId == data.receiverId) || (this.userId == data.receiverId && this.currUserId == data.creatorId)) {
+			  this.getFriendRequestStatusFromCurrUser();
+			}
 		}
+
 	},
 
 	async created() {
@@ -111,38 +128,15 @@ export default {
 	},
 
 	mounted() {
-	  // ----- Listeners to update the target user connection status -----
-		this.$store.state.auth.websockets.connectionStatusSocket.on('userOnline', (userId) => {
-			if (userId == this.userId) this.status = "online";
-	  })
-	  this.$store.state.auth.websockets.connectionStatusSocket.on('userOffline', (userId) => {
-		  if (userId == this.userId) this.status = "offline";
-	  })
-	  this.$store.state.auth.websockets.connectionStatusSocket.on('userInGame', (userId) => {
-		  if (userId == this.userId) this.status = "in-game";
-	  })
+	  // ----- Listener to update the target user connection status and the friend request status -----
+	  this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+	},
 
-	  // ----- Listeners to update friend request status on user page -----
-	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestAccepted', (friendRequest) => {
-		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
-			  this.getFriendRequestStatusFromCurrUser();
-		  }
-	  })
-	  this.$store.state.auth.websockets.friendRequestsSocket.on('friendRequestDeclined', (friendRequest) => {
-		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
-			  this.getFriendRequestStatusFromCurrUser();
-		  }
-	  })
-	  this.$store.state.auth.websockets.friendRequestsSocket.on('sentFriendRequest', (friendRequest) => {
-		  if ((this.userId == friendRequest.creatorId && this.currUserId == friendRequest.receiverId) || (this.userId == friendRequest.receiverId && this.currUserId == friendRequest.creatorId)) {
-			  this.getFriendRequestStatusFromCurrUser();
-		  }
-	  })
-	  this.$store.state.auth.websockets.friendRequestsSocket.on('userUnfriended', (result) => {
-		  if ((this.userId == result.userOne && this.currUserId == result.userTwo) || (this.userId == result.userTwo && this.currUserId == result.userOne)) {
-			  this.getFriendRequestStatusFromCurrUser();
-		  }
-	  })
+	beforeUnmount() {
+		// ----- Stopping the listeners to update the target user connection status and the friend request status -----
+		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
 	}
 
 }

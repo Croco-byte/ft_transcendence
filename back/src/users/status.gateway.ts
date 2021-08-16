@@ -21,7 +21,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		this.logger.log(`Client disconnected from Status Gateway ${client.id}`)
 		if (client.data && client.data.userId) {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
-			this.wss.emit('userOffline', client.data.userId);
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		}
 	}
 
@@ -40,12 +40,12 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		try {
-			console.log("User ID: " + data.user.id + " | User status: " + data.user.status);
+			console.log("Status of the user trying to connect : " + data.user.status + " | " + typeof(data.user.status));
 			if (data.user.status !== "offline") {
 				this.wss.emit('multipleConnectionsOnSameUser', { userId: client.data.userId });
 			} else {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
-				this.wss.emit('userOnline', client.data.userId);
+				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
 			}
 		} catch(e) {
 			console.log(e.message);
@@ -57,9 +57,11 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOffline')
 	async handleOffline(client: Socket, data: any): Promise<void> {
 		try {
+			console.log("Emitting status change offline signal");
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
-			this.wss.emit('userOffline', client.data.userId);
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		} catch(e) {
+			console.log(e.message);
 			throw new WsException(e.message);
 		}
 	}

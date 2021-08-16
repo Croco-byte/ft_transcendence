@@ -10,6 +10,11 @@
 </template>
 
 <script>
+
+/* This component displays a button that allows to show or hide the QR Code used to register the application
+** with Google Authenticator, in order to activate 2FA.
+*/
+
 import AuthService from '../services/auth.service'
 
 export default {

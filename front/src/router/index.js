@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import store from '../store'
 
+/* For a smooth front, prevent a non-logged in user to access routes for which he will need his JWT to interact with the backend.
+** This is not in itself an authentification mechanism, it's just esthetic. The real check is made by the backend.
+*/
 const ifAuthenticated = (from, to, next) => {
 	if (store.state.auth.status.loggedIn === true) {
 		next();
