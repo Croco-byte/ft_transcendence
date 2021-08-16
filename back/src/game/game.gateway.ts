@@ -55,14 +55,11 @@ import { GameService } from './game.service';
  * 
  * - 'gameEnded' (1 FOIS)
  * 	>>> Envoie l'objet avec les scores finaux. Indique que la parte est terminée, arrete l'animation du jeu
- * 		et déclenche le rendu de l'écran de victoire. Besoin que vue.js emit 'opponentLeft' apres avoir recu 
- * 		ce signal afin que tous les clients de deconnectent correctement côté back et puissent relancer une game.
+ * 		et déclenche le rendu de l'écran de victoire. 
  * 
  * - 'opponentLeft' (1 FOIS)
  * 	>>> Permet juste d'indiquer que 1 des 2 joueurs principaux vient de deconnecter de la partie. Entraine la
- * 		fin du jeu et la victoire par abandon de l'autre joueur (on display donc le screen de victoire). Besoin 
- * 		que vue.js emit 'opponentLeft' apres avoir recu ce signal afin que tous les clients de deconnectent 
- * 		correctement de la room côté back et puissent relancer une game.
+ * 		fin du jeu et la victoire par abandon de l'autre joueur (on display donc le screen de victoire). 
  * 		!!! VOIR COMMENT ON PEUT MIEUX GERER SI LE JOUEUR DECO PENDANT LE SETUP DE LA GAME
  * 
  * 
@@ -80,11 +77,7 @@ import { GameService } from './game.service';
  * 	>>> Survient quand un joueur dans le front change d'onglet. Cela provoque un arret du jeu, + le back emet 'opponentLeft' 
  * 		a tous les gens dans la room afin de deconnecter de la room tout le monde correctement.
  * 
- * - 'opponentLeft' (@MessageBody() room: RoomInterface)
- * 	>>> Quand le back recoit ce signal, il deconnecte le client de la room auquel il appartient.
  */
-
-//  this.wss.in(room.name).socketsLeave(room.name);
 
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
@@ -107,12 +100,14 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.logger.log(`Client connected:\t\tclient id:\t${client.id}`);
 
 		const room: RoomInterface = this.gameService.joinRoom(client.id, false);
-		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
-
+		
 		client.join(room.name);
-		client.emit('joinRoom', { clientId: client.id, room });
+		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
+		
+		if (room.nbPeopleConnected === 1)
+			client.emit('joinRoom', { clientId: client.id, room });
 
-		if (room.nbPeopleConnected === 2)
+		else if (room.nbPeopleConnected === 2)
 		{
 			// Clients will render the setup screen and they will be able to choose match
 			// options for x seconds.
