@@ -84,6 +84,8 @@ import { GameService } from './game.service';
  * 	>>> Quand le back recoit ce signal, il deconnecte le client de la room auquel il appartient.
  */
 
+//  this.wss.in(room.name).socketsLeave(room.name);
+
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
 {
@@ -143,13 +145,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 				this.intervalId = setInterval(() => {
 					this.wss.to(room.name).emit('actualizeGameScreen', { clientId: client.id, room });
 					
-					// Case somebody won.
+					// Case somebody won, removing the room.
 					if (this.gameService.updateGame(room))
 					{
-						clearInterval(this.intervalId);
 						this.wss.to(room.name).emit('gameEnded', { clientId: client.id, room });
 						this.logger.log(`Game won:\t\tclient id:\t${client.id} (room id: ${room.name})`);
-						this.gameService.removeRoom(client.id);
+						this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
 					}
 				}, this.gameService.FRAMERATE);
 			});
@@ -163,12 +164,13 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		this.logger.log(`Client disconnected:\tclient id:\t${client.id}`);
 		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
-		
-		if (room && room.name)
+
+		// Removing a room if one of the two players left the game (except if player is alone in the room),
+		// will be automatically removed.
+		if (room && room.name && room.nbPeopleConnected > 1)
 		{
-			clearInterval(this.intervalId);
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.gameService.removeRoom(client.id);
+			this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
 		}
 	}
 
@@ -176,20 +178,18 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('updateGameSetup')
 	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
 	{
-		const room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
-		// this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
+		this.gameService.updateGameSetup(client.id, setup);
 	}
 
 	// Update player's paddle position when a player mooves his mouse.
 	@SubscribeMessage('pongEvent')
 	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() event: any): void
 	{
-		this.gameService.updatePlayerPos(client, event);
+		this.gameService.updatePlayerPos(client.id, event);
 	}
 	
-	// When a player leaves the game vue, he will emit disconnectClient the server will emit 'opponentLeft'
-	// event to the room making everybode leave the room. If a spectator leaves the vue, 
-	// just disconnecting him from the server.
+	// When a player leaves the game vue, he will emit disconnectClient making everybody 
+	// leave the room. If a spectator leaves the vue, just disconnecting him from the server.
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
@@ -197,22 +197,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		if (room)
 		{
-			clearInterval(this.intervalId);
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.logger.log(`Room has been left:\tplayer id:\t${client.id} (room id: ${room.name})`);
-			this.gameService.removeRoom(client.id);
+			this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
 		}
 		else
 			this.logger.log(`Room has been left:\spectator id:\t${client.id}`);
 		
 		client.disconnect();
-	}
-
-	// Client leaves the room.
-	@SubscribeMessage('opponentLeft')
-	handleOpponentLeft(@ConnectedSocket() client: Socket, @MessageBody() room: RoomInterface): void
-	{
-		client.leave(room.name);
-		this.logger.log(`Room has been left:\tclient id:\t${client.id} (room id: ${room.name})`);
 	}
 };
