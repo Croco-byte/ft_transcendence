@@ -6,7 +6,3 @@ COPY package*.json ./
 
 RUN npm i fsevents@latest -f --save-optional
 RUN npm install
-
-COPY . .
-
-# RUN npm run build

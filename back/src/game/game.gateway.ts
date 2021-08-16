@@ -29,7 +29,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	
 	@WebSocketServer() wss: Socket;
 
-	afterInit(server: Server): void {
+	afterInit(server: Server): void 
+	{
 		this.logger.log('Init done');
 	}
 
@@ -39,7 +40,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		this.logger.log(`Client connected:\t\tclient id:\t${client.id}`);
 
-		let room: RoomInterface = this.gameService.joinRoom(client.id, false);
+		const room: RoomInterface = this.gameService.joinRoom(client.id, false);
 		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
 
 		client.join(room.name);
@@ -97,7 +98,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
 		this.logger.log(`Client disconnected:\tclient id:\t${client.id}`);
-		let room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
+		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 		
 		if (room && room.name)
 		{
@@ -111,7 +112,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('updateGameSetup')
 	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
 	{
-		let room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
+		const room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
 		this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
 	}
 
@@ -128,7 +129,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
-		let room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
+		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 		
 		if (room)
 		{

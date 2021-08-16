@@ -45,7 +45,6 @@ services:
     
   postgres:
     container_name: postgres
-    # image: postgres
     image: postgres:12
     networks:
       - webnet
