@@ -153,10 +153,7 @@ export default defineComponent({
 
 	created() 
 	{ 
-		console.log('http://localhost:3000/game');
 		this.socket = io('http://localhost:3000/game');
-		console.log(this.socket);
-		this.socket.connected ? console.log('is connected') : console.log(`isn't connected`);
 		
 		if (this.socket) {
 

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export interface SocketDataInterface
 {
 	clientId: string;
@@ -54,7 +55,12 @@ export interface PaddleInterface
 
 export interface SetupInterface
 {
+	// 1, 2 or 3
 	level: number;
+
+	// 5, 10 or 15
 	score: number;
+
+	// 5 colors ?
 	paddleColor: string;
 }

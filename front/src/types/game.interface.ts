@@ -54,7 +54,12 @@ export interface PaddleInterface
 
 export interface SetupInterface
 {
-	level: string;
+	// 1, 2 or 3
+	level: number;
+
+	// 5, 10 or 15
 	score: number;
+
+	// 5 colors ?
 	paddleColor: string;
 }

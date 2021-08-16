@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { SubscribeMessage, 
 	WebSocketGateway, 
 	OnGatewayInit, 
@@ -91,21 +92,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
-	// If a player click on another option, updating his choice to all people in the room.
-	@SubscribeMessage('updateGameSetup')
-	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
-	{
-		let room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
-		this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
-	}
-
-	// Update player's paddle position when a player mooves his mouse.
-	@SubscribeMessage('pongEvent')
-	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() event: any): void
-	{
-		this.gameService.updatePlayerPos(client, event);
-	}
-
 	// Emit to disconnect everybody in the room if one of the two players disconnect from the game
 	// (including people spectating).
 	handleDisconnect(@ConnectedSocket() client: Socket): void
@@ -119,6 +105,21 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
 			this.gameService.removeRoom(client.id);
 		}
+	}
+
+	// If a player click on another option, updating his choice to all people in the room.
+	@SubscribeMessage('updateGameSetup')
+	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
+	{
+		let room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
+		this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
+	}
+
+	// Update player's paddle position when a player mooves his mouse.
+	@SubscribeMessage('pongEvent')
+	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() event: any): void
+	{
+		this.gameService.updatePlayerPos(client, event);
 	}
 	
 	// When a player leaves the game vue, he will emit disconnectClient the server will emit 'opponentLeft'
