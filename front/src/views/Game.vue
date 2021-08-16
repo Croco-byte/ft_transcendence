@@ -72,10 +72,14 @@ export default defineComponent({
     //     this.pongEvent();
     // },
 
-    // actualizeGameScreen(obj: SocketDataInterface) {
-    //   if (this.ctx && this.canvas)
-    //     this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
-    // },
+    actualizeGameScreen(obj: SocketDataInterface) {
+      this.room = obj.room;
+      this.isPlaying = true;
+      this.optGame =false;
+
+      // if (this.ctx && this.canvas)
+      //   this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
+    },
 
   gameEnded(obj: SocketDataInterface) : void
   {
@@ -168,20 +172,20 @@ export default defineComponent({
 				this.actualizeSetupScreen(obj);
 			});
 
-			// ecran qui montre pendant quelques secondes les options choisies
-			this.socket.on('displaySetupChoose', (obj: SocketDataInterface) => {
-				this.displaySetupChoose(obj);
-			})
+			// // ecran qui montre pendant quelques secondes les options choisies
+			// this.socket.on('displaySetupChoose', (obj: SocketDataInterface) => {
+			// 	this.displaySetupChoose(obj);
+			// });
 
-			// event qui permet de lancer la game apres que les options aient ete choisi
+			// //event qui permet de lancer la game apres que les options aient ete choisi
 			// this.socket.on('startingGame', (obj: SocketDataInterface) => {
 			// 	this.startingGame(obj);
 			// });
 
 			// ecran de rendu du jeu
-			// this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
-			// 	this.actualizeGameScreen(obj);
-			// });
+			this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
+        this.actualizeGameScreen(obj);
+			});
 			
 			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
 			this.socket.on('gameEnded', (obj: SocketDataInterface) => {
