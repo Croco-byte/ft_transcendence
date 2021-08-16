@@ -20,6 +20,70 @@ import { GameService } from './game.service';
  * 			- Mieux gerer les cas de deconnexion et de changement de vue.
  */
 
+/**
+ * HOW IT WORKS:
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * EMETTERS COTE BACK (dans leur ordre d'apparition):
+ * TOUS LES EMETTEURS ENVOIENT L'OBJET 'SocketDataInterface'
+ * 
+ * - 'joinRoom' (1 FOIS) 
+ *	>>>	Quand quelqu'un se connecte pour la premiere fois à l'onglet game. Correspond
+ *		au 'waiting another player'. Le joueur 1 a donc cet ecran qui s'affiche, le joueur
+ * 		2 lui recevra l'event mais ne doit pas print l'ecran. On peut checker le nombre de joueurs
+ * 		dans la room dans obj.room.nbPeopleConnected
+ * 
+ * - 'actualizeSetupScreen' (INTERVAL)
+ *	>>> Envoie l'objet toutes les x ms avec les choix actuels des options pour joueur 1 et joueur 2.
+ *		Permet ainsi de faire un rendu en direct des choix actuels des joueurs. Cette evenement dure
+ *		quelques secondes (defini par la constante 'TIME_GAME_SETUP' dans game.service.ts). Si joueur 1
+ *		ou joueur 2 clique sur une autre option, l'objet 'SocketDataInterface' sera update par le listener
+ *		'updateGameSetup'.
+ *		
+ * - 'displaySetupChoose' (1 FOIS)
+ * 	>>> Envoie une seule fois l'objet 'SocketDataInterface' avec les options finales du jeu retenues pour
+ * 		la game à venir. Si P1 et P2 n'avait pas choisi les mêmes options, la plus petite option est retenue
+ * 		(ex: P1 a choisi easy, P2 a choisi medium >>> easy sera retenue).
+ * 
+ * - 'startingGame' (1 FOIS) (peut-etre useless cet event ?)
+ * 	>>> Indique que la partie va commencer. Permet de stop de display les options choisies et d'indiquer 
+ * 		le jeu va pouvoir etre display.
+ * 
+ * - 'actualizeGameScreen' (INTERVAL)
+ * 	>>>	Envoie l'objet toutes les x ms avec les nouvelles positions de la balle et des paddle. Les positions 
+ * 		des paddles peuvent etre update par le listener 'pongEvent'.
+ * 
+ * - 'gameEnded' (1 FOIS)
+ * 	>>> Envoie l'objet avec les scores finaux. Indique que la parte est terminée, arrete l'animation du jeu
+ * 		et déclenche le rendu de l'écran de victoire. Besoin que vue.js emit 'opponentLeft' apres avoir recu 
+ * 		ce signal afin que tous les clients de deconnectent correctement côté back et puissent relancer une game.
+ * 
+ * - 'opponentLeft' (1 FOIS)
+ * 	>>> Permet juste d'indiquer que 1 des 2 joueurs principaux vient de deconnecter de la partie. Entraine la
+ * 		fin du jeu et la victoire par abandon de l'autre joueur (on display donc le screen de victoire). Besoin 
+ * 		que vue.js emit 'opponentLeft' apres avoir recu ce signal afin que tous les clients de deconnectent 
+ * 		correctement de la room côté back et puissent relancer une game.
+ * 		!!! VOIR COMMENT ON PEUT MIEUX GERER SI LE JOUEUR DECO PENDANT LE SETUP DE LA GAME
+ * 
+ * 
+ * ---------------------------------------------------------------------------------------------------------------
+ * LISTENERS COTE BACK (dans leur ordre d'apparition):
+ * 
+ * - 'updateGameSetup' (@MessageBody() setup: SetupInterface)
+ * 	>>> Update l'objet setup qui est envoyé par interval regulier par l'emetteur back 'actualizeSetupScreen' lorsqu'un 
+ * 		joueur clique sur une option differente.
+ * 
+ * - 'pongEvent' (@MessageBody() event: any)
+ * 	>>> L'objet event contient un x et un y, permet d'update la position du joueur pendant que le jeu a lieu.
+ * 
+ * - 'disconnectClient' (pas de body)
+ * 	>>> Survient quand un joueur dans le front change d'onglet. Cela provoque un arret du jeu, + le back emet 'opponentLeft' 
+ * 		a tous les gens dans la room afin de deconnecter de la room tout le monde correctement.
+ * 
+ * - 'opponentLeft' (@MessageBody() room: RoomInterface)
+ * 	>>> Quand le back recoit ce signal, il deconnecte le client de la room auquel il appartient.
+ */
+
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
 {
@@ -113,7 +177,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
 	{
 		const room: RoomInterface = this.gameService.updateGameSetup(client.id, setup);
-		this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
+		// this.wss.to(room.name).emit('gameSetupUpdated', { clientId: client.id, room });
 	}
 
 	// Update player's paddle position when a player mooves his mouse.
@@ -139,7 +203,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.gameService.removeRoom(client.id);
 		}
 		else
-		this.logger.log(`Room has been left:\spectator id:\t${client.id}`);
+			this.logger.log(`Room has been left:\spectator id:\t${client.id}`);
 		
 		client.disconnect();
 	}

@@ -162,7 +162,7 @@ export class GameService
 			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
 	
-	resetGame(dir: number, _p1score: number = 0, _p2score: number = 0) : GameInterface
+	resetGame(dir: number, _p1score = 0, _p2score = 0) : GameInterface
 	{
 		return {
 			width: this.GAME_WIDTH,
@@ -229,7 +229,7 @@ export class GameService
 
 	updateGameSetup(playerId: string, playerSetup: SetupInterface) : RoomInterface
 	{
-		let room: RoomInterface	= this.findRoomByPlayerId(playerId);
+		const room: RoomInterface	= this.findRoomByPlayerId(playerId);
 
 		if (playerId === room.player1Id)
 			room.game.p1Left.setup = playerSetup;
@@ -241,12 +241,12 @@ export class GameService
 	
 	chooseGameSetup(playerId: string) : RoomInterface
 	{
-		let room: RoomInterface = this.findRoomByPlayerId(playerId);
+		const room: RoomInterface = this.findRoomByPlayerId(playerId);
 
 		if (room)
 		{
-			let setup1: SetupInterface = room.game.p1Left.setup;
-			let setup2: SetupInterface = room.game.p2Right.setup;
+			const setup1: SetupInterface = room.game.p1Left.setup;
+			const setup2: SetupInterface = room.game.p2Right.setup;
 
 			// Choosing the lowest level between the two player choices.
 			if (setup1.level < setup2.level)
@@ -271,7 +271,7 @@ export class GameService
 
 	removeRoom(playerId: string) : boolean
 	{
-		let room: RoomInterface = this.findRoomByPlayerId(playerId);
+		const room: RoomInterface = this.findRoomByPlayerId(playerId);
 
 		// If one of the two players leaves the game, removing the room.
 		if (room)
