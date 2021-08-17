@@ -15,26 +15,28 @@
 </template>
 
 <script lang="ts">
+
+/* This component displays the header of the application.
+** If the user is logged-in, it loads his avatar in a bubble, which is a link leading to his profile page.
+*/
+
 import { defineComponent } from 'vue';
 import NavLink from './NavLink.vue';
-// import AccountService from '../services/account.service'
+//import userService from '../services/user.service';
+//import authHeader from '../services/auth-header';
+//import authService from '../services/auth.service';
 
 export default defineComponent({
 	name: 'Header',
 	components:
 	{
 		NavLink,
-		// AccountService
-	},
-
-	data() {
-		return {
-		}
 	},
 
 	mounted() {
+
 		// if (this.$store.state.auth.status.loggedIn === true) {
-		// 	AccountService.getUserAvatar().then(
+		// 	UserService.getUserAvatar().then(
 		// 	  response => {
 		// 		  const urlCreator = window.URL || window.webkitURL;
 		// 		  this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);

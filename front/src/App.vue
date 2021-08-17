@@ -8,9 +8,6 @@ export default defineComponent({
 	{
 		Header
 	},
-	created () {
-		console.log("hi :)");
-	}
 });
 
 </script>
