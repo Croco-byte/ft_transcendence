@@ -39,7 +39,8 @@ export class AuthService {
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });
-			let returnObject: { username: string, accessToken: string, twoFARedirect?: boolean };
+			let returnObject : { username?: string, accessToken?: string, twoFARedirect?: boolean };
+			returnObject = {};
 			returnObject.username = infos.username;
 			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
 			if (user.isTwoFactorAuthenticationEnabled === true) {

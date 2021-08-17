@@ -8,6 +8,7 @@ import { User } from './users.entity';
 import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { UserStatus, User_Status } from './status.interface';
 import { unlink } from 'fs';
+import UserRepository from './user.repository';
 
 @Injectable()
 export class UsersService {
@@ -316,6 +317,41 @@ export class UsersService {
 				return friendRequests;
 			})
 		);
+	}
+
+	async insert(user: User)
+	{
+		return this.usersRepository.save(user);
+	}
+
+	async findAll(): Promise<User[]>
+	{
+		return (await this.usersRepository.find());
+	}
+	
+	async findOne(id: string): Promise<User>
+	{
+		return this.usersRepository.findOne(id);
+	}
+
+	async findByUsername(name: string): Promise<User>
+	{
+		return this.usersRepository.findOne({relations: ["channels"], where: [{username: name}]});
+	}
+
+	async findById(id: string): Promise<User>
+	{
+		return await this.usersRepository.findOne({relations: ["channels"], where: [{id: id}]});
+	}
+	
+	async delete(id: string): Promise<void>
+	{
+		await this.usersRepository.delete(id);
+	}
+
+	async save(user: User)
+	{
+		await this.usersRepository.save(user);
 	}
 }
 
