@@ -95,6 +95,8 @@ export default defineComponent({
 
 		drawGame(room: RoomInterface) {
       if (this.ctx && this.canvas) {
+        console.log('hello');
+          
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "black";
         this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
@@ -124,6 +126,12 @@ export default defineComponent({
       }, false );
 		},
 
+		// marche lol
+		step() {
+		this.drawGame(this.room);
+		requestAnimationFrame(this.step);
+	},
+
     // convertRoomData() {
     //   if (this.canvas) {
     //     // this.game.ball.x = game.ball.x / game.width * this.canvas.width;
@@ -134,15 +142,32 @@ export default defineComponent({
   },
 
   mounted() {
+
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    // this.canvas.width = window.innerWidth;
-    // this.canvas.height = window.innerHeight;
-    this.canvas.width = 600;
-    this.canvas.height = 400;
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    // this.canvas.width = 600;
+    // this.canvas.height = 400;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     // this.convertRoomData()
-    watch(()=> this.room, () => {
-        requestAnimationFrame(()=>this.drawGame(this.room));
+
+	// TEST 1 MARCHE 
+	this.step();
+
+	// let lol;
+    watch(() => this.room, () => {
+		
+		// TEST 2 MARCHE AUSSI
+		// cancelAnimationFrame(lol);
+		// lol = requestAnimationFrame(() => this.drawGame(this.room));
+		
+		// TEST 3 MARCHE AUSSI
+        // requestAnimationFrame( () => {
+			// this.drawGame(this.room);
+		// }
+		
+		// TEST 4 MARCHE AUSSI
+		// this.drawGame(this.room);
     })
   },
 
