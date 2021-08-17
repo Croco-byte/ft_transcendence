@@ -108,7 +108,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
 
 		client.join(room.name);
-		client.emit('joinRoom', { clientId: client.id, room });
+		if (room.nbPeopleConnected === 1)
+			client.emit('joinRoom', { clientId: client.id, room });
 
 		if (room.nbPeopleConnected === 2)
 		{
