@@ -1,5 +1,5 @@
 <template>
-  <div class="fullWindow">
+  <div class="fullWindow" id="fullGameWindow">
     <canvas id="canvas"></canvas> 
   </div>
 </template>
@@ -22,7 +22,7 @@ export default defineComponent({
         x: -1 as number,
         y: -1 as number
       },
-      fullGameWindow: null as HTMLElement | null,
+      // fullGameWindow: null as HTMLElement | null,
       ctx: null as CanvasRenderingContext2D | null,
       canvas: null as HTMLCanvasElement | null,
       game: null as GameInterface | null
@@ -32,7 +32,7 @@ export default defineComponent({
   methods: {
     // --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
-    drawPaddle(player1: PlayerInterface, player2: PlayerInterface,paddle: PaddleInterface) {
+    drawPaddle(player1: PlayerInterface, player2: PlayerInterface, paddle: PaddleInterface) {
       if (this.ctx && this.canvas) {
         let nPaddle = {
           height: paddle.height / this.room.game.height * this.canvas.height,
@@ -68,7 +68,7 @@ export default defineComponent({
       }
     },
 
-		drawScore(player1Score, player2Score) {
+		drawScore(player1Score: number, player2Score: number) {
       if (this.ctx && this.canvas) {
 				this.ctx.font = '48px serif';
 				this.ctx.fillStyle = 'white';
@@ -107,10 +107,8 @@ export default defineComponent({
     // --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent(fullGameWindow: HTMLElement) {
-      console.log(fullGameWindow)
       if (fullGameWindow){
-        console.log("event2");
-        fullGameWindow.addEventListener('pointermove', (event)=> {
+        fullGameWindow.addEventListener('mousemove', (event)=> {
           console.log("moove")
         // if (this.ctx && this.canvas)
         //   if (event.x < this.canvas.width && event.y < this.canvas.height)
@@ -131,7 +129,7 @@ export default defineComponent({
   // --------------------------------------------------------------------------------
   // ---------------------------------------- LIFECIRCLE HOOKS ----------------------
   mounted() {
-    this.fullGameWindow = document.getElementById('fullWindow') as HTMLElement;
+    // this.fullGameWindow = document.getElementById('fullWindow') as HTMLElement;
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
@@ -139,11 +137,11 @@ export default defineComponent({
     watch(()=> this.room, () => {
         requestAnimationFrame(()=>this.drawGame(this.room));
     })
+    this.pongEvent(document.getElementById('fullGameWindow')as HTMLElement);
   },
 
-  created() {
-    this.pongEvent(this.fullGameWindow as HTMLElement);
-  }
+  // created() {
+  // }
 
 })
 </script>
