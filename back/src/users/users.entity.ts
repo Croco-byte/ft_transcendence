@@ -1,0 +1,69 @@
+import { Channel } from 'src/channels/channel.entity';
+import { Channel_muted_user } from 'src/channel_muted_users/channel_muted_user.entity';
+import { Message } from 'src/messages/message.entity';
+import { FriendRequestEntity } from './friends-request.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, BaseEntity, OneToMany } from 'typeorm';
+
+@Entity()
+export class User extends BaseEntity
+{
+	@PrimaryGeneratedColumn()
+	id: number;
+
+	@Column()
+	username: string;
+
+	@Column({nullable: false, default: "yass.png"})
+	avatar: string;
+
+	@Column({ type: "text", nullable: true})
+	stat: string;
+
+	@Column({ type: "integer", nullable: true})
+	score: number
+
+	@Column({ default: 'offline' })
+	status?: string;
+
+	@Column({ type: "boolean", default: false })
+	DFA: boolean
+
+	@Column({type: "boolean", default: true})
+	online: boolean
+
+	@OneToMany(() => Message, msg => msg.user)
+    messages: Message[];
+
+	@ManyToMany(() => User)
+	@JoinTable()
+	friends: User[];
+
+	@ManyToMany(() => Channel, channel => channel.users)
+	channels: Channel[];
+
+	@Column({ default: false })
+	isTwoFactorAuthenticationEnabled?: boolean
+
+	@Column({ nullable: true})
+	twoFactorAuthenticationSecret?: string;
+
+	@Column({ default: "filler" })
+	displayName?: string;
+
+	@OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.creator)
+	sentFriendRequests?: FriendRequestEntity[];
+
+	@OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.receiver)
+	receivedFriendRequests?: FriendRequestEntity[];
+
+	toPublic()
+	{
+		return {
+			id: this.id,
+			username: this.username,
+			avatar: this.avatar,
+			score: this.score,
+			online: this.online
+		}
+	}
+};
