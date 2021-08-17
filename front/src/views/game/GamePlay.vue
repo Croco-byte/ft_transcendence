@@ -1,5 +1,5 @@
 <template>
-  <div class="fullWindow" @mousemove="updatePosition">
+  <div class="fullWindow" id="fullGameWindow">
     <canvas id="canvas"></canvas> 
   </div>
 </template>
@@ -22,6 +22,7 @@ export default defineComponent({
         x: -1 as number,
         y: -1 as number
       },
+      // fullGameWindow: null as HTMLElement | null,
       ctx: null as CanvasRenderingContext2D | null,
       canvas: null as HTMLCanvasElement | null,
       game: null as GameInterface | null
@@ -29,12 +30,9 @@ export default defineComponent({
   },
 
   methods: {
-    // updateMouseCoordinate(event: Object) {
-    //   console.log(event);
-    // },
-    // ----------------------------------------
-		// ---------------- DRAWINGS --------------
-    drawPaddle(player1: PlayerInterface, player2: PlayerInterface,paddle: PaddleInterface) {
+    // --------------------------------------------------------------------------------
+		// -------------------------------------------------------- DRAWINGS --------------
+    drawPaddle(player1: PlayerInterface, player2: PlayerInterface, paddle: PaddleInterface) {
       if (this.ctx && this.canvas) {
         let nPaddle = {
           height: paddle.height / this.room.game.height * this.canvas.height,
@@ -55,7 +53,6 @@ export default defineComponent({
       }
 		},
   
-
 		drawBall(ball: BallInterface) {
       if (this.ctx && this.canvas) {
         let nBall = {
@@ -71,7 +68,7 @@ export default defineComponent({
       }
     },
 
-		drawScore(player1Score, player2Score) {
+		drawScore(player1Score: number, player2Score: number) {
       if (this.ctx && this.canvas) {
 				this.ctx.font = '48px serif';
 				this.ctx.fillStyle = 'white';
@@ -102,7 +99,6 @@ export default defineComponent({
         this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
 
         this.drawPaddle(room.game.p1Left, room.game.p2Right, room.game.paddle);
-        // this.drawPaddle(room.game.p2Right, room.game.paddle);
         this.drawSeparator();
         this.drawBall(room.game.ball);
         this.drawScore(room.game.p1Score, room.game.p2Score);
@@ -110,69 +106,47 @@ export default defineComponent({
 		},
 
 
-    // ----------------------------------------
-		// ----------- SOCKET EMETTERS ------------
-		pongEvent() {
-      window.addEventListener('pointermove', (event)=> {
-        console.log("moove")
-        event;
+    // --------------------------------------------------------------------------------
+		// ---------------------------------------------------- EVENT HANDLER -------------
+		pongEvent(fullGameWindow: HTMLElement) {
+      if (fullGameWindow){
+        fullGameWindow.addEventListener('mousemove', (event)=> {
+          console.log("moove")
         // if (this.ctx && this.canvas)
         //   if (event.x < this.canvas.width && event.y < this.canvas.height)
         //     this.socket.emit('pongEvent', { x: event.x, y: event.y });
-      });
+        });
+      }
 
-      window.addEventListener( 'resize', (event) => {
-        event;
+      window.addEventListener('resize', (event) => {
+        if (this.canvas) {
+          this.canvas.width = window.innerWidth;
+          this.canvas.height = window.innerHeight;
+        }
       }, false );
 		},
 
 		// marche lol
-		step() {
-		this.drawGame(this.room);
-		requestAnimationFrame(this.step);
-	},
+		step(): void {
+			this.drawGame(this.room);
+			requestAnimationFrame(this.step);
+		},
 
-    // convertRoomData() {
-    //   if (this.canvas) {
-    //     // this.game.ball.x = game.ball.x / game.width * this.canvas.width;
-    //     // game.ball.y = game.ball.y / game.height * this.canvas.height;
-    //     this.room.game.ball.radius = this.room.game.ball.radius / this.room.game.width * this.canvas.width;
-    //   }
-    // }
   },
 
+  // --------------------------------------------------------------------------------
+  // ---------------------------------------- LIFECIRCLE HOOKS ----------------------
   mounted() {
 
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
-    // this.canvas.width = 600;
-    // this.canvas.height = 400;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-    // this.convertRoomData()
-
-	// TEST 1 MARCHE 
 	this.step();
 
-	// let lol;
-    watch(() => this.room, () => {
-		
-		// TEST 2 MARCHE AUSSI
-		// cancelAnimationFrame(lol);
-		// lol = requestAnimationFrame(() => this.drawGame(this.room));
-		
-		// TEST 3 MARCHE AUSSI
-        // requestAnimationFrame( () => {
-			// this.drawGame(this.room);
-		// }
-		
-		// TEST 4 MARCHE AUSSI
-		// this.drawGame(this.room);
-    })
+    watch(() => this.room, () => {});
+    this.pongEvent(document.getElementById('fullGameWindow')as HTMLElement);
   },
 
-  created() {
-    this.pongEvent();
-  }
 })
 </script>
