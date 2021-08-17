@@ -86,12 +86,12 @@ export class GameService
 		return ret;
 	}
 
-	updatePlayerPos(client: Socket, event: any)
+	updatePlayerPos(playerId: string, event: any)
 	{
-		const room: RoomInterface = this.rooms.find(el => el.player1Id === client.id || 
-				el.player2Id === client.id);
+		const room: RoomInterface = this.rooms.find(el => el.player1Id === playerId || 
+				el.player2Id === playerId);
 		
-		if (room && room.player1Id === client.id)
+		if (room && room.player1Id === playerId)
 			event.y > room.game.p1Left.y ? this.userMoveDown(room, room.game.p1Left, event) :
 					this.userMoveUp(room, room.game.p1Left, event);
 
@@ -269,19 +269,14 @@ export class GameService
 		return this.rooms.find(el => el.player1Id === playerId || el.player2Id === playerId);
 	}
 
-	removeRoom(playerId: string) : boolean
+	removeRoom(wss: Socket, intervalId: NodeJS.Timer, playerId: string, roomName: string) : void
 	{
-		const room: RoomInterface = this.findRoomByPlayerId(playerId);
-
-		// If one of the two players leaves the game, removing the room.
-		if (room)
-		{
-			this.logger.log(`Room closed:\t\troom id:\t${room.name}`);
-			this.rooms = this.rooms.filter((el) => el.name != room.name);
-			return true;
-		}
-
-		return false;
+		clearInterval(intervalId);
+		wss.in(roomName).socketsLeave(roomName);
+		
+		this.logger.log(`Room closed:\t\troom id:\t${roomName}`);
+		this.logger.log(`Room has been left:\tplayer id:\t${playerId} (room id: ${roomName})`);
+		this.rooms = this.rooms.filter((el) => el.name != roomName);
 	}
 
 }
