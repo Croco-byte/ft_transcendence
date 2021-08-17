@@ -22,10 +22,10 @@ export default defineComponent({
         x: -1 as number,
         y: -1 as number
       },
-      // fullGameWindow: null as HTMLElement | null,
+      fullGameWindow: null as HTMLElement | null,
       ctx: null as CanvasRenderingContext2D | null,
       canvas: null as HTMLCanvasElement | null,
-      game: null as GameInterface | null
+      game: null as GameInterface | null,
     }
   },
 
@@ -92,7 +92,6 @@ export default defineComponent({
 
 		drawGame(room: RoomInterface) {
       if (this.ctx && this.canvas) {
-        console.log('hello');
           
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "black";
@@ -108,28 +107,28 @@ export default defineComponent({
 
     // --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
-		pongEvent(fullGameWindow: HTMLElement) {
-      if (fullGameWindow){
-        fullGameWindow.addEventListener('mousemove', (event)=> {
-          console.log("moove")
-        // if (this.ctx && this.canvas)
-        //   if (event.x < this.canvas.width && event.y < this.canvas.height)
-        //     this.socket.emit('pongEvent', { x: event.x, y: event.y });
-        });
-      }
+		pongEvent() {
+    //   if (fullGameWindow){
+    //     fullGameWindow.addEventListener('mousemove', (event)=> {
+    //       console.log("moove")
+    //     // if (this.ctx && this.canvas)
+    //     //   if (event.x < this.canvas.width && event.y < this.canvas.height)
+    //     //     this.socket.emit('pongEvent', { x: event.x, y: event.y });
+    //     });
+    //   }
 
-      window.addEventListener('resize', (event) => {
-        if (this.canvas) {
-          this.canvas.width = window.innerWidth;
-          this.canvas.height = window.innerHeight;
+      window.addEventListener('resize', () => {
+        
+        if (this.canvas && this.fullGameWindow) {
+          this.canvas.width = this.fullGameWindow.clientWidth;
+          this.canvas.height = this.fullGameWindow.clientHeight;
         }
       }, false );
 		},
 
-		// marche lol
-		step(): void {
+		refreshScreen(): void {
 			this.drawGame(this.room);
-			requestAnimationFrame(this.step);
+			requestAnimationFrame(this.refreshScreen);
 		},
 
   },
@@ -137,15 +136,15 @@ export default defineComponent({
   // --------------------------------------------------------------------------------
   // ---------------------------------------- LIFECIRCLE HOOKS ----------------------
   mounted() {
-
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
+	
+    this.canvas.width = this.fullGameWindow.clientWidth;
+    this.canvas.height = this.fullGameWindow.clientHeight;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-	this.step();
 
-    watch(() => this.room, () => {});
-    this.pongEvent(document.getElementById('fullGameWindow')as HTMLElement);
+    this.pongEvent();
+	this.refreshScreen();
   },
 
 })
