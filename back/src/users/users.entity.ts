@@ -25,12 +25,6 @@ export class User extends BaseEntity
 	@Column({ default: 'offline' })
 	status?: string;
 
-	@Column({ type: "boolean", default: false })
-	DFA: boolean
-
-	@Column({type: "boolean", default: true})
-	online: boolean
-
 	@OneToMany(() => Message, msg => msg.user)
     messages: Message[];
 
@@ -63,7 +57,6 @@ export class User extends BaseEntity
 			username: this.username,
 			avatar: this.avatar,
 			score: this.score,
-			online: this.online
 		}
 	}
 };

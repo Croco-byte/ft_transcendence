@@ -4,6 +4,9 @@ import io from 'socket.io-client'
 import router from '../router/index';
 import store from './index';
 import userService from '../services/user.service';
+import { AuthState } from '../types/user.interface';
+import { LocalStorageUserInterface } from '../types/user.interface';
+
 
 /* When the application loads, we check if the user already has a JWT in the local storage.
 ** If this is the case, the user is already connected from his last session. We initialize
@@ -13,12 +16,11 @@ import userService from '../services/user.service';
 */
 
 
-const user: { username: string, accessToken: string, twoFARedirect?: boolean } = JSON.parse(localStorage.getItem('user') as string);
-let initialState: any;
+const user: LocalStorageUserInterface = JSON.parse(localStorage.getItem('user') as string);
+let initialState: AuthState;
 
 
 if (user) {
-	console.log("HELLO !" + user);
 	const statusSocket =  io('http://localhost:3000/connectionStatus', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 	const friendSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 
@@ -56,7 +58,7 @@ export const auth: any = {
 			}
 		},
 
-		async twoFALogin({ commit }, twoFACode) {
+		async twoFALogin(twoFACode) {
 			try {
 				const user = await AuthService.twoFALogin(twoFACode);
 				return Promise.resolve(user);
