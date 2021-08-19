@@ -26,6 +26,7 @@
 ** It also allows to see the QR Code to register the app to Google Authenticator.
 */
 
+import { defineComponent } from 'vue'
 import QRCode from './QRCode.vue'
 import AuthService from '../services/auth.service'
 
@@ -34,7 +35,7 @@ interface TwoFASwitchComponentData
 	wrongTwoFACode: string;
 }
 
-export default {
+export default defineComponent({
 	name: 'TwoFASwitch',
 	components: {
 		QRCode
@@ -66,7 +67,7 @@ export default {
 				() => { return ; })
 		},
 	},
-}
+})
 </script>
 
 <style scoped>

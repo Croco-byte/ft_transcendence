@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 
 const ifAuthenticated = (from, to, next) => {
-	if ((store.state as any).auth.status.loggedIn === true) {
+	if (store.state.status.loggedIn === true) {
 		next();
 		return ;
 	}

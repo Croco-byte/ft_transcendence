@@ -13,7 +13,7 @@ export class User extends BaseEntity
 	@Column()
 	username: string;
 
-	@Column({nullable: false, default: "yass.png"})
+	@Column({ default: "default" })
 	avatar: string;
 
 	@Column({ type: "text", nullable: true})

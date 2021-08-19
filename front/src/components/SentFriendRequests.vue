@@ -37,6 +37,7 @@
 ** The displayed users are links leading to their profile pages
 */
 
+import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
 import UserStatus from '../components/UserStatus.vue'
@@ -52,7 +53,7 @@ interface SentFriendRequestsComponentData
 
 }
 
-export default {
+export default defineComponent({
 	name: "SentFriendRequests",
 	components: {
 		UserStatus
@@ -136,18 +137,16 @@ export default {
 
 	mounted(): void {
 		/* Starting listeners to automatically update users' status and friendrequests */
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 	},
 
 	beforeUnmount(): void {
 		/* Stopping listeners to avoid catching signals after leaving this component */
-		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
-
-
-}
+})
 </script>
 
 <style scoped>

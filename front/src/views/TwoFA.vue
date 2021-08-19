@@ -20,6 +20,7 @@
 ** for a 2FA JWT will be made to the backend, allowing the user to login.
 */
 
+import { defineComponent } from 'vue'
 import QRCode from '../components/QRCode.vue'
 
 interface TwoFaViewData
@@ -27,7 +28,7 @@ interface TwoFaViewData
 	error: string;
 }
 
-export default {
+export default defineComponent({
 	name: "TwoFA",
 	components: {
 		QRCode
@@ -41,12 +42,12 @@ export default {
 		authTwoFA: async function(): Promise<void> {
 			try {
 				let twoFACode: FormData = new FormData(document.getElementById("TwoFAForm") as HTMLFormElement);
-				await this.$store.dispatch('auth/twoFALogin', twoFACode.get('TwoFACode')).then(
-					result => { this.$store.commit('auth/loginSuccess', result); })
+				await this.$store.dispatch('twoFALogin', twoFACode.get('TwoFACode')).then(
+					result => { this.$store.commit('loginSuccess', result); })
 			} catch {
 				this.error = "Wrong 2FA authentication code";
 			}
 		}
 	}
-}
+})
 </script>

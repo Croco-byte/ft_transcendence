@@ -18,13 +18,15 @@
 ** his profile page.
 */
 
+import { defineComponent } from 'vue'
+
 interface CallbackViewData
 {
 	code: string;
 	state: string;
 }
 
-export default {
+export default defineComponent({
 	name: 'Callback',
 
 	data(): CallbackViewData {
@@ -36,11 +38,11 @@ export default {
 	methods: {
 		handleLogin: async function(): Promise<void> {
 			try {
-				const result = await this.$store.dispatch('auth/login', this.code, this.state);
+				const result = await this.$store.dispatch('login', { code: this.code, state: this.state });
 				if (result.twoFARedirect === true) { this.$router.push('/twoFA'); }
-				else { this.$store.commit('auth/loginSuccess', result); }
+				else { this.$store.commit('loginSuccess', result); }
 			} catch(error) {
-				this.$store.commit('auth/loginFailure');
+				this.$store.commit('loginFailure');
 				const errMessage = "Something went wrong. Please try again later."
 				this.$router.push({name: 'Login', params: { message: errMessage }});
 			}
@@ -49,5 +51,5 @@ export default {
 	mounted(): void {
 		this.handleLogin();
 	}
-}
+})
 </script>

@@ -6,14 +6,6 @@ export interface User
 	displayName: string;
 }
 
-export interface AuthState
-{
-	status: { loggedIn: boolean };
-	user: LocalStorageUserInterface | null;
-	avatar: string;
-	websockets: { connectionStatusSocket: any, friendRequestsSocket: any };
-}
-
 export interface LocalStorageUserInterface
 {
 	username: string;

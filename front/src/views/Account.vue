@@ -12,9 +12,9 @@
 		<br/><br/>
 	</div>
 
-	<div id="avatar-display" v-if="$store.state.auth.avatar" style="text-align: center;">
+	<div id="avatar-display" v-if="$store.state.avatar" style="text-align: center;">
 		<h3 style="text-align: center;">This is your avatar</h3>
-		<img :src="$store.state.auth.avatar" fluid alt="User avatar" width="200" height="200"/>
+		<img :src="$store.state.avatar" fluid alt="User avatar" width="200" height="200"/>
 	</div>
 </div>
 
@@ -34,7 +34,7 @@
 ** It shows the AvatarUpload component.
 */
 
-
+import { defineComponent } from 'vue'
 import AvatarUpload from '../components/AvatarUpload.vue'
 import TwoFASwitch from '../components/TwoFASwitch.vue'
 import UserStatus from '../components/UserStatus.vue'
@@ -53,7 +53,7 @@ interface AccountViewData
 	TwoFA: boolean;
 }
 
-export default {
+export default defineComponent({
 	name: 'Account',
 	components: {
 		UserStatus,
@@ -115,15 +115,15 @@ export default {
 		UserService.getCurrUserAvatar().then(
 			response => {
 				const urlCreator = window.URL || window.webkitURL;
-				this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
+				this.$store.state.avatar = urlCreator.createObjectURL(response.data);
 			},
 			(error) => { console.log("Couldn't get user avatar from backend: " + error.message); }
 		)
 
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 	}
 
-}
+})
 </script>
 
 <style scoped>

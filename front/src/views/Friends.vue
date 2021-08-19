@@ -11,12 +11,14 @@
 
 /* The view for the "Friends" page. Everything is implemented in the components. */
 
+import { defineComponent } from 'vue'
+
 import FriendList from "../components/FriendList.vue"
 import UserSearch from "../components/UserSearch.vue"
 import ReceivedFriendRequests from "../components/ReceivedFriendRequests.vue"
 import SentFriendRequests from "../components/SentFriendRequests.vue"
 
-export default {
+export default defineComponent({
 	name: 'Friends',
 	components: {
 		FriendList,
@@ -24,7 +26,7 @@ export default {
 		ReceivedFriendRequests,
 		SentFriendRequests
 	}
-}
+})
 </script>
 
 <style scoped>

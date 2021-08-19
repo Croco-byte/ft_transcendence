@@ -52,6 +52,7 @@
 ** This page allows to see the status of the user, send him friend requests, or unfriend the user.
 */
 
+import { defineComponent } from 'vue'
 import UserService from '../services/user.service'
 import authService from '../services/auth.service'
 import { UserStatusChangeData } from '../types/user.interface';
@@ -68,7 +69,7 @@ interface UserViewData
 	friendRequestStatus: string;
 }
 
-export default {
+export default defineComponent({
 	name: 'User',
 	data(): UserViewData {
 		return {
@@ -93,11 +94,11 @@ export default {
 
 	methods: {
 		sendFriendRequest: function(): void {
-			this.$store.state.auth.websockets.friendRequestsSocket.emit('sendFriendRequest', { receiverId: this.userId, user: null });
+			this.$store.state.websockets.friendRequestsSocket.emit('sendFriendRequest', { receiverId: this.userId, user: null });
 		},
 
 		unfriendUser: function(): void {
-			this.$store.state.auth.websockets.friendRequestsSocket.emit('unfriendUser', { friendId: this.userId, user: null });
+			this.$store.state.websockets.friendRequestsSocket.emit('unfriendUser', { friendId: this.userId, user: null });
 		},
 
 		getFriendRequestStatusFromCurrUser: function(): void {
@@ -144,17 +145,17 @@ export default {
 
 	mounted(): void {
 		// ----- Listener to update the target user connection status and the friend request status -----
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
 	},
 
 	beforeUnmount(): void {
 		// ----- Stopping the listeners to update the target user connection status and the friend request status -----
-		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
-		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
 	}
 
-}
+})
 </script>
 
 <style scoped>

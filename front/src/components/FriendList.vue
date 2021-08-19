@@ -31,6 +31,7 @@
 ** The displayed users are links leading to their profile pages
 */
 
+import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
 import UserStatus from '../components/UserStatus.vue';
@@ -45,7 +46,7 @@ interface FriendListComponentData
 	friendsMeta: PaginationMeta;
 }
 
-export default {
+export default defineComponent({
 	name: 'FriendList',
 	components: {
 		UserStatus
@@ -105,7 +106,7 @@ export default {
 		** that will update our friend list (and the one of the other user).
 		*/
 		unfriendUser: function(friendId: number): void {
-			this.$store.state.auth.websockets.friendRequestsSocket.emit('unfriendUser', { friendId, user: null });
+			this.$store.state.websockets.friendRequestsSocket.emit('unfriendUser', { friendId, user: null });
 		},
 
 		/* This functon is fired upon reception of a "statusChange" signal, which means that a user of our app changed his status.
@@ -136,16 +137,16 @@ export default {
 
 	mounted(): void {
 		/* Starting listeners to automatically update the friendlist (status of users and changes in friendship) */
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 	},
 
 	beforeUnmount(): void {
 		/* Stopping listeners to avoid catching signals after leaving this component */
-		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
-}
+})
 </script>
 
 <style scoped>

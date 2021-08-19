@@ -39,6 +39,7 @@
 ** The displayed users are links leading to their profile pages
 */
 
+import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
 import UserStatus from '../components/UserStatus.vue'
@@ -53,7 +54,7 @@ interface ReceivedFriendRequestsComponentData
 	receivedRequestsMeta: PaginationMeta;
 }
 
-export default {
+export default defineComponent({
 	name: "ReceivedFriendRequests",
 	components: {
 		UserStatus
@@ -113,14 +114,14 @@ export default {
 		** send the "friendStatusChanged" signal, that will be caught by the current user and the friend, allowing them to update their requests / friend list
 		*/
 		acceptFriendRequest: function(friendRequestId: number): void {
-			this.$store.state.auth.websockets.friendRequestsSocket.emit('acceptFriendRequest', { friendRequestId });
+			this.$store.state.websockets.friendRequestsSocket.emit('acceptFriendRequest', { friendRequestId });
 		},
 
 		/* This function emits the signal that allows to decline the friendRequest. Upon reception of the signal, the WebSocket server will
 		** send the "friendStatusChanged" signal, that will be caught by the current user and the former friend, allowing them to update their requests / friend list
 		*/
 		declineFriendRequest: function(friendRequestId: number): void {
-			this.$store.state.auth.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
+			this.$store.state.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
 		},
 
 		/* This functon is fired upon reception of a "statusChange" signal, which means that a user of our app changed his status.
@@ -149,16 +150,16 @@ export default {
 	},
 	mounted(): void {
 		/* Starting listeners to automatically update users' status and friendrequests */
-		this.$store.state.auth.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 	},
 
 	beforeUnmount(): void {
 		/* Stopping listeners to avoid catching signals after leaving this component */
-		this.$store.state.auth.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
-		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
-}
+})
 </script>
 
 <style scoped>

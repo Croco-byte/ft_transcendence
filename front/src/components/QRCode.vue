@@ -15,6 +15,7 @@
 ** with Google Authenticator, in order to activate 2FA.
 */
 
+import { defineComponent } from 'vue'
 import AuthService from '../services/auth.service'
 
 interface QRCodeComponentData
@@ -23,7 +24,7 @@ interface QRCodeComponentData
 }
 
 
-export default {
+export default defineComponent({
 	name: 'QRCode',
 	data(): QRCodeComponentData {
 		return {
@@ -43,7 +44,7 @@ export default {
 			this.QRCode = '';
 		}
 	}
-}
+})
 </script>
 
 <style scoped>

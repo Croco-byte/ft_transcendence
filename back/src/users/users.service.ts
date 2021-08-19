@@ -89,9 +89,9 @@ export class UsersService {
 				unlink("./images/" + user.avatar, () => { console.log("Successfully deleted previous avatar with path ./images/" + user.avatar) });
 				this.usersRepository.update(id, { avatar: filename });
 			}
-		} catch {
-			console.log("Couldn't find user with id " + id + " to update avatar");
-			throw new UnauthorizedException();
+		} catch(e) {
+			console.log(e.message);
+			throw new BadRequestException();
 		}
 	}
 

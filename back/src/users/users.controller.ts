@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException, UseInterceptors, UploadedFile, ForbiddenException } from "@nestjs/common";
 import { Pagination } from "nestjs-typeorm-paginate";
 import { Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
@@ -160,13 +160,25 @@ export class UserController {
 	@Post('avatar/update')
 	@UseGuards(JwtTwoFactorGuard)
 	@UseInterceptors(FileInterceptor('avatar', {
+		limits: {
+			fileSize: 5 * 10 * 10 * 10 * 10 * 10 * 10 * 10		// 50 MB max
+		},
 		storage: diskStorage({
 			destination: './images',
-		})
+		}),
+		fileFilter: (req: Request, file, cb) => {
+			if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+				return cb(new ForbiddenException('Only image files are allowed'), false);
+			}
+			return cb(null, true);
+		}
 	}))
 	async saveAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
-		await this.userService.updateAvatar(req.user.id, file.filename);
-		console.log("Updated avatar");
+		try {
+			await this.userService.updateAvatar(req.user.id, file.filename);
+		} catch(e) {
+			throw e;
+		}
 	}
 
 	@Get('avatar/me')

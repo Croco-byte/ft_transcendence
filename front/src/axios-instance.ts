@@ -10,7 +10,7 @@ instance.interceptors.response.use(function (response) {
   }, function (error) {
 		if (error && error.response.status === 401) {
 			Swal.fire('Session expired', 'Your session has expired !', 'error');
-			store.dispatch('auth/logout');
+			store.dispatch('logout');
 			router.push({name: 'Login', params: { message: 'Session expired or invalid token' }})
 		}
 	return Promise.reject(error);

@@ -34,6 +34,7 @@
 ** The search is case-insensitive. Typing "a" returns all usernames with a "a" in it. "au" all usernames with "au" in it. Etc...
 */
 
+import { defineComponent } from 'vue'
 import UserService from '../services/user.service'
 import UserStatus from '../components/UserStatus.vue'
 import { PaginationMeta } from '../types/pagination.interface';
@@ -46,7 +47,7 @@ interface UserSearchComponentData
 	searchDisplayName: string | null;
 }
 
-export default {
+export default defineComponent({
 	name: "UserSearch",
 	components: {
 		UserStatus
@@ -132,13 +133,13 @@ export default {
 
 	/* Starting then stopping the listeners that handle the status change of displayed users */
 	mounted(): void {
-		this.$store.state.auth.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 	},
 
 	beforeUnmount(): void {
-		this.$store.state.auth.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
-}
+})
 </script>
 
 <style scoped>
