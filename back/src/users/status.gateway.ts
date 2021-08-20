@@ -5,6 +5,13 @@ import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessa
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
 
+/* This is the gateway that handles the users status.
+** When the user connects to the gateway, his ID is stored in the client Socket object.
+** When the Socket object disconnects, the user that started the connection is set "offline" (--> the user closed the window of the app)
+** The handleOnline function allows to set a user online. If the user was already online, we send a message to all users that indicates
+** multiple connections on our current user, and disconnects this user on every windows.
+*/
+
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
 export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 

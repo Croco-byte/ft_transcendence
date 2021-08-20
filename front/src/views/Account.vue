@@ -69,7 +69,7 @@ export default defineComponent({
 			displayNameEditMode: false,
 			displayNameInput: '',
 
-			status: '',
+			status: 'online',
 
 			TwoFA: false,
 		}
@@ -101,16 +101,19 @@ export default defineComponent({
 		}
 	},
 
+	created(): void {
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+	},
+
 	mounted(): void {
 		UserService.getCurrUserInfo().then(
 			response => {
 			this.name = response.data.username;
 			this.displayName = this.displayNameInput = response.data.displayName;
 			this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
-			this.status = response.data.status;
 			this.id = response.data.id;
 		},
-		() => { return ; })
+		() => { console.log("Error in retrieving the informations for the current user"); })
 
 		UserService.getCurrUserAvatar().then(
 			response => {
@@ -119,8 +122,10 @@ export default defineComponent({
 			},
 			(error) => { console.log("Couldn't get user avatar from backend: " + error.message); }
 		)
+	},
 
-		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+	beforeUnmount(): void {
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
 
 })
