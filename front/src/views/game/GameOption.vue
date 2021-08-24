@@ -24,17 +24,6 @@ export default defineComponent({
 
   emits: ["updateGameSetup"],
 
-  props: {
-      ctx: {
-          required: true,      // add true
-          type: CanvasRenderingContext2D
-      },
-      canvas: {
-          required: true,
-          type: HTMLCanvasElement
-      }
-  },
-
   data() {
     return {
       opt: { level: 1, score: 5, paddleColor: 'blue' } as SetupInterface,
@@ -63,11 +52,6 @@ export default defineComponent({
         this.$emit('updateGameSetup', this.opt as SetupInterface);
       }
     }
-
-  },
-
-  mounted() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
   
 })

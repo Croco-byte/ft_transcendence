@@ -27,7 +27,7 @@ export class GameService
 	private readonly DEFAULT_PADDLE_COLOR: string = 'white';
 
 	public readonly FRAMERATE: number = 1000 / 60;
-	public readonly TIME_GAME_SETUP: number = 30000;
+	public readonly TIME_GAME_SETUP: number = 10000;
 	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 1000;
 
 	joinRoom(playerId: string, speactor: boolean) : RoomInterface

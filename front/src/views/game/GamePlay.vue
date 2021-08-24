@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, watch } from 'vue'
+import { defineComponent, PropType } from 'vue'
 import { RoomInterface, BallInterface, PlayerInterface, PaddleInterface, GameInterface } from '../../types/game.interface'
 
 export default defineComponent({
@@ -30,6 +30,14 @@ export default defineComponent({
   },
 
   methods: {
+
+    rapport(posY: number) : number {
+      let ret = 0;
+      if (this.canvas) 
+        ret = posY / this.canvas.height * this.room.game.height;
+      return ret;
+    },
+
     // --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
     drawPaddle(player1: PlayerInterface, player2: PlayerInterface, paddle: PaddleInterface) {
@@ -109,17 +117,19 @@ export default defineComponent({
     // --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent() {
-    //   if (fullGameWindow){
-    //     fullGameWindow.addEventListener('mousemove', (event)=> {
-    //       console.log("moove")
-    //     // if (this.ctx && this.canvas)
-    //     //   if (event.x < this.canvas.width && event.y < this.canvas.height)
-    //     //     this.socket.emit('pongEvent', { x: event.x, y: event.y });
-    //     });
-    //   }
+      if (this.canvas){
+        this.canvas.addEventListener('mousemove', (event)=> {
+          if (this.canvas){
+            let rect = this.canvas.getBoundingClientRect() as DOMRect;
+            this.$emit(
+              'playerEvent', 
+              { x: this.rapport(event.clientX - rect.left) as number, y: this.rapport(event.clientY - rect.top) as number }
+            ); //////////////// A DEGAGER LE X
+          }
+        });
+      }
 
       window.addEventListener('resize', () => {
-        
         if (this.canvas && this.fullGameWindow) {
           this.canvas.width = this.fullGameWindow.clientWidth;
           this.canvas.height = this.fullGameWindow.clientHeight;
@@ -129,7 +139,8 @@ export default defineComponent({
 
 		refreshScreen(): void {
 			this.drawGame(this.room);
-			requestAnimationFrame(this.refreshScreen);
+			let id = requestAnimationFrame(this.refreshScreen);
+      this.$emit('gameId', id);
 		},
 
   },
@@ -145,7 +156,7 @@ export default defineComponent({
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
 
     this.pongEvent();
-	this.refreshScreen();
+    this.refreshScreen();
   },
 
 })
@@ -153,7 +164,7 @@ export default defineComponent({
 
 <style scoped>
 .fullWindow {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
 }
 </style>

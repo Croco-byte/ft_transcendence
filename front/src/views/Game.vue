@@ -1,15 +1,15 @@
 <template>
     <div class="game">
-        <GameJoin v-if="isWaiting" :end="endGame"></GameJoin>
-        <GameOption v-if="optGame" :ctx="ctx" :canvas="canvas" @updateGameSetup="updateGameSetup($event)"/>
-        <GamePlay v-if="isPlaying" v-model:room="room"/>
+        <GameJoin v-if="isWaiting" :backColor="backColor"></GameJoin>
+        <GameOption v-if="optGame" @updateGameSetup="updateGameSetup($event)"/>
+        <GamePlay v-if="isPlaying" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
     </div>
 </template>
 
 
 <script lang="ts">
-import { defineComponent, watch, ref } from 'vue'
-import { SocketDataInterface, RoomInterface, GameInterface, BallInterface, PlayerInterface, PaddleInterface, SetupInterface } from '../types/game.interface'
+import { defineComponent } from 'vue'
+import { SocketDataInterface, SetupInterface } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
 import GameJoin from './game/GameJoin.vue'
@@ -27,15 +27,9 @@ export default defineComponent({
       isWaiting: true as boolean,
       isPlaying: false as boolean,
       optGame: false as boolean,
-      endGame: '' as string,
-      // ctx: null as CanvasRenderingContext2D | null,
-      // canvas: null as HTMLCanvasElement | null,
+      backColor: 'orange' as string,
       socket: null as any,
       gameID: 0 as number,
-      windowSize: {
-        width : window.innerHeight, 
-        height: window.innerWidth
-      }
     }
   },
 
@@ -45,13 +39,8 @@ export default defineComponent({
     // ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
 		joinRoom(obj: SocketDataInterface) {
-        console.log(`in joinRoom function`);
-      // if (this.ctx && this.canvas) {
-      //   // Need to add waiting animation
-      //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      //   this.ctx.fillStyle = "orange";
-      //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-      // }
+      this.backColor = "orange"
+      console.log(`in joinRoom function`);
 		},
 
 		actualizeSetupScreen(obj: SocketDataInterface) {
@@ -60,11 +49,7 @@ export default defineComponent({
 		},
 
 
-		displaySetupChoose(obj: SocketDataInterface) {
-			// if (this.ctx && this.canvas) {
-      //   console.log(obj.room.game.p1Left.setup);
-      //   console.log(obj.room.game.p2Right.setup);
-			// }
+		displaySetupChoose(obj: SocketDataInterface) { obj;
 		},
 
     // startingGame(obj: SocketDataInterface) : void
@@ -75,82 +60,48 @@ export default defineComponent({
 
     actualizeGameScreen(obj: SocketDataInterface) {
       this.room = obj.room;
+      this.optGame = false;
       this.isPlaying = true;
-      this.optGame =false;
-
-      // if (this.ctx && this.canvas)
-      //   this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
     },
 
-  gameEnded(obj: SocketDataInterface) : void
-  {
-    // if (this.ctx && this.canvas)
-    // {
+    gameEnded(obj: SocketDataInterface) : void
+    {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.game.p1Score > obj.room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
       alert(msg);
-
       cancelAnimationFrame(this.gameID);
-      this.gameID = requestAnimationFrame(() => 
-      {
-        // if (this.ctx && this.canvas)
-        // {
-        //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        //   this.ctx.fillStyle = "purple";
-        //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        // }
-      });
-    // }
-  },
+      this.backColor = 'purple';
+      this.isPlaying = false;
+      this.isWaiting = true;
+    },
 
-  opponentLeft(obj: SocketDataInterface) 
-  {
-    // if (this.ctx && this.canvas)
-    // {
+    opponentLeft(obj: SocketDataInterface) {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
                       'player 2 has disconnected. You won !';
       alert(msg);
-
       cancelAnimationFrame(this.gameID);
-      this.gameID = requestAnimationFrame(() => 
-      {
-        // if (this.ctx && this.canvas)
-        // {
-        //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        //   this.ctx.fillStyle = "blue";
-        //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        // }
-      });
-    // }
-  },
+      this.backColor = 'blue';
+      this.isPlaying = false;
+      this.isWaiting = true;
+    },
 
-		// ----------------------------------------
-		// ----------- SOCKET EMETTERS ------------
-		updateGameSetup(obj: SetupInterface) {
-			this.socket.emit('updateGameSetup', obj);
-		}
+    updateGameId(id: number) {
+      this.gameID = id;
+    },
 
-  },
+    // ----------------------------------------
+    // ----------- SOCKET EMETTERS ------------
+    updateGameSetup(obj: SetupInterface) {
+      this.socket.emit('updateGameSetup', obj);
+    },
 
-  mounted() {
-    this.isPlaying = false as boolean;
-    this.optGame = false as boolean;
-    this.isWaiting = true as boolean;
-    // this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    // this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    updatePosition(obj: {x: number, y: number}) {
+      this.socket.emit('pongEvent', obj);
+    }
   },
-				
-  // pongEvent()
-  // {
-  //   window.addEventListener('pointermove', (event) => 
-  //   {
-  //     if (this.ctx && this.canvas && event.x < this.canvas.width && event.y < this.canvas.height)
-  //       this.socket.emit('pongEvent', { x: event.x, y: event.y });
-  //   });
-  // },
 
 	created() 
 	{ 
@@ -167,7 +118,6 @@ export default defineComponent({
 			// ecran choisir option qunad les joueurs cliquent sur les options
 			this.socket.on('actualizeSetupScreen', (obj: SocketDataInterface) => {
 				this.actualizeSetupScreen(obj);
-        console.log(obj);
 			});
 
 			// // ecran qui montre pendant quelques secondes les options choisies
