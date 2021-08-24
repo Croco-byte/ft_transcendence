@@ -1,41 +1,36 @@
 <template>
     <div class="game">
-        <canvas ref="canvas" id="canvas" width="600" height="400"></canvas>
-        <GameOption v-if="optGame" :ctx="ctx" :canvas="canvas" v-on:optionChosen="updateGameSetup"/>
-        <GamePlay v-if="isPlaying" v-model:room="room"/>
+        <GameJoin v-if="isWaiting" :backColor="backColor"></GameJoin>
+        <GameOption v-if="optGame" @updateGameSetup="updateGameSetup($event)"/>
+        <GamePlay v-if="isPlaying" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
     </div>
 </template>
 
 
 <script lang="ts">
-import { defineComponent, watch, ref } from 'vue'
-import { SocketDataInterface, RoomInterface, GameInterface, BallInterface, PlayerInterface, PaddleInterface, SetupInterface } from '../types/game.interface'
+import { defineComponent } from 'vue'
+import { SocketDataInterface, SetupInterface } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
+import GameJoin from './game/GameJoin.vue'
 import io from 'socket.io-client'
 import authHeader from '../services/auth-header';
 
 export default defineComponent({
   
   name: 'game',
-  components: { GameOption, GamePlay },
+  components: { GameOption, GamePlay, GameJoin },
 
 
   data() {
     return {
       room: null as any,
-      isWaiting: false as boolean,
+      isWaiting: true as boolean,
       isPlaying: false as boolean,
       optGame: false as boolean,
-      optchosen: -1 as number,
-      ctx: null as CanvasRenderingContext2D | null,
-      canvas: null as HTMLCanvasElement | null,
+      backColor: 'orange' as string,
       socket: null as any,
       gameID: 0 as number,
-      windowSize: {
-        width : window.innerHeight, 
-        height: window.innerWidth
-      }
     }
   },
 
@@ -45,26 +40,17 @@ export default defineComponent({
     // ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
 		joinRoom(obj: SocketDataInterface) {
-      this.isWaiting = true;
-      if (this.ctx && this.canvas) {
-        console.log(`in joinRoom function`);
-        // Need to add waiting animation
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "orange";
-        this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-      }
+      this.backColor = "orange"
+      console.log(`in joinRoom function`);
 		},
 
 		actualizeSetupScreen(obj: SocketDataInterface) {
+      this.isWaiting = false;
       this.optGame = true;
 		},
 
 
-		displaySetupChoose(obj: SocketDataInterface) {
-			if (this.ctx && this.canvas) {
-        console.log(obj.room.game.p1Left.setup);
-        console.log(obj.room.game.p2Right.setup);
-			}
+		displaySetupChoose(obj: SocketDataInterface) { obj;
 		},
 
     // startingGame(obj: SocketDataInterface) : void
@@ -75,85 +61,47 @@ export default defineComponent({
 
     actualizeGameScreen(obj: SocketDataInterface) {
       this.room = obj.room;
+      this.optGame = false;
       this.isPlaying = true;
-      this.optGame =false;
-
-      // if (this.ctx && this.canvas)
-      //   this.gameID = requestAnimationFrame(()=>this.drawGame(obj.room));
     },
 
-  gameEnded(obj: SocketDataInterface) : void
-  {
-    if (this.ctx && this.canvas)
+    gameEnded(obj: SocketDataInterface) : void
     {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.game.p1Score > obj.room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
       alert(msg);
-
       cancelAnimationFrame(this.gameID);
-      this.gameID = requestAnimationFrame(() => 
-      {
-        if (this.ctx && this.canvas)
-        {
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.ctx.fillStyle = "purple";
-          this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        }
-      });
-    }
-  },
+      this.backColor = 'purple';
+      this.isPlaying = false;
+      this.isWaiting = true;
+    },
 
-  opponentLeft(obj: SocketDataInterface) 
-  {
-    if (this.ctx && this.canvas)
-    {
+    opponentLeft(obj: SocketDataInterface) {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
                       'player 2 has disconnected. You won !';
       alert(msg);
-
       cancelAnimationFrame(this.gameID);
-      this.gameID = requestAnimationFrame(() => 
-      {
-        if (this.ctx && this.canvas)
-        {
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.ctx.fillStyle = "blue";
-          this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        }
-      });
+      this.backColor = 'blue';
+      this.isPlaying = false;
+      this.isWaiting = true;
+    },
+
+    updateGameId(id: number) {
+      this.gameID = id;
+    },
+
+    // ----------------------------------------
+    // ----------- SOCKET EMETTERS ------------
+    updateGameSetup(obj: SetupInterface) {
+      this.socket.emit('updateGameSetup', obj);
+    },
+
+    updatePosition(obj: {x: number, y: number}) {
+      this.socket.emit('pongEvent', obj);
     }
-  },
-
-		// ----------------------------------------
-		// ----------- SOCKET EMETTERS ------------
-		updateGameSetup(value:  number) {
-			this.socket.emit('updateGameSetup', {
-						level: value,
-						score: 5,
-						paddleColor: 'white',
-      });
-		}
-
-  },
-
-  mounted() {
-    this.isPlaying = false as boolean;
-    this.optGame = false as boolean;
-    this.isWaiting = false as boolean;
-    this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-  },
-				
-  pongEvent()
-  {
-    window.addEventListener('pointermove', (event) => 
-    {
-      if (this.ctx && this.canvas && event.x < this.canvas.width && event.y < this.canvas.height)
-        this.socket.emit('pongEvent', { x: event.x, y: event.y });
-    });
   },
 
 	created() 

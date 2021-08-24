@@ -1,11 +1,11 @@
 <template>
   <div class="fullWindow" id="fullGameWindow">
-    <canvas id="canvas"></canvas> 
+    <canvas id="PongGame"></canvas> 
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, watch } from 'vue'
+import { defineComponent, PropType } from 'vue'
 import { RoomInterface, BallInterface, PlayerInterface, PaddleInterface, GameInterface } from '../../types/game.interface'
 
 export default defineComponent({
@@ -30,6 +30,14 @@ export default defineComponent({
   },
 
   methods: {
+
+    rapport(posY: number) : number {
+      let ret = 0;
+      if (this.canvas) 
+        ret = posY / this.canvas.height * this.room.game.height;
+      return ret;
+    },
+
     // --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
     drawPaddle(player1: PlayerInterface, player2: PlayerInterface, paddle: PaddleInterface) {
@@ -47,8 +55,9 @@ export default defineComponent({
           x: player2.x / this.room.game.width * this.canvas.width,
           y: player2.y / this.room.game.height * this.canvas.height - nPaddle.height / 2
         }
-        this.ctx.fillStyle = 'white';
+        this.ctx.fillStyle = player1.setup.paddleColor;
         this.ctx.fillRect(p1.x, p1.y, nPaddle.width, nPaddle.height);
+        this.ctx.fillStyle = player2.setup.paddleColor;
         this.ctx.fillRect(p2.x, p2.y, nPaddle.width, nPaddle.height);
       }
 		},
@@ -108,17 +117,19 @@ export default defineComponent({
     // --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent() {
-    //   if (fullGameWindow){
-    //     fullGameWindow.addEventListener('mousemove', (event)=> {
-    //       console.log("moove")
-    //     // if (this.ctx && this.canvas)
-    //     //   if (event.x < this.canvas.width && event.y < this.canvas.height)
-    //     //     this.socket.emit('pongEvent', { x: event.x, y: event.y });
-    //     });
-    //   }
+      if (this.canvas){
+        this.canvas.addEventListener('mousemove', (event)=> {
+          if (this.canvas){
+            let rect = this.canvas.getBoundingClientRect() as DOMRect;
+            this.$emit(
+              'playerEvent', 
+              { x: this.rapport(event.clientX - rect.left) as number, y: this.rapport(event.clientY - rect.top) as number }
+            ); //////////////// A DEGAGER LE X
+          }
+        });
+      }
 
       window.addEventListener('resize', () => {
-        
         if (this.canvas && this.fullGameWindow) {
           this.canvas.width = this.fullGameWindow.clientWidth;
           this.canvas.height = this.fullGameWindow.clientHeight;
@@ -129,7 +140,8 @@ export default defineComponent({
 		refreshScreen(): void {
 			// console.log('refresh');
 			this.drawGame(this.room);
-			requestAnimationFrame(this.refreshScreen);
+			let id = requestAnimationFrame(this.refreshScreen);
+      this.$emit('gameId', id);
 		},
 
   },
@@ -137,7 +149,7 @@ export default defineComponent({
   // --------------------------------------------------------------------------------
   // ---------------------------------------- LIFECIRCLE HOOKS ----------------------
   mounted() {
-    this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
     this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 	
     this.canvas.width = this.fullGameWindow.clientWidth;
@@ -147,8 +159,15 @@ export default defineComponent({
 	console.log('mounted');
 
     this.pongEvent();
-	this.refreshScreen();
+    this.refreshScreen();
   },
 
 })
 </script>
+
+<style scoped>
+.fullWindow {
+  width: 100vw;
+  height: 100vh;
+}
+</style>
