@@ -27,7 +27,7 @@ export class GameService
 	private readonly DEFAULT_PADDLE_COLOR: string = 'white';
 
 	public readonly FRAMERATE: number = 1000 / 60;
-	public readonly TIME_GAME_SETUP: number = 3000;
+	public readonly TIME_GAME_SETUP: number = 30000;
 	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 1000;
 
 	joinRoom(playerId: string, speactor: boolean) : RoomInterface
@@ -227,16 +227,14 @@ export class GameService
 		}
 	}
 
-	updateGameSetup(playerId: string, playerSetup: SetupInterface) : RoomInterface
+	updateGameSetup(playerId: string, playerSetup: SetupInterface) : void
 	{
-		const room: RoomInterface	= this.findRoomByPlayerId(playerId);
+		const room: RoomInterface = this.findRoomByPlayerId(playerId);
 
 		if (playerId === room.player1Id)
 			room.game.p1Left.setup = playerSetup;
 		else if (playerId === room.player2Id)
 			room.game.p2Right.setup = playerSetup;
-		
-		return room;
 	}
 	
 	chooseGameSetup(playerId: string) : RoomInterface

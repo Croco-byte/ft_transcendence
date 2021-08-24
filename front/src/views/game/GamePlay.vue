@@ -1,6 +1,6 @@
 <template>
   <div class="fullWindow" id="fullGameWindow">
-    <canvas id="canvas"></canvas> 
+    <canvas id="PongGame"></canvas> 
   </div>
 </template>
 
@@ -47,8 +47,9 @@ export default defineComponent({
           x: player2.x / this.room.game.width * this.canvas.width,
           y: player2.y / this.room.game.height * this.canvas.height - nPaddle.height / 2
         }
-        this.ctx.fillStyle = 'white';
+        this.ctx.fillStyle = player1.setup.paddleColor;
         this.ctx.fillRect(p1.x, p1.y, nPaddle.width, nPaddle.height);
+        this.ctx.fillStyle = player2.setup.paddleColor;
         this.ctx.fillRect(p2.x, p2.y, nPaddle.width, nPaddle.height);
       }
 		},
@@ -136,7 +137,7 @@ export default defineComponent({
   // --------------------------------------------------------------------------------
   // ---------------------------------------- LIFECIRCLE HOOKS ----------------------
   mounted() {
-    this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
     this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 	
     this.canvas.width = this.fullGameWindow.clientWidth;
@@ -149,3 +150,10 @@ export default defineComponent({
 
 })
 </script>
+
+<style scoped>
+.fullWindow {
+  width: 100%;
+  height: 100%;
+}
+</style>

@@ -1,7 +1,7 @@
 <template>
     <div class="game">
-        <canvas ref="canvas" id="canvas" width="600" height="400"></canvas>
-        <GameOption v-if="optGame" :ctx="ctx" :canvas="canvas" v-on:optionChosen="updateGameSetup"/>
+        <GameJoin v-if="isWaiting" :end="endGame"></GameJoin>
+        <GameOption v-if="optGame" :ctx="ctx" :canvas="canvas" @updateGameSetup="updateGameSetup($event)"/>
         <GamePlay v-if="isPlaying" v-model:room="room"/>
     </div>
 </template>
@@ -12,23 +12,24 @@ import { defineComponent, watch, ref } from 'vue'
 import { SocketDataInterface, RoomInterface, GameInterface, BallInterface, PlayerInterface, PaddleInterface, SetupInterface } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
+import GameJoin from './game/GameJoin.vue'
 import io from 'socket.io-client'
 
 export default defineComponent({
   
   name: 'game',
-  components: { GameOption, GamePlay },
+  components: { GameOption, GamePlay, GameJoin },
 
 
   data() {
     return {
       room: null as any,
-      isWaiting: false as boolean,
+      isWaiting: true as boolean,
       isPlaying: false as boolean,
       optGame: false as boolean,
-      optchosen: -1 as number,
-      ctx: null as CanvasRenderingContext2D | null,
-      canvas: null as HTMLCanvasElement | null,
+      endGame: '' as string,
+      // ctx: null as CanvasRenderingContext2D | null,
+      // canvas: null as HTMLCanvasElement | null,
       socket: null as any,
       gameID: 0 as number,
       windowSize: {
@@ -44,26 +45,26 @@ export default defineComponent({
     // ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
 		joinRoom(obj: SocketDataInterface) {
-      this.isWaiting = true;
-      if (this.ctx && this.canvas) {
         console.log(`in joinRoom function`);
-        // Need to add waiting animation
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "orange";
-        this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-      }
+      // if (this.ctx && this.canvas) {
+      //   // Need to add waiting animation
+      //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      //   this.ctx.fillStyle = "orange";
+      //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
+      // }
 		},
 
 		actualizeSetupScreen(obj: SocketDataInterface) {
+      this.isWaiting = false;
       this.optGame = true;
 		},
 
 
 		displaySetupChoose(obj: SocketDataInterface) {
-			if (this.ctx && this.canvas) {
-        console.log(obj.room.game.p1Left.setup);
-        console.log(obj.room.game.p2Right.setup);
-			}
+			// if (this.ctx && this.canvas) {
+      //   console.log(obj.room.game.p1Left.setup);
+      //   console.log(obj.room.game.p2Right.setup);
+			// }
 		},
 
     // startingGame(obj: SocketDataInterface) : void
@@ -83,8 +84,8 @@ export default defineComponent({
 
   gameEnded(obj: SocketDataInterface) : void
   {
-    if (this.ctx && this.canvas)
-    {
+    // if (this.ctx && this.canvas)
+    // {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.game.p1Score > obj.room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
@@ -93,20 +94,20 @@ export default defineComponent({
       cancelAnimationFrame(this.gameID);
       this.gameID = requestAnimationFrame(() => 
       {
-        if (this.ctx && this.canvas)
-        {
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.ctx.fillStyle = "purple";
-          this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        }
+        // if (this.ctx && this.canvas)
+        // {
+        //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        //   this.ctx.fillStyle = "purple";
+        //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
+        // }
       });
-    }
+    // }
   },
 
   opponentLeft(obj: SocketDataInterface) 
   {
-    if (this.ctx && this.canvas)
-    {
+    // if (this.ctx && this.canvas)
+    // {
       this.socket.emit('opponentLeft', obj.room);
 
       let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
@@ -116,24 +117,20 @@ export default defineComponent({
       cancelAnimationFrame(this.gameID);
       this.gameID = requestAnimationFrame(() => 
       {
-        if (this.ctx && this.canvas)
-        {
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.ctx.fillStyle = "blue";
-          this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
-        }
+        // if (this.ctx && this.canvas)
+        // {
+        //   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        //   this.ctx.fillStyle = "blue";
+        //   this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
+        // }
       });
-    }
+    // }
   },
 
 		// ----------------------------------------
 		// ----------- SOCKET EMETTERS ------------
-		updateGameSetup(value:  number) {
-			this.socket.emit('updateGameSetup', {
-						level: value,
-						score: 5,
-						paddleColor: 'white',
-      });
+		updateGameSetup(obj: SetupInterface) {
+			this.socket.emit('updateGameSetup', obj);
 		}
 
   },
@@ -141,19 +138,19 @@ export default defineComponent({
   mounted() {
     this.isPlaying = false as boolean;
     this.optGame = false as boolean;
-    this.isWaiting = false as boolean;
-    this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    this.isWaiting = true as boolean;
+    // this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    // this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
   },
 				
-  pongEvent()
-  {
-    window.addEventListener('pointermove', (event) => 
-    {
-      if (this.ctx && this.canvas && event.x < this.canvas.width && event.y < this.canvas.height)
-        this.socket.emit('pongEvent', { x: event.x, y: event.y });
-    });
-  },
+  // pongEvent()
+  // {
+  //   window.addEventListener('pointermove', (event) => 
+  //   {
+  //     if (this.ctx && this.canvas && event.x < this.canvas.width && event.y < this.canvas.height)
+  //       this.socket.emit('pongEvent', { x: event.x, y: event.y });
+  //   });
+  // },
 
 	created() 
 	{ 
@@ -170,6 +167,7 @@ export default defineComponent({
 			// ecran choisir option qunad les joueurs cliquent sur les options
 			this.socket.on('actualizeSetupScreen', (obj: SocketDataInterface) => {
 				this.actualizeSetupScreen(obj);
+        console.log(obj);
 			});
 
 			// // ecran qui montre pendant quelques secondes les options choisies

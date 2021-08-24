@@ -1,5 +1,5 @@
 <template>
-<p> BALL SPEEED</p>
+  <p> BALL SPEEED</p>
     <button class="level" @click="setLevel(1)">EASY</button>
     <button class="level" @click="setLevel(2)">MEDIUM</button>
     <button class="level" @click="setLevel(3)">HARD</button>
@@ -18,7 +18,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { SetupInterface } from '../../types/game.interface'
-
+import Socket from 'socket.io-client'
 
 export default defineComponent({
 
@@ -32,7 +32,12 @@ export default defineComponent({
       canvas: {
           required: true,
           type: HTMLCanvasElement
+      },
+      sock: {
+        required: true,
+        type: Socket
       }
+
   },
 
   data() {
@@ -46,29 +51,34 @@ export default defineComponent({
     setLevel(value: number) {
       if (value != undefined){
         this.opt.level = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
+        this.sock.emit('updateGameSetup', this.opt as SetupInterface);
+        console.log(this.opt);
       }
     },
 
     setScore(value: number) {
       if (value != undefined){
         this.opt.score = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
+        this.sock.emit('updateGameSetup', this.opt as SetupInterface);
+        console.log(this.opt);
       }
     },
 
     setPadColor(value: string) {
       if (value != undefined){
         this.opt.paddleColor = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
+        this.sock.emit('updateGameSetup', this.opt as SetupInterface);
+        console.log(this.opt);
       }
     }
-
   },
 
   mounted() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
-  
 })
 </script>
+
+<style scoped>
+
+</style>
