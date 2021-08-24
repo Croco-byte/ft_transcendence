@@ -45,27 +45,28 @@ export class GameService
 	public readonly TIME_GAME_SETUP: number = 3000;
 	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 1000;
 
-	async joinRoom(userId: number, playerId: string, speactor: boolean) : Promise<RoomInterface>
+	async joinRoom(userDbId: number, playerId: string) : Promise<RoomInterface>
 	{
-		// const user: User = await this.userRepository.findOne(userId);
+		const user: User = await this.userRepository.findOne(userDbId);
 		let roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
 
-		// this.logger.log(`${user.wins} and ${user.loses}`);
-
 		// Case spectator
-		// if (user.roomId != '')
-		// {
-		// 	roomToFill =  this.rooms.find(el => el.name === user.roomId);
-		// 	roomToFill.nbPeopleConnected++;
-		// 	return roomToFill;
-		// }
+		if (user.roomId != '')
+		{
+			roomToFill =  this.rooms.find(el => el.name === user.roomId);
+			roomToFill.nbPeopleConnected++;
+			this.userRepository.update(user.id, { playerStatus: 'spectating' });
+			
+			return roomToFill;
+		}
 		
 		// Trying to find a room with only one player
 		// else if (roomToFill && roomToFill.nbPeopleConnected == 1)
-		if (roomToFill && roomToFill.nbPeopleConnected == 1)
+		else if (roomToFill && roomToFill.nbPeopleConnected == 1)
 		{
 			roomToFill.nbPeopleConnected++;
 			roomToFill.player2Id = playerId;
+			this.userRepository.update(user.id, { roomId: roomToFill.name, playerStatus: 'inGame' });
 
 			return roomToFill;
 		}
@@ -81,12 +82,14 @@ export class GameService
 				game: this.resetGame(1)
 				 });
 			
-			this.logger.log(`Room created:\t\troom id:\t${this.rooms[this.rooms.length - 1].name}`);
+			this.userRepository.update(user.id, { roomId: playerId, playerStatus: 'inGame' });
+			this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
+
 			return this.rooms[this.rooms.length - 1];
 		}
 	}
 
-	updateGame(room: RoomInterface) : boolean
+	updateGame(userDbId: number, playerId: string, room: RoomInterface) : boolean
 	{
 		if (room.game.ball.x - room.game.ball.radius < 0)
 		{
@@ -105,40 +108,59 @@ export class GameService
 			this.detectCollision(room);	
 		}
 
-		const ret: boolean = room.game.p1Score >= room.game.p1Left.setup.score || 
-				room.game.p2Score >= room.game.p1Left.setup.score ? true : false;
+		if ((room.player1Id === playerId || room.player2Id === playerId) && (
+				room.game.p1Score >= room.game.p1Left.setup.score || 
+				room.game.p2Score >= room.game.p1Left.setup.score))
+		{
+			this.updateScores(userDbId, room.game.p1Score >= room.game.p1Left.setup.score);
+			return true;
+		}
 		
-		return ret;
+		return false;
 	}
 
-	updatePlayerPos(playerId: string, event: any)
+	async updateScores(userDbId: number, p1Won: boolean) : Promise<boolean>
+	{
+		const user: User = await this.userRepository.findOne(userDbId);
+
+		if (p1Won)
+		{
+			this.userRepository.update(user.id, { wins: user.wins + 1 });
+			return true;
+		}
+
+		this.userRepository.update(user.id, { wins: user.loses + 1 });
+		return false;
+	}
+
+	updatePlayerPos(playerId: string, playerPosY: number) : void
 	{
 		const room: RoomInterface = this.rooms.find(el => el.player1Id === playerId || 
 				el.player2Id === playerId);
 		
 		if (room && room.player1Id === playerId)
-			event.y > room.game.p1Left.y ? this.userMoveDown(room, room.game.p1Left, event) :
-					this.userMoveUp(room, room.game.p1Left, event);
+			playerPosY > room.game.p1Left.y ? this.userMoveDown(room, room.game.p1Left, playerPosY) :
+					this.userMoveUp(room, room.game.p1Left, playerPosY);
 
 		else if (room)
-			event.y > room.game.p2Right.y ? this.userMoveDown(room, room.game.p2Right, event) :
-					this.userMoveUp(room, room.game.p2Right, event);
+			playerPosY > room.game.p2Right.y ? this.userMoveDown(room, room.game.p2Right, playerPosY) :
+					this.userMoveUp(room, room.game.p2Right, playerPosY);
 	}
 
-	private userMoveUp(room: RoomInterface, player : PlayerInterface, event: any): void
+	private userMoveUp(room: RoomInterface, player : PlayerInterface, event: any) : void
 	{
 		player.y -= (player.y - event.y > player.velY) ? player.velY : player.y - event.y;
 		(player.y < room.game.paddle.height / 2) ? player.y = room.game.paddle.height / 2 : 0;
 	}
 	
-	private userMoveDown(room: RoomInterface, player : PlayerInterface, event: any): void
+	private userMoveDown(room: RoomInterface, player : PlayerInterface, event: any) : void
 	{
 		player.y += (event.y - player.y > player.velY) ? player.velY : event.y - player.y;
 		(player.y > this.GAME_HEIGHT - room.game.paddle.height / 2) ? 
 				player.y = this.GAME_HEIGHT - room.game.paddle.height / 2 : 0;
 	}
 
-	private detectCollision(room: RoomInterface): void
+	private detectCollision(room: RoomInterface) : void
 	{
 		const ball: BallInterface = room.game.ball;
 		const p1Left: PlayerInterface = room.game.p1Left;
@@ -159,7 +181,7 @@ export class GameService
 			room.game.ball.velY = room.game.ball.velY * -1;
 	}
 
-	private playerOneIntersectBall(room: RoomInterface): void
+	private playerOneIntersectBall(room: RoomInterface) : void
 	{
 		const percentIntersect: number = (room.game.ball.y - room.game.p1Left.y)/ (room.game.paddle.height / 2);
 		const angleRad: number = percentIntersect < 0 ? -percentIntersect * this.MAX_ANGLE : 
@@ -173,7 +195,7 @@ export class GameService
 			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
 	
-	private playerTwoIntersectBall(room: RoomInterface): void
+	private playerTwoIntersectBall(room: RoomInterface) : void
 	{
 		const percentIntersect: number = (room.game.ball.y - room.game.p2Right.y) / (room.game.paddle.height / 2);
 		const angleRad: number = percentIntersect < 0 ? -percentIntersect * this.MAX_ANGLE : 
@@ -252,23 +274,21 @@ export class GameService
 		}
 	}
 
-	updateGameSetup(playerId: string, playerSetup: SetupInterface) : RoomInterface
+	updateGameSetup(playerId: string, playerSetup: SetupInterface) : void
 	{
 		const room: RoomInterface	= this.findRoomByPlayerId(playerId);
 
-		if (playerId === room.player1Id)
+		if (room && playerId === room.player1Id)
 			room.game.p1Left.setup = playerSetup;
-		else if (playerId === room.player2Id)
+		else if (room && playerId === room.player2Id)
 			room.game.p2Right.setup = playerSetup;
-		
-		return room;
 	}
 	
-	chooseGameSetup(playerId: string) : RoomInterface
+	chooseGameSetup(playerId: string) : void
 	{
 		const room: RoomInterface = this.findRoomByPlayerId(playerId);
 
-		if (room)
+		if (room && room.player1Id === playerId)
 		{
 			const setup1: SetupInterface = room.game.p1Left.setup;
 			const setup2: SetupInterface = room.game.p2Right.setup;
@@ -285,8 +305,6 @@ export class GameService
 			else
 				setup1.score = setup2.score;
 		}
-
-		return room;
 	}
 
 	findRoomByPlayerId(playerId: string) : RoomInterface
@@ -299,9 +317,13 @@ export class GameService
 		clearInterval(intervalId);
 		wss.in(roomName).socketsLeave(roomName);
 		
-		this.logger.log(`Room closed:\t\troom id:\t${roomName}`);
-		this.logger.log(`Room has been left:\tplayer id:\t${playerId} (room id: ${roomName})`);
+		this.logger.log(`Room closed (room id: ${roomName})`);
+		this.logger.log(`Room has been left (player id: ${playerId}, room id: ${roomName})`);
 		this.rooms = this.rooms.filter((el) => el.name != roomName);
 	}
 
+	async updatePlayerStatus(userDbId: number) : Promise<void>
+	{
+		this.userRepository.update(userDbId, { roomId: 'none', playerStatus: 'none' });
+	}
 }

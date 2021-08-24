@@ -105,23 +105,23 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		{
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			client.data = { userId: user.id, username: user.username };
-			this.logger.log(`Client connected:\t\tclient id:\t${client.id}`);
+			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
 		catch(e) 
 		{
-			console.log("Unauthorized client trying to connect");
+			this.logger.log("Unauthorized client trying to connect");
 			client.disconnect();
 		}
 
-		const room: RoomInterface = await this.gameService.joinRoom(client.data.id, client.id, false);
+		const room: RoomInterface = await this.gameService.joinRoom(client.data.id, client.id);
 		
 		client.join(room.name);
-		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
+		this.logger.log(`Room joined (client id: ${client.id}, room id: ${room.name})`);
 		
 		if (room.nbPeopleConnected === 1)
 			client.emit('joinRoom', { clientId: client.id, room });
 
-		else if (room.nbPeopleConnected === 2)
+		else if (room.nbPeopleConnected >= 2)
 		{
 			// Clients will render the setup screen and they will be able to choose match
 			// options for x seconds.
@@ -155,10 +155,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 					this.wss.to(room.name).emit('actualizeGameScreen', { clientId: client.id, room });
 					
 					// Case somebody won, removing the room.
-					if (this.gameService.updateGame(room))
+					if (this.gameService.updateGame(client.data.id, client.id, room))
 					{
 						this.wss.to(room.name).emit('gameEnded', { clientId: client.id, room });
-						this.logger.log(`Game won:\t\tclient id:\t${client.id} (room id: ${room.name})`);
+						this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
 						this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
 					}
 				}, this.gameService.FRAMERATE);
@@ -171,7 +171,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	// (including people spectating).
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
-		this.logger.log(`Client disconnected:\tclient id:\t${client.id}`);
+		this.logger.log(`Client disconnected: client id: ${client.id})`);
+		this.gameService.updatePlayerStatus(client.data.id);
+		
 		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 
 		// Removing a room if one of the two players left the game (except if player is alone in the room),
@@ -192,9 +194,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 	// Update player's paddle position when a player mooves his mouse.
 	@SubscribeMessage('pongEvent')
-	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() event: any): void
+	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() playerPosY: number): void
 	{
-		this.gameService.updatePlayerPos(client.id, event);
+		this.gameService.updatePlayerPos(client.id, playerPosY);
 	}
 	
 	// Occurs when someone leaves the game vue in front.

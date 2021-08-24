@@ -6,7 +6,7 @@
 #    By: lucaslefrancq <lucaslefrancq@student.42    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/08/16 12:30:03 by lucaslefran       #+#    #+#              #
-#    Updated: 2021/08/24 15:58:05 by lucaslefran      ###   ########.fr        #
+#    Updated: 2021/08/24 18:48:08 by lucaslefran      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,6 +16,14 @@ NAME		=	ft_transcendence
 install		:
 				docker-compose -f docker-compose.yml up --force-recreate --build
 
+# Stop all the containers, remove them, and also remove the network / the images / the volumes. 
+remove		:
+				docker-compose -f docker-compose.yml down -v --rmi all
+				
+# Rebuild all the images and run the containers with new volumes.
+reinstall	:	remove install
+
+				
 # Run all the containers, using previous data stored in volumes and on host machine for 
 # app files. 'make install' need to have been executed before.
 start		: 	$(NAME)
@@ -29,11 +37,8 @@ $(NAME)		:
 stop		:	
 				docker-compose -f docker-compose.yml stop 
 
-# Stop all the containers, remove them, and also remove the network / the images / the volumes. 
-remove		:
-				docker-compose -f docker-compose.yml down -v --rmi all
-
-# Rebuild all the images and run the containers with new volumes.
-reinstall	:	remove install
-
+recreate	:
+				docker-compose -f docker-compose.yml down -v
+				docker-compose -f docker-compose.yml up
+				
 .PHONY		:	run resintall install stop remove

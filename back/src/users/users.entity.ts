@@ -57,8 +57,12 @@ export class User extends BaseEntity
 	@Column({ default: 0 })
 	loses: number;
 	
-	@Column({ default: '' })
+	@Column({ default: 'none' })
 	roomId: string;
+
+	// values: 'none', 'spectating', 'inGame'
+	@Column({ default: 'none' })
+	playerStatus: string;
 
 	toPublic()
 	{
