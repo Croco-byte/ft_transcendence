@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { from, Observable, map } from 'rxjs';
@@ -185,9 +186,9 @@ export class UsersService {
 
 	async unfriendUser(currUserId: number, friendId: number): Promise<{ creatorId: number, receiverId: number }> {
 		try {
-			var friend = await this.findUserById(friendId);
-			var currentUser = await this.findUserById(currUserId);
-			var friendRequest = await this.friendRequestRepository.findOne({
+			let friend = await this.findUserById(friendId);
+			let currentUser = await this.findUserById(currUserId);
+			let friendRequest = await this.friendRequestRepository.findOne({
 				where: [
 					{ creator: currentUser, receiver: friend, status: 'accepted'},
 					{ creator: friend, receiver: currentUser, status: 'accepted'}

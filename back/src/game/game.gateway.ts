@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io'
 import { RoomInterface, SetupInterface } from './interfaces/game.interface'
 import { GameService } from './game.service';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * TO DO: 	- Rajouter le lien avec la base de données pour les spectateurs (notamment comment on join 
@@ -82,7 +83,10 @@ import { GameService } from './game.service';
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
 {
-	constructor(private gameService: GameService) {};
+	constructor(
+		private gameService: GameService, 
+		private readonly authService: AuthService
+		) {};
 	private logger: Logger = new Logger('GameGateway');
 	private intervalId: NodeJS.Timer;
 	
@@ -95,11 +99,21 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 	// The new client will join a room. If 2 players in a room, will then emit x milliseconds
 	// all the game positions, and frontend will render the game using those coordinates.
-	handleConnection(@ConnectedSocket() client: Socket): void
+	async handleConnection(@ConnectedSocket() client: Socket): Promise<void>
 	{
-		this.logger.log(`Client connected:\t\tclient id:\t${client.id}`);
+		try
+		{
+			const user = await this.authService.validateToken(client.handshake.query.token as string);
+			client.data = { userId: user.id, username: user.username };
+			this.logger.log(`Client connected:\t\tclient id:\t${client.id}`);
+		} 
+		catch(e) 
+		{
+			console.log("Unauthorized client trying to connect");
+			client.disconnect();
+		}
 
-		const room: RoomInterface = this.gameService.joinRoom(client.id, false);
+		const room: RoomInterface = await this.gameService.joinRoom(client.data.id, client.id, false);
 		
 		client.join(room.name);
 		this.logger.log(`Room joined:\t\tclient id:\t${client.id} (room id: ${room.name})`);
@@ -183,21 +197,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.gameService.updatePlayerPos(client.id, event);
 	}
 	
-	// When a player leaves the game vue, he will emit disconnectClient making everybody 
-	// leave the room. If a spectator leaves the vue, just disconnecting him from the server.
+	// Occurs when someone leaves the game vue in front.
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
-		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
-		
-		if (room)
-		{
-			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
-		}
-		else
-			this.logger.log(`Room has been left:\spectator id:\t${client.id}`);
-		
 		client.disconnect();
 	}
 };

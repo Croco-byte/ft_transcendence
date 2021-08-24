@@ -13,6 +13,7 @@ import { SocketDataInterface, RoomInterface, GameInterface, BallInterface, Playe
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
 import io from 'socket.io-client'
+import authHeader from '../services/auth-header';
 
 export default defineComponent({
   
@@ -157,7 +158,8 @@ export default defineComponent({
 
 	created() 
 	{ 
-		this.socket = io('http://localhost:3000/game');
+		this.socket = io('http://localhost:3000/game', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
+		// this.socket = io('http://localhost:3000/game');
 		
 		if (this.socket) {
 
@@ -184,7 +186,7 @@ export default defineComponent({
 
 			// ecran de rendu du jeu
 			this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
-        this.actualizeGameScreen(obj);
+				this.actualizeGameScreen(obj);
 			});
 			
 			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)

@@ -2,11 +2,26 @@
 import { Injectable } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SetupInterface, PlayerInterface, BallInterface, RoomInterface, PaddleInterface, GameInterface } from './interfaces/game.interface';
+import { Repository } from 'typeorm';
+import { User } from '../users/users.entity';
+import { InjectRepository } from '@nestjs/typeorm'
+import {
+  SetupInterface,
+  PlayerInterface,
+  BallInterface,
+  RoomInterface,
+  PaddleInterface,
+  GameInterface,
+} from './interfaces/game.interface';
 
 @Injectable()
 export class GameService
 {
+	constructor(
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
+	) {}
+
 	private rooms: RoomInterface[] = [];
 	private logger: Logger = new Logger('GameService');
 
@@ -30,13 +45,23 @@ export class GameService
 	public readonly TIME_GAME_SETUP: number = 3000;
 	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 1000;
 
-	joinRoom(playerId: string, speactor: boolean) : RoomInterface
+	async joinRoom(userId: number, playerId: string, speactor: boolean) : Promise<RoomInterface>
 	{
-		// if (speactor)
-		// 	handle spectator
+		// const user: User = await this.userRepository.findOne(userId);
+		let roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
+
+		// this.logger.log(`${user.wins} and ${user.loses}`);
+
+		// Case spectator
+		// if (user.roomId != '')
+		// {
+		// 	roomToFill =  this.rooms.find(el => el.name === user.roomId);
+		// 	roomToFill.nbPeopleConnected++;
+		// 	return roomToFill;
+		// }
 		
 		// Trying to find a room with only one player
-		const roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
+		// else if (roomToFill && roomToFill.nbPeopleConnected == 1)
 		if (roomToFill && roomToFill.nbPeopleConnected == 1)
 		{
 			roomToFill.nbPeopleConnected++;

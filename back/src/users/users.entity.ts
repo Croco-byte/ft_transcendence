@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Channel } from 'src/channels/channel.entity';
 import { Channel_muted_user } from 'src/channel_muted_users/channel_muted_user.entity';
 import { Message } from 'src/messages/message.entity';
@@ -55,6 +56,15 @@ export class User extends BaseEntity
 
 	@OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.receiver)
 	receivedFriendRequests?: FriendRequestEntity[];
+
+	@Column({ default: 0 })
+	wins: number;
+	
+	@Column({ default: 0 })
+	loses: number;
+	
+	@Column({ default: '' })
+	roomId: string;
 
 	toPublic()
 	{

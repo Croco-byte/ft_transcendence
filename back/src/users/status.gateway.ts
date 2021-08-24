@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Logger, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { WsJwtGuard } from '../auth/ws-jwt-strategy'
