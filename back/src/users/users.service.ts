@@ -20,14 +20,17 @@ export class UsersService {
 	** ==== Functions related to the Two Factor Authentication ====
 	*/
 
+	/* Explicit */
 	async setTwoFactorAuthenticationSecret(secret: string, id: number) {
 		return this.usersRepository.update(id, { twoFactorAuthenticationSecret: secret });
 	}
 
+	/* Explicit */
 	async turnOnTwoFactorAuthentication(id: number) {
 		return this.usersRepository.update(id, { isTwoFactorAuthenticationEnabled: true });
 	}
 
+	/* Explicit */
 	async turnOffTwoFactorAuthentication(id: number) {
 		return this.usersRepository.update(id, { isTwoFactorAuthenticationEnabled: false });
 	}
@@ -37,6 +40,7 @@ export class UsersService {
 	** ==== Functions retrieving information about a user ====
 	*/
 
+	/* Returns all public informations about the user (everything but 2FA status and secret) */
 	async findUserById(id: number): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { id: id } });
 		if (!user) {
@@ -47,6 +51,7 @@ export class UsersService {
 		return user;
 	}
 
+	/* Explicit */
 	getCurrUserStatus(currUser: User): Observable<UserStatus> {
 		return from(this.usersRepository.findOne(currUser.id)).pipe(
 			map((user: User) => {
@@ -55,6 +60,7 @@ export class UsersService {
 		)
 	}
 
+	/* Explicit */
 	getUserStatus(userId: number): Observable<UserStatus> {
 		return from(this.usersRepository.findOne(userId)).pipe(
 			map((user: User) => {
@@ -68,6 +74,9 @@ export class UsersService {
 	** ==== Functions updating information for a user ====
 	*/
 
+	/* Allows to change the user display name. If the name contains caracters that are not letters, numbers, of '_', '-', or if the
+	** chosen name is already taken, throws an exception.
+	*/
 	async changeUserDisplayName(id: number, newDisplayName: string): Promise<string> {
 		const invalidChars = /^[a-zA-Z0-9-_]+$/;
 		if (newDisplayName.search(invalidChars) === -1 || newDisplayName.length > 15) { throw new ForbiddenException(); }
@@ -80,6 +89,9 @@ export class UsersService {
 		return user.displayName;
 	}
 
+	/* This function updates the path of the avatar of the user in the database (the file was already uploaded from the controller).
+	** If the user already had a custom avatar, we delete his previous avatar with "unlink".
+	*/
 	async updateAvatar(id: number, filename: string) {
 		try {
 			const user = await User.findOne({ where: { id: id } });
@@ -90,12 +102,13 @@ export class UsersService {
 				unlink("./images/" + user.avatar, () => { console.log("Successfully deleted previous avatar with path ./images/" + user.avatar) });
 				this.usersRepository.update(id, { avatar: filename });
 			}
-		} catch {
-			console.log("Couldn't find user with id " + id + " to update avatar");
-			throw new UnauthorizedException();
+		} catch(e) {
+			console.log(e.message);
+			throw new BadRequestException();
 		}
 	}
 
+	/* Explicit */
 	async changeUserStatus(userId: number, targetStatus: User_Status): Promise<void> {
 		try {
 			const user = await this.usersRepository.findOne(userId);
@@ -111,6 +124,7 @@ export class UsersService {
 	** ==== Functions allowing to interact with friend requests ====
 	*/
 
+	/* Returns a specific friend request by his ID, as well as the two Users related to it */
 	async getFriendRequestById(friendRequestId: number): Promise<FriendRequest> {
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({where:
 			[{ id: friendRequestId}],
@@ -119,6 +133,11 @@ export class UsersService {
 		return friendRequest;
 	}
 
+	/* Allows to send a friend request. If a friend request already exists between the two users or if the user tries to 
+	** send a friend request to himself, raise an exception.
+	** The "hasFriendRequestBeenSentOrReceived" function also checks the case in which the request has been declined. If this is
+	** the case, we only allow the user that declined it to re-send the request to the other user.
+	*/
 	async sendFriendRequest(receiverId: number, creatorId: number): Promise<FriendRequest> {
 		if (receiverId === creatorId) {
 			throw new Error("You can't send a friend request to yourself !")
@@ -138,6 +157,9 @@ export class UsersService {
 		return this.friendRequestRepository.save(friendRequest);
 	}
 
+	/* This function allows tor re-send a friend request that had been declined. It simply updates the status of the friend request from
+	** "declined" to "pending"
+	*/
 	async reSendFriendRequest(creator: User, receiver: User): Promise<FriendRequest> {
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
 			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
@@ -148,6 +170,7 @@ export class UsersService {
 		return this.friendRequestRepository.save(friendRequest);
 	}
 
+	/* Change the friend request status to the desired state (accepted, declined, pending) */
 	async respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Promise<FriendRequest> {
 		const friendRequest: FriendRequest = await this.getFriendRequestById(friendRequestId);
 		return this.friendRequestRepository.save(
@@ -158,6 +181,10 @@ export class UsersService {
 		);
 	}
 
+	/* The user can send the request in two cases :
+		>> There is no existing friend request between the user.
+		>> There is a declined request, but the user is the one that declined it
+	*/
 	async hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Promise<string> {
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
 			[ { creator, receiver}, { creator: receiver, receiver: creator } ],
@@ -167,6 +194,11 @@ export class UsersService {
 		return ("true");
 	}
 
+	/* Allows to know the status of the friend request :
+		>> If the friend request was received by current user but not accepted or declined, we are waiting for him to respond.
+		>> If the friend request was received by current user and declined, it was declined by him.
+		>> Else, it wasn't sent.
+	*/
 	async getFriendRequestStatus(receiverId: number, currentUser: User): Promise<FriendRequestStatus> {
 		const receiver: User = await this.findUserById(receiverId);
 		const friendRequest: FriendRequest = await this.friendRequestRepository.findOne({ where:
@@ -184,6 +216,7 @@ export class UsersService {
 		return { status: friendRequest?.status || 'not-sent' };
 	}
 
+	/* Allows to unfriend a user by simply deleting the associated friend request in the database. */
 	async unfriendUser(currUserId: number, friendId: number): Promise<{ creatorId: number, receiverId: number }> {
 		try {
 			let friend = await this.findUserById(friendId);
@@ -207,6 +240,7 @@ export class UsersService {
 	** === Functions allowing to display users, in a paginated way ====
 	*/
 
+	/* Display all users, paginated */
 	paginateUsers(options: IPaginationOptions): Observable<Pagination<User>> {
 		return from(paginate(this.usersRepository, options)).pipe(
 			map((usersPageable: Pagination<User>) => {
@@ -216,6 +250,7 @@ export class UsersService {
 		)
 	}
 
+	/* Displays user matching a filter in their displayname, paginated */
 	paginateUsersFilterByDisplayName(options: IPaginationOptions, displayName: string): Observable<Pagination<User>> {
 		return from(this.usersRepository.findAndCount({
 			skip: ((options.page as number) - 1) * (options.limit as number) || 0,
@@ -251,6 +286,7 @@ export class UsersService {
 	** ==== Functions allowing to display the friends of a user and its friend requests, in a paginated way ====
 	*/
 
+	/* Shows current user friends, paginated */
 	paginateFriends(options: IPaginationOptions, currentUser: User): Observable<Pagination<User>> {
 		return from(paginate(this.friendRequestRepository, options, {
 			where: [{ creator: currentUser, status: "accepted" }, { receiver: currentUser, status: "accepted"}],
@@ -282,6 +318,7 @@ export class UsersService {
 		)
 	}
 
+	/* Shows received friend requests, paginated */
 	paginateFriendRequestsFromRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
 		return from(paginate(this.friendRequestRepository, options, {
 			where: { receiver: currentUser, status: "pending" },
@@ -301,6 +338,7 @@ export class UsersService {
 		)
 	}
 
+	/* Shows sent friend requests, paginated */
 	paginateFriendRequestsToRecipients(options: IPaginationOptions, currentUser: User): Observable<Pagination<FriendRequest>> {
 		return from(paginate(this.friendRequestRepository, options, {
 			where: { creator: currentUser, status: "pending" },
@@ -319,6 +357,9 @@ export class UsersService {
 			})
 		);
 	}
+
+
+	/* ==== Yassine's utility functions ==== */
 
 	async insert(user: User)
 	{

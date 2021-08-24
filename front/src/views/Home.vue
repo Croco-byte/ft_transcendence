@@ -2,7 +2,7 @@
   <div class="home">
     <h1>WELCOME</h1>
 	</div>
-	<div v-if="$store.state.auth.status.loggedIn === true">
+	<div v-if="$store.state.status.loggedIn === true">
 		<p>You're logged in :)</p>
 		<button v-on:click="logout">Logout</button>
 	</div>
@@ -13,17 +13,15 @@
 
 <script lang="ts">
 
-import { defineComponent } from 'vue'
+import { defineComponent } from 'vue';
 
 export default defineComponent ({
-  name: 'Home',
-  	methods: {
-		  logout: function() {
-			  this.$store.dispatch('auth/logout').then(() => {
-				  this.$router.push('/login');
-				  })
+	name: 'Home',
+	methods: {
+		logout: function() {
+			this.$store.dispatch('logout').then(() => {
+				this.$router.push('/login'); })
 		}
 	}
-
 })
 </script>
