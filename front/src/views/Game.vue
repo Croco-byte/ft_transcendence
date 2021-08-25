@@ -44,12 +44,14 @@ export default defineComponent({
 		},
 
 		actualizeSetupScreen(obj: SocketDataInterface) {
+      console.log(obj);
       this.isWaiting = false;
       this.optGame = true;
 		},
 
 
 		displaySetupChoose(obj: SocketDataInterface) { obj;
+      // console.log(obj);
 		},
 
     // startingGame(obj: SocketDataInterface) : void
@@ -120,7 +122,7 @@ export default defineComponent({
 				this.actualizeSetupScreen(obj);
 			});
 
-			// // ecran qui montre pendant quelques secondes les options choisies
+			// ecran qui montre pendant quelques secondes les options choisies
 			// this.socket.on('displaySetupChoose', (obj: SocketDataInterface) => {
 			// 	this.displaySetupChoose(obj);
 			// });
@@ -131,19 +133,19 @@ export default defineComponent({
 			// });
 
 			// ecran de rendu du jeu
-			this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
-        this.actualizeGameScreen(obj);
-			});
+			// this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
+      //   this.actualizeGameScreen(obj);
+			// });
 			
-			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			this.socket.on('gameEnded', (obj: SocketDataInterface) => {
-				this.gameEnded(obj);
-			});
+			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
+			// this.socket.on('gameEnded', (obj: SocketDataInterface) => {
+			// 	this.gameEnded(obj);
+			// });
 
-			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
-				this.opponentLeft(obj);
-			});
+			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
+			// this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
+			// 	this.opponentLeft(obj);
+			// });
 		}
 	},
 

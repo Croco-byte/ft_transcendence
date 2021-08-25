@@ -1,34 +1,48 @@
 <template>
-<p> BALL SPEEED</p>
-    <button class="level" @click="setLevel(1)">EASY</button>
-    <button class="level" @click="setLevel(2)">MEDIUM</button>
-    <button class="level" @click="setLevel(3)">HARD</button>
+<div>
+  <h2>BALL SPEED</h2>
+  <OptionButton msg="Easy" @setEasy="setLevel(1)"></OptionButton>
+  <OptionButton msg="Medium" @setMedium="setLevel(2)"></OptionButton>
+  <OptionButton msg="Hard" @setHard="setLevel(3)"></OptionButton>
 
-  <p> SCORE MAX</p>
-    <button @click="setScore(5)">5</button>
-    <button @click="setScore(10)">10</button>
-    <button @click="setScore(15)">15</button>
+  <OptionButton msg="Easy" :p2Opt='true'></OptionButton>
+  <OptionButton msg="Medium" :p2Opt='true'></OptionButton>
+  <OptionButton msg="Hard" :p2Opt='true'></OptionButton>
+</div> 
 
-  <p>COLOR OF PAD</p>
-    <button @click="setPadColor('yellow')">yellow</button>
-    <button @click="setPadColor('blue')">blue</button>
-    <button @click="setPadColor('red')">red</button>
+<div>
+  <h2>MAX SCORE</h2>
+  <OptionButton msg="5" @setScore5="setScore(5)"></OptionButton>
+  <OptionButton msg="10" @setScore10="setScore(10)"></OptionButton>
+  <OptionButton msg="15" @setScore15="setScore(15)"></OptionButton>
+</div>
+
+<div>
+  <h2>PAD COLOR</h2>
+  <OptionButton msg="Yellow" @setPadYellow="setPadColor('Yellow')"></OptionButton>
+  <OptionButton msg="Blue" @setPadBlue="setPadColor('Blue')"></OptionButton>
+  <OptionButton msg="Red" @setPadRed="setPadColor('Red')"></OptionButton>
+</div>
+
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { SetupInterface } from '../../types/game.interface'
-
+import OptionButton from '../../components/OptionButton.vue'
 
 export default defineComponent({
 
-  emits: ["updateGameSetup"],
+  components: { OptionButton },
+
+  emits: [ "updateGameSetup" ],
 
   data() {
     return {
       opt: { level: 1, score: 5, paddleColor: 'blue' } as SetupInterface,
     }
   },
+
   name: 'OptionGame',
 
   methods: {
@@ -56,3 +70,15 @@ export default defineComponent({
   
 })
 </script>
+
+<style scoped>
+
+ 
+h2 {
+  text-align: center;
+  font-style: Arial, Helvetica, sans-serif;
+  font-size: 30px;
+  color: black;
+}
+
+</style>

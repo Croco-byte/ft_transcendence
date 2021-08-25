@@ -112,7 +112,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			// Clients will render the setup screen and they will be able to choose match
 			// options for x seconds.
 			this.intervalId = setInterval(() => {
-				this.wss.to(room.name).emit('actualizeSetupScreen', { clientId: client.id, room });
+				this.wss.to(room.name).emit('actualizeSetupScreen', { clientId: client.id, room });				
 			}, this.gameService.FRAMERATE);
 			
 			// Stop to emit gameSetup event after x seconds.
@@ -124,6 +124,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 			// Display the match parameters choose by the player for x seconds.
 			}).then(() => {
+				this.logger.log(room.game.p1Left.setup);
+				this.logger.log(room.game.p2Right.setup);
 				return new Promise<void> ((resolve) => {
 					this.gameService.chooseGameSetup(client.id);
 					this.wss.to(room.name).emit('displaySetupChoose', { clientId: client.id, room });

@@ -4,11 +4,13 @@
   </div>
 </template>
 
+
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
 import { RoomInterface, BallInterface, PlayerInterface, PaddleInterface, GameInterface } from '../../types/game.interface'
 
 export default defineComponent({
+  // checker ball qui sort du bord de l'ecran
 
   props: {
     room: {
@@ -16,6 +18,7 @@ export default defineComponent({
       type: Object as PropType<RoomInterface>
     }
   },
+  
   data() {
     return {
       mousePos: {
