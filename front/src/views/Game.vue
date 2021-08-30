@@ -14,6 +14,7 @@ import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
 import GameJoin from './game/GameJoin.vue'
 import io from 'socket.io-client'
+import socket from '../services/gamesocket.service'
 
 export default defineComponent({
   
@@ -107,7 +108,8 @@ export default defineComponent({
 
 	created() 
 	{ 
-		this.socket = io('http://localhost:3000/game');
+		// this.socket = io('http://localhost:3000/game');
+    this.socket = socket;
 		
 		if (this.socket) {
 

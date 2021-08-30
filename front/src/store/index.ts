@@ -1,5 +1,8 @@
 import { createStore } from 'vuex'
-import { auth } from './auth.module';
+import { auth } from './auth.module'
+import { gameState } from './game.module'
+import gameSocket from '../plugin/gameSocket.plugin'
+
 
 export default createStore({
   state: {
@@ -10,5 +13,7 @@ export default createStore({
   },
   modules: {
 		auth,
-  }
+    gameState
+  },
+  plugins: [gameSocket()]
 })
