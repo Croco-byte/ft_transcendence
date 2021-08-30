@@ -12,7 +12,7 @@ import { defineComponent, watch, ref } from 'vue'
 import { SocketDataInterface, RoomInterface, GameInterface, BallInterface, PlayerInterface, PaddleInterface, SetupInterface } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
-import io from 'socket.io-client'
+import { io } from 'socket.io-client'
 
 export default defineComponent({
   

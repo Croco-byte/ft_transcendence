@@ -61,7 +61,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	handleDisconnect(client: Socket)
 	{
 		let user = this.clients[client.id];
-		this.logger.log(`Client disconnected: ${user.username} -  ${Object.keys(this.clients).length - 1} clients connected`);
+		//this.logger.log(`Client disconnected: ${user.username} -  ${Object.keys(this.clients).length - 1} clients connected`);
 		delete this.clients[client.id];
 	}
 

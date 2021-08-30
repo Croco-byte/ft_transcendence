@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
 import { RootState } from '../types/store.interface';
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import authHeader from '../services/auth-header';
 import userService from '../services/user.service';
 import router from '../router/index';
