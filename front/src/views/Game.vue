@@ -1,7 +1,7 @@
 <template>
     <div class="game">
         <GameJoin v-if="isWaiting" :backColor="backColor"></GameJoin>
-        <GameOption v-if="optGame" @updateGameSetup="updateGameSetup($event)"/>
+        <GameOption v-if="optGame" @updateGameSetup="updateGameSetup($event)" :dataInterface="dataInterface"/>
         <GamePlay v-if="isPlaying" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
     </div>
 </template>
@@ -30,6 +30,7 @@ export default defineComponent({
       backColor: 'orange' as string,
       socket: null as any,
       gameID: 0 as number,
+      dataInterface: null as any
     }
   },
 
@@ -44,14 +45,13 @@ export default defineComponent({
 		},
 
 		actualizeSetupScreen(obj: SocketDataInterface) {
-      console.log(obj);
       this.isWaiting = false;
       this.optGame = true;
 		},
 
 
-		displaySetupChoose(obj: SocketDataInterface) { obj;
-      // console.log(obj);
+		displaySetupChoose(obj: SocketDataInterface) {
+      this.dataInterface = obj as SocketDataInterface;
 		},
 
     // startingGame(obj: SocketDataInterface) : void
