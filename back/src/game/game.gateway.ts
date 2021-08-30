@@ -9,8 +9,10 @@ import { SubscribeMessage,
 	MessageBody} from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io'
-import { RoomInterface, SetupInterface } from './interfaces/game.interface'
+import { RoomInterface, 
+    SetupInterface } from './interfaces/game.interface'
 import { GameService } from './game.service';
+import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
 
 /**
@@ -84,8 +86,9 @@ import { AuthService } from '../auth/auth.service';
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
 {
 	constructor(
-		private gameService: GameService, 
-		private readonly authService: AuthService
+		private readonly gameService: GameService,
+		private readonly authService: AuthService,
+		private readonly usersService: UsersService,
 		) {};
 	private logger: Logger = new Logger('GameGateway');
 	private intervalId: NodeJS.Timer;
@@ -104,7 +107,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		try
 		{
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userId: user.id, username: user.username };
+			client.data = { userDbId: user.id, username: user.username };
 			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
 		catch(e) 
@@ -113,7 +116,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.disconnect();
 		}
 
-		const room: RoomInterface = await this.gameService.joinRoom(client.data.id, client.id);
+		const room: RoomInterface = await this.gameService.joinRoom(client.data.userDbId, client.id);
 		
 		client.join(room.name);
 		this.logger.log(`Room joined (client id: ${client.id}, room id: ${room.name})`);
@@ -121,7 +124,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		if (room.nbPeopleConnected === 1)
 			client.emit('joinRoom', { clientId: client.id, room });
 
-		else if (room.nbPeopleConnected >= 2)
+		else if (room.nbPeopleConnected === 2)
 		{
 			// Clients will render the setup screen and they will be able to choose match
 			// options for x seconds.
@@ -155,7 +158,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 					this.wss.to(room.name).emit('actualizeGameScreen', { clientId: client.id, room });
 					
 					// Case somebody won, removing the room.
-					if (this.gameService.updateGame(client.data.id, client.id, room))
+					if (this.gameService.updateGame(client.id, room))
 					{
 						this.wss.to(room.name).emit('gameEnded', { clientId: client.id, room });
 						this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
@@ -172,7 +175,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
 		this.logger.log(`Client disconnected: client id: ${client.id})`);
-		this.gameService.updatePlayerStatus(client.data.id);
+		// this.gameService.updatePlayerStatus(client.data.id);
 		
 		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 

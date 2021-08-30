@@ -28,7 +28,7 @@ services:
     container_name: phppgadmin
     image: neimheadh/phppgadmin:7.13.0
     ports:
-      - "8000:80"
+      - 8000:80
     links:
       - "postgres"
     env_file:

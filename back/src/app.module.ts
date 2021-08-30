@@ -14,7 +14,13 @@ import { ChannelBannedUserModule } from './channel_banned_users/channel_banned_u
 import { AppGateway } from './app.gateway';
 
 @Module({
-  imports: [GameModule, AuthModule, UsersModule, HttpModule, ConfigModule.forRoot(), DatabaseModule, ChannelModule,
+  imports: [GameModule, 
+        AuthModule, 
+        UsersModule, 
+        HttpModule, 
+        ConfigModule.forRoot(), 
+        DatabaseModule, 
+        ChannelModule,
 		MessageModule,
 		ChannelMutedUserModule,
 		ChannelBannedUserModule,

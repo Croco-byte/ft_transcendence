@@ -2,9 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { Repository } from 'typeorm';
-import { User } from '../users/users.entity';
-import { InjectRepository } from '@nestjs/typeorm'
+import { UsersService } from 'src/users/users.service';
 import {
   SetupInterface,
   PlayerInterface,
@@ -18,8 +16,7 @@ import {
 export class GameService
 {
 	constructor(
-		@InjectRepository(User)
-		private userRepository: Repository<User>,
+        private usersService: UsersService,
 	) {}
 
 	private rooms: RoomInterface[] = [];
@@ -47,26 +44,27 @@ export class GameService
 
 	async joinRoom(userDbId: number, playerId: string) : Promise<RoomInterface>
 	{
-		const user: User = await this.userRepository.findOne(userDbId);
+		// const user: User = await this.userRepository.findOne(userDbId);
 		let roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
 
 		// Case spectator
-		if (user.roomId != '')
-		{
-			roomToFill =  this.rooms.find(el => el.name === user.roomId);
-			roomToFill.nbPeopleConnected++;
-			this.userRepository.update(user.id, { playerStatus: 'spectating' });
+		// if (user.roomId != '')
+		// {
+		// 	roomToFill =  this.rooms.find(el => el.name === user.roomId);
+		// 	roomToFill.nbPeopleConnected++;
+		// 	this.userRepository.update(user.id, { playerStatus: 'spectating' });
 			
-			return roomToFill;
-		}
+		// 	return roomToFill;
+		// }
 		
 		// Trying to find a room with only one player
 		// else if (roomToFill && roomToFill.nbPeopleConnected == 1)
-		else if (roomToFill && roomToFill.nbPeopleConnected == 1)
+		if (roomToFill && roomToFill.nbPeopleConnected == 1)
 		{
 			roomToFill.nbPeopleConnected++;
+			roomToFill.user2DbId = userDbId;
 			roomToFill.player2Id = playerId;
-			this.userRepository.update(user.id, { roomId: roomToFill.name, playerStatus: 'inGame' });
+			// this.userRepository.update(user.id, { roomId: roomToFill.name, playerStatus: 'inGame' });
 
 			return roomToFill;
 		}
@@ -76,20 +74,22 @@ export class GameService
 		{
 			this.rooms.push({ 
 				name: playerId, 
+				user1DbId: userDbId,
+				user2DbId: 0,
 				player1Id: playerId, 
 				player2Id: '', 
 				nbPeopleConnected: 1,
 				game: this.resetGame(1)
 				 });
 			
-			this.userRepository.update(user.id, { roomId: playerId, playerStatus: 'inGame' });
+			// this.userRepository.update(user.id, { roomId: playerId, playerStatus: 'inGame' });
 			this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
 
 			return this.rooms[this.rooms.length - 1];
-		}
+        }
 	}
 
-	updateGame(userDbId: number, playerId: string, room: RoomInterface) : boolean
+	updateGame(playerId: string, room: RoomInterface) : boolean
 	{
 		if (room.game.ball.x - room.game.ball.radius < 0)
 		{
@@ -108,29 +108,30 @@ export class GameService
 			this.detectCollision(room);	
 		}
 
-		if ((room.player1Id === playerId || room.player2Id === playerId) && (
-				room.game.p1Score >= room.game.p1Left.setup.score || 
-				room.game.p2Score >= room.game.p1Left.setup.score))
-		{
-			this.updateScores(userDbId, room.game.p1Score >= room.game.p1Left.setup.score);
-			return true;
-		}
+		if (room.game.p1Score >= room.game.p1Left.setup.score || 
+				room.game.p2Score >= room.game.p1Left.setup.score)
+			return this.updateScores(room, playerId);
 		
 		return false;
 	}
 
-	async updateScores(userDbId: number, p1Won: boolean) : Promise<boolean>
+	/**
+	 * Increment by one the number of wins / loses for a player depending on the result
+	 * of the game.
+	 * 
+	 * @param room Object with all the game information.
+	 * @param playerId Client socket ID.
+	 * @param userDbId Database ID retrieved after authentification.
+	 */
+	updateScores(room: RoomInterface, playerId: string): boolean
 	{
-		const user: User = await this.userRepository.findOne(userDbId);
+		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
+				this.usersService.incUserLoses(room.user1DbId);
+		
+		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
+				this.usersService.incUserLoses(room.user2DbId);
 
-		if (p1Won)
-		{
-			this.userRepository.update(user.id, { wins: user.wins + 1 });
-			return true;
-		}
-
-		this.userRepository.update(user.id, { wins: user.loses + 1 });
-		return false;
+		return true;
 	}
 
 	updatePlayerPos(playerId: string, playerPosY: number) : void
@@ -284,6 +285,13 @@ export class GameService
 			room.game.p2Right.setup = playerSetup;
 	}
 	
+	/**
+	 * Will set setup options for player 1 and player 2 after they choose. If they didn't
+	 * choose item for 'level' and 'score', the lowest choice will be chosen (ex: P1 choose
+	 * 'easy, P2 'medium', the level difficulty will be set to 'easy').
+	 * 
+	 * @param playerId The client socket ID.
+	 */
 	chooseGameSetup(playerId: string) : void
 	{
 		const room: RoomInterface = this.findRoomByPlayerId(playerId);
@@ -293,13 +301,11 @@ export class GameService
 			const setup1: SetupInterface = room.game.p1Left.setup;
 			const setup2: SetupInterface = room.game.p2Right.setup;
 
-			// Choosing the lowest level between the two player choices.
 			if (setup1.level < setup2.level)
 				setup2.level = setup1.level;
 			else
 				setup1.level = setup2.level;
 			
-			// Same thing for score.
 			if (setup1.score < setup2.score)
 				setup2.score = setup1.score;
 			else
@@ -320,10 +326,5 @@ export class GameService
 		this.logger.log(`Room closed (room id: ${roomName})`);
 		this.logger.log(`Room has been left (player id: ${playerId}, room id: ${roomName})`);
 		this.rooms = this.rooms.filter((el) => el.name != roomName);
-	}
-
-	async updatePlayerStatus(userDbId: number) : Promise<void>
-	{
-		this.userRepository.update(userDbId, { roomId: 'none', playerStatus: 'none' });
 	}
 }

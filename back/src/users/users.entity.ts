@@ -62,7 +62,7 @@ export class User extends BaseEntity
 
 	// values: 'none', 'spectating', 'inGame'
 	@Column({ default: 'none' })
-	playerStatus: string;
+	gameStatus: string;
 
 	toPublic()
 	{
