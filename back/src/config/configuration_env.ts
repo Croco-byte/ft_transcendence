@@ -13,10 +13,6 @@ export default () => ({
 	increase_speed_percentage_easy: parseInt(process.env.INCREASE_SPEED_PERCENTAGE_EASY, 10) || 1.05,
 	increase_speed_percentage_medium: parseInt(process.env.INCREASE_SPEED_PERCENTAGE_MEDIUM, 10) || 1.10,
 	increase_speed_percentage_hard: parseInt(process.env.INCREASE_SPEED_PERCENTAGE_HARD, 10) || 1.15,
-	default_level: parseInt(process.env.DEFAULT_LEVEL, 10) || 1,
-	default_score: parseInt(process.env.DEFAULT_SCORE, 10) || 5,
-	default_paddle_color: process.env.DEFAULT_PADDLE_COLOR,
 	framerate: parseInt(process.env.FRAMERATE, 10) || 60,
-	time_game_setup: parseInt(process.env.TIME_GAME_SETUP, 10) || 10000,
-	time_display_setup_choose: parseInt(process.env.TIME_DISPLAY_SETUP_CHOOSE, 10) || 3000,
+	time_match_start: parseInt(process.env.TIME_MATCH_START, 10) || 10000,
   });

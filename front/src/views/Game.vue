@@ -75,7 +75,6 @@ export default defineComponent({
       cancelAnimationFrame(this.gameID);
       this.backColor = 'purple';
       this.isPlaying = false;
-      this.isWaiting = true;
     },
 
     opponentLeft(obj: SocketDataInterface) {

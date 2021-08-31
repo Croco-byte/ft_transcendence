@@ -45,14 +45,8 @@ export class GameService
 			this.configService.get<number>('increase_speed_percentage_easy');
 	private readonly MAX_ANGLE: number = Math.PI / 4;
 
-	private readonly DEFAULT_LEVEL: number = this.configService.get<number>('default_level');
-	private readonly DEFAULT_SCORE: number = this.configService.get<number>('default_score');
-	private readonly DEFAULT_PADDLE_COLOR: string = this.configService.get<string>('default_paddle_color');
-
 	public readonly FRAMERATE: number = 1000 / this.configService.get<number>('framerate');
-	public readonly TIME_GAME_SETUP: number = this.configService.get<number>('time_game_setup');
-	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 
-			this.configService.get<number>('time_display_setup_choose');;
+	public readonly TIME_MATCH_START: number = this.configService.get<number>('time_match_start');
 
 
 	/**
@@ -71,13 +65,13 @@ export class GameService
 	 * 
 	 * @param userDbId The Id of an user in User's table.
 	 * @param playerId Client socket ID.
+	 * @param setupChosen Setup chosen by player.
 	 * @return A RoomInterface object with all the game information.
 	 */
-	async joinRoom(userDbId: number, playerId: string) : Promise<RoomInterface>
+	async attributeRoom(userDbId: number, playerId: string, setupChosen?: SetupInterface) : Promise<RoomInterface>
 	{
 		const user: User = await this.usersService.findUserById(userDbId);
 
-		// Case spectator
 		if (user.roomId != 'none' && user.gameStatus === 'spectating') {
 			const roomToSpectate = this.rooms.find(el => el.name === user.roomId);
 			roomToSpectate.nbPeopleConnected++;
@@ -85,35 +79,61 @@ export class GameService
 			return roomToSpectate;
 		}
 		
-		this.usersService.updateGameStatus(userDbId, 'inGame');
-		const roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
+		const roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1 && 
+				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
-		if (roomToFill && roomToFill.nbPeopleConnected == 1) {
-			roomToFill.nbPeopleConnected++;
-			roomToFill.user2DbId = userDbId;
-			roomToFill.player2Id = playerId;
-			this.usersService.updateRoomId(userDbId, roomToFill.name);
+		if (roomToFill) 
+			return this.playerJoinRoom(roomToFill, userDbId, playerId);
+		else
+			return this.createNewRoom(setupChosen, userDbId, playerId);
+	}
 
-			return roomToFill;
-		}
+	/**
+	 * Updates a room with only player 1 information, with player 2 informations.
+	 * Updates gameStatus to 'inGame' and roomId in database for both players.
+	 * 
+	 * @param roomToFill A RoomInterface object with information for only one player.
+	 * @param userDbId Player 2 database id.
+	 * @param playerId Player 2 socket id.
+	 * @return A RoomInterface object with all the game information, so the game can be started.
+	 */
+	playerJoinRoom(roomToFill: RoomInterface, userDbId: number, playerId: string) : RoomInterface
+	{
+		roomToFill.nbPeopleConnected++;
+		roomToFill.user2DbId = userDbId;
+		roomToFill.player2Id = playerId;
+		
+		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
+		this.usersService.updateRoomId(roomToFill.user2DbId, playerId);
+		this.usersService.updateGameStatus(roomToFill.user1DbId, 'inGame');
+		this.usersService.updateGameStatus(roomToFill.user2DbId, 'inGame');
+			
+		return roomToFill;
+	}
 
-		// Creating new room if nobody is waiting for another player.
-		else {
-			this.rooms.push({ 
-				name: playerId, 
-				user1DbId: userDbId,
-				user2DbId: 0,
-				player1Id: playerId, 
-				player2Id: '', 
-				nbPeopleConnected: 1,
-				game: this.resetGame(1)
-				 });
+	/**
+	 * Creates a new room with information of player 1. Needs information of player 2 to start
+	 * a new game.
+	 * 
+	 * @param setupChosen Setup chosen by player one.
+	 * @param userDbId Player 1 database id.
+	 * @param playerId Player 1 socket id.
+	 */
+	createNewRoom(setupChosen: SetupInterface, userDbId: number, playerId: string) : RoomInterface
+	{
+		this.rooms.push({ 
+			name: playerId, 
+			user1DbId: userDbId,
+			user2DbId: 0,
+			player1Id: playerId, 
+			player2Id: '', 
+			nbPeopleConnected: 1,
+			game: this.resetGame(setupChosen)
+		});
 
-			this.usersService.updateRoomId(userDbId, playerId);
-			this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
+		this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
 
-			return this.rooms[this.rooms.length - 1];
-        }
+		return this.rooms[this.rooms.length - 1];
 	}
 
 	/**
@@ -134,60 +154,28 @@ export class GameService
 	}
 
 	/**
-	 * Updates setup options for one player.
+	 * Compares two setup.
 	 * 
-	 * @param playerId Client socket ID. If it's a spectator ID, function does nothing.
-	 * @param playerSetup Will be the new setup choose for this player.
+	 * @param setup1 First setup to compare.
+	 * @param setup2 Second setup to compare.
+	 * @return True if same level and same score. False otherwise.
 	 */
-	updateGameSetup(playerId: string, playerSetup: SetupInterface) : void
+	checkIfSameSetup(setup1: SetupInterface, setup2: SetupInterface) : boolean
 	{
-		const room: RoomInterface = this.findRoomByPlayerId(playerId);
-
-		if (room && playerId === room.player1Id)
-			room.game.p1Left.setup = playerSetup;
-		else if (room && playerId === room.player2Id)
-			room.game.p2Right.setup = playerSetup;
-	}
-	
-	/**
-	 * Sets setup options for player 1 and player 2 after they choose. If they didn't
-	 * choose item for 'level' and 'score', the lowest choice will be chosen (ex: P1 choose
-	 * 'easy, P2 'medium', the level difficulty will be set to 'easy').
-	 * 
-	 * @param room Object with game information, will be updated with new setups.
-	 */
-	chooseGameSetup(room: RoomInterface) : void
-	{
-		const setup1: SetupInterface = room.game.p1Left.setup;
-		const setup2: SetupInterface = room.game.p2Right.setup;
-
-		if (setup1.level < setup2.level)
-			setup2.level = setup1.level;
-		else
-			setup1.level = setup2.level;
-		
-		if (setup1.level === this.MEDIUM) {
-			this.PADDLE_HEIGHT = this.configService.get<number>('paddle_height_screen_percentage_medium');
-			this.INCREASE_SPEED_PERCENTAGE = this.configService.get<number>('increase_speed_percentage_medium');
-		}
-		else if (setup1.level === this.HARD) {
-			this.PADDLE_HEIGHT = this.configService.get<number>('paddle_height_screen_percentage_hard');
-			this.INCREASE_SPEED_PERCENTAGE = this.configService.get<number>('increase_speed_percentage_hard');
-		}
-
-		if (setup1.score < setup2.score)
-			setup2.score = setup1.score;
-		else
-			setup1.score = setup2.score;
+		if (setup1.level === setup2.level
+				&& setup1.score === setup2.score)
+			return true;
+		return false;
 	}
 
-
 	/**
-	 * Handles the whole game (player scoring, ball hit by a player...).
+	 * Handles the whole game (player scoring, ball hit by a player, game ended...).
 	 * 
+	 * @param wss A websocket object.
+	 * @param intervalId Clear the interval if existing.
 	 * @param room Object with game information. Will be updated with new ball / players position.
 	 */
-	updateGame(room: RoomInterface) : boolean
+	updateGame(playerId: string, wss: Socket, intervalId: NodeJS.Timer, room: RoomInterface) : boolean
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
@@ -206,8 +194,12 @@ export class GameService
 		}
 
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
-				room.game.p2Score >= room.game.p1Left.setup.score)
+				room.game.p2Score >= room.game.p1Left.setup.score) {
+					
+			this.logger.log(`Game won (client id: ${playerId} (room id: ${room.name})`);
+			this.removeRoom(wss, intervalId, room.name);
 			return this.updateScores(room);
+		}
 		
 		return false;
 	}
@@ -346,12 +338,13 @@ export class GameService
 	}
 
 	/**
+	 * @param setupChosen Setup chosen by player one.
 	 * @param dir Initial ball direction (should be 1 or -1).
 	 * @param _p1score Initial score of player 1.
 	 * @param _p2score Initial score of player 2.
 	 * @return A Game object with default configuration.
 	 */
-	resetGame(dir: number, _p1score = 0, _p2score = 0) : GameInterface
+	resetGame(setup: SetupInterface, dir = 1, _p1score = 0, _p2score = 0) : GameInterface
 	{
 		return {
 			width: this.GAME_WIDTH,
@@ -360,8 +353,8 @@ export class GameService
 			p2Score: _p2score,
 			ball: this.resetBall(dir),
 			paddle: this.resetPaddle(),
-			p1Left: this.resetPlayer(true),
-			p2Right: this.resetPlayer(false),
+			p1Left: this.resetPlayer(setup, true),
+			p2Right: this.resetPlayer(setup, false),
 		};
 	}
 
@@ -382,9 +375,10 @@ export class GameService
 	}
 
 	/**
+	 * @param setupChosen Setup chosen by player one.
 	 * @return A Player object with default configuration.
 	 */
-	private resetPlayer(left: boolean) : PlayerInterface
+	private resetPlayer(setupChosen: SetupInterface, left: boolean) : PlayerInterface
 	{
 		if (left)
 			return {
@@ -392,7 +386,7 @@ export class GameService
 				y: this.GAME_HEIGHT * 0.5,
 				velX: this.BASE_VEL,
 				velY: this.BASE_VEL,
-				setup: this.resetSetup(),
+				setup: this.resetSetup(setupChosen),
 			}
 		else
 			return {
@@ -400,19 +394,20 @@ export class GameService
 				y: this.GAME_HEIGHT * 0.5,
 				velX: this.BASE_VEL,
 				velY: this.BASE_VEL,
-				setup: this.resetSetup(),
+				setup: this.resetSetup(setupChosen),
 			}
 	}
 
 	/**
+	 * @param setupChosen Setup chosen by player one.
 	 * @return A Setup object with default configuration.
 	 */
-	private resetSetup() : SetupInterface
+	private resetSetup(setupChosen: SetupInterface) : SetupInterface
 	{
 		return {
-			level: this.DEFAULT_LEVEL,
-			score: this.DEFAULT_SCORE,
-			paddleColor: this.DEFAULT_PADDLE_COLOR,
+			level: setupChosen.level,
+			score: setupChosen.score,
+			paddleColor: setupChosen.paddleColor,
 		}
 	}
 

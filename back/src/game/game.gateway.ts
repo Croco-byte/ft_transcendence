@@ -14,6 +14,7 @@ import { RoomInterface,
 import { GameService } from './game.service';
 import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
+import { resolve } from 'path';
 
 /**
  * HOW IT WORKS:
@@ -104,7 +105,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userDbId: user.id, username: user.username };
+			client.data = { userDbId: user.id, gameStatus: user.gameStatus };
 			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
 		catch(e) {
@@ -112,58 +113,63 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.disconnect();
 		}
 
-		let room: RoomInterface = await this.gameService.joinRoom(client.data.userDbId, client.id);
-		
-		client.join(room.name);
-		this.logger.log(`Room joined (client id: ${client.id}, room id: ${room.name})`);
-		
-		if (room.nbPeopleConnected === 1)
-			client.emit('joinRoom', { clientId: client.id, room });
+		if (client.data.gameStatus === 'spectating')
+			this.gameService.attributeRoom(client.data.userDbId, client.id);
 
-		else if (room.nbPeopleConnected === 2)
-		{
-			// Clients will render the setup screen and they will be able to choose match
-			// options for x seconds.
-			this.intervalId = setInterval(() => {
-				this.wss.to(room.name).emit('actualizeSetupScreen', room);
-			}, this.gameService.FRAMERATE);
+		// spectate
+
+		// let room: RoomInterface = await this.gameService.joinRoom(client.data.userDbId, client.id);
+		
+		// client.join(room.name);
+		// this.logger.log(`Room joined (client id: ${client.id}, room id: ${room.name})`);
+		
+		// if (room.nbPeopleConnected === 1)
+		// 	client.emit('joinRoom', { clientId: client.id, room });
+
+		// else if (room.nbPeopleConnected === 2)
+		// {
+		// 	// Clients will render the setup screen and they will be able to choose match
+		// 	// options for x seconds.
+		// 	this.intervalId = setInterval(() => {
+		// 		this.wss.to(room.name).emit('actualizeSetupScreen', room);
+		// 	}, this.gameService.FRAMERATE);
 			
-			// Stop to emit gameSetup event after x seconds.
-			new Promise<void> ((resolve) => {
-				setTimeout(() => {
-					clearInterval(this.intervalId);
-					resolve();
-				}, this.gameService.TIME_GAME_SETUP);	
+		// 	// Stop to emit gameSetup event after x seconds.
+		// 	new Promise<void> ((resolve) => {
+		// 		setTimeout(() => {
+		// 			clearInterval(this.intervalId);
+		// 			resolve();
+		// 		}, this.gameService.TIME_GAME_SETUP);	
 
-			// Display the match parameters choose by the player for x seconds.
-			}).then(() => {
-				return new Promise<void> ((resolve) => {
-					this.gameService.chooseGameSetup(room);
-					this.wss.to(room.name).emit('displaySetupChoose', room);
+		// 	// Display the match parameters choose by the player for x seconds.
+		// 	}).then(() => {
+		// 		return new Promise<void> ((resolve) => {
+		// 			this.gameService.chooseGameSetup(room);
+		// 			this.wss.to(room.name).emit('displaySetupChoose', room);
 
-					setTimeout(() => {
-						resolve();
-					}, this.gameService.TIME_DISPLAY_SETUP_CHOOSE);
-				});
+		// 			setTimeout(() => {
+		// 				resolve();
+		// 			}, this.gameService.TIME_DISPLAY_SETUP_CHOOSE);
+		// 		});
 
-			// Once gameSetup emitting is stopped, the game starts and clients will render it.
-			}).then(() => {
-				this.wss.to(room.name).emit('startingGame', room);
+		// 	// Once gameSetup emitting is stopped, the game starts and clients will render it.
+		// 	}).then(() => {
+		// 		this.wss.to(room.name).emit('startingGame', room);
 
-				this.intervalId = setInterval(() => {
-					this.wss.to(room.name).emit('actualizeGameScreen', room);
+		// 		this.intervalId = setInterval(() => {
+		// 			this.wss.to(room.name).emit('actualizeGameScreen', room);
 					
-					// Case somebody won, removing the room.
-					if (this.gameService.updateGame(room))
-					{
-						this.wss.to(room.name).emit('gameEnded', room);
-						this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
-						this.gameService.removeRoom(this.wss, this.intervalId, room.name);
-					}
-				}, this.gameService.FRAMERATE);
-			});
+		// 			// Case somebody won, removing the room.
+		// 			if (this.gameService.updateGame(room))
+		// 			{
+		// 				this.wss.to(room.name).emit('gameEnded', room);
+		// 				this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
+		// 				this.gameService.removeRoom(this.wss, this.intervalId, room.name);
+		// 			}
+		// 		}, this.gameService.FRAMERATE);
+		// 	});
 
-		}
+		// }
 	}
 
 	/**
@@ -180,23 +186,44 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 
-		// No need to remove the room if only 1 people is in it (automatically removed).
-		if (room && room.name && room.nbPeopleConnected > 1) {
+		if (room && room.name && room.nbPeopleConnected) {
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
 			this.gameService.removeRoom(this.wss, this.intervalId, room.name);
 		}
 	}
 
 	/**
-	 * Updates the player' setup options with its new choice.
+	 * Connects the player to a room after it has chosn its game setup option, and when
+	 * a room is fulfilled with two players, launches the game.
+	 * Game will be proceed as following:
+	 * 		- Displays a waiting screen until another player is matched.
+	 * 		- Runs the game.
+	 * 		- Displays end screen when a player won the game or one disconnect.
 	 * 
 	 * @param client Socket object with user information.
-	 * @param setup New setup options for this user.
+	 * @param setupChosen Setup chosen by the player.
 	 */
-	@SubscribeMessage('updateGameSetup')
-	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
+	@SubscribeMessage('setupChosen')
+	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() setupChosen: SetupInterface) : Promise<void>
 	{
-		this.gameService.updateGameSetup(client.id, setup);
+		let room: RoomInterface = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
+
+		if (room.nbPeopleConnected === 1)
+			client.emit('waitingForPlayer');
+		
+		else if (room.nbPeopleConnected === 2) {
+			this.wss.to(room.name).emit('startingGame', room);
+
+			await (() => new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START)));
+
+			this.intervalId = setInterval(() => {
+				this.wss.to(room.name).emit('actualizeGameScreen', room);
+				
+				if (this.gameService.updateGame(client.id, this.wss, this.intervalId, room))
+					this.wss.to(room.name).emit('gameEnded', room);
+					
+			}, this.gameService.FRAMERATE);
+		}
 	}
 
 	/**
