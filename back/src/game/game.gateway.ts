@@ -20,38 +20,37 @@ import { AuthService } from '../auth/auth.service';
  * 
  * ---------------------------------------------------------------------------------------------------------------
  * EMETTERS COTE BACK (dans leur ordre d'apparition):
- * TOUS LES EMETTEURS ENVOIENT L'OBJET 'SocketDataInterface'
  * 
- * - 'joinRoom' (1 FOIS) 
+ * - 'joinRoom' (1 FOIS) : SocketDataInterface
  *	>>>	Quand quelqu'un se connecte pour la premiere fois à l'onglet game. Correspond
- *		au 'waiting another player'. Seul le joueur 1 recevra cet event.
+ *		au 'waiting another player'. Seul le joueur 1 recevra cet event (permet de l'identifier).
  *		On peut checker le nombre de joueurs dans la room dans obj.room.nbPeopleConnected.
  * 
- * - 'actualizeSetupScreen' (INTERVAL)
+ * - 'actualizeSetupScreen' (INTERVAL) : RoomInterface
  *	>>> Envoie l'objet toutes les x ms avec les choix actuels des options pour joueur 1 et joueur 2.
  *		Permet ainsi de faire un rendu en direct des choix actuels des joueurs. Cette evenement dure
  *		quelques secondes (defini par la constante 'TIME_GAME_SETUP' dans game.service.ts). Si joueur 1
  *		ou joueur 2 clique sur une autre option, l'objet 'SocketDataInterface' sera update par le listener
  *		'updateGameSetup'.
  *		
- * - 'displaySetupChoose' (1 FOIS)
+ * - 'displaySetupChoose' (1 FOIS) : RoomInterface
  * 	>>> Envoie une seule fois l'objet 'SocketDataInterface' avec les options finales du jeu retenues pour
  * 		la game à venir. Si P1 et P2 n'avait pas choisi les mêmes options, la plus petite option est retenue
  * 		(ex: P1 a choisi easy, P2 a choisi medium >>> easy sera retenue).
  * 
- * - 'startingGame' (1 FOIS) (peut-etre useless cet event ?)
+ * - 'startingGame' (1 FOIS) (peut-etre useless cet event ?) : RoomInterface
  * 	>>> Indique que la partie va commencer. Permet de stop de display les options choisies et d'indiquer 
  * 		le jeu va pouvoir etre display.
  * 
- * - 'actualizeGameScreen' (INTERVAL)
+ * - 'actualizeGameScreen' (INTERVAL) : RoomInterface
  * 	>>>	Envoie l'objet toutes les x ms avec les nouvelles positions de la balle et des paddle. Les positions 
  * 		des paddles peuvent etre update par le listener 'pongEvent'.
  * 
- * - 'gameEnded' (1 FOIS)
+ * - 'gameEnded' (1 FOIS) : RoomInterface
  * 	>>> Envoie l'objet avec les scores finaux. Indique que la parte est terminée, arrete l'animation du jeu
  * 		et déclenche le rendu de l'écran de victoire. 
  * 
- * - 'opponentLeft' (1 FOIS)
+ * - 'opponentLeft' (1 FOIS) : SocketDataInterface
  * 	>>> Permet juste d'indiquer que 1 des 2 joueurs principaux vient de deconnecter de la partie. Entraine la
  * 		fin du jeu et la victoire par abandon de l'autre joueur (on display donc le screen de victoire). 
  * 		!!! VOIR COMMENT ON PEUT MIEUX GERER SI LE JOUEUR DECO PENDANT LE SETUP DE LA GAME
@@ -64,7 +63,7 @@ import { AuthService } from '../auth/auth.service';
  * 	>>> Update l'objet setup qui est envoyé par interval regulier par l'emetteur back 'actualizeSetupScreen' lorsqu'un 
  * 		joueur clique sur une option differente.
  * 
- * - 'pongEvent' (@MessageBody() event: any)
+ * - 'pongEvent' (@MessageBody() playerPosY: number)
  * 	>>> L'objet event contient un x et un y, permet d'update la position du joueur pendant que le jeu a lieu.
  * 
  * - 'disconnectClient' (pas de body)
@@ -126,7 +125,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			// Clients will render the setup screen and they will be able to choose match
 			// options for x seconds.
 			this.intervalId = setInterval(() => {
-				this.wss.to(room.name).emit('actualizeSetupScreen', { clientId: client.id, room });
+				this.wss.to(room.name).emit('actualizeSetupScreen', room);
 			}, this.gameService.FRAMERATE);
 			
 			// Stop to emit gameSetup event after x seconds.
@@ -140,7 +139,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			}).then(() => {
 				return new Promise<void> ((resolve) => {
 					this.gameService.chooseGameSetup(room);
-					this.wss.to(room.name).emit('displaySetupChoose', { clientId: client.id, room });
+					this.wss.to(room.name).emit('displaySetupChoose', room);
 
 					setTimeout(() => {
 						resolve();
@@ -149,15 +148,15 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 			// Once gameSetup emitting is stopped, the game starts and clients will render it.
 			}).then(() => {
-				this.wss.to(room.name).emit('startingGame', { clientId: client.id, room });
+				this.wss.to(room.name).emit('startingGame', room);
 
 				this.intervalId = setInterval(() => {
-					this.wss.to(room.name).emit('actualizeGameScreen', { clientId: client.id, room });
+					this.wss.to(room.name).emit('actualizeGameScreen', room);
 					
 					// Case somebody won, removing the room.
 					if (this.gameService.updateGame(room))
 					{
-						this.wss.to(room.name).emit('gameEnded', { clientId: client.id, room });
+						this.wss.to(room.name).emit('gameEnded', room);
 						this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
 						this.gameService.removeRoom(this.wss, this.intervalId, room.name);
 					}
@@ -213,7 +212,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 	
 	/**
-	 * Disconnect the client when it leaves the game vue.
+	 * Disconnects the client when it leaves the game vue.
 	 * 
 	 * @param client Socket object with user information.
 	 */
