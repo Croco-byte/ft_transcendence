@@ -2,7 +2,9 @@
 import { Injectable } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { User } from '../users/users.entity';
 import { UsersService } from 'src/users/users.service';
+import { ConfigService } from '@nestjs/config'
 import {
   SetupInterface,
   PlayerInterface,
@@ -16,62 +18,83 @@ import {
 export class GameService
 {
 	constructor(
-        private usersService: UsersService,
+		private usersService: UsersService,
+		private configService: ConfigService,
 	) {}
 
 	private rooms: RoomInterface[] = [];
 	private logger: Logger = new Logger('GameService');
 
-	private readonly GAME_WIDTH: number = 600;
-	private readonly GAME_HEIGHT: number = 400;
-	private readonly BASE_SPEED: number = 6;
-	private readonly BASE_VEL: number = 30;
-	private readonly BALL_RADIUS: number = 15;
-	private readonly PADDLE_WIDTH: number = 20;
-	private readonly PADDLE_HEIGHT: number = 600 * 0.2;
-	private readonly PADDLE_BORDER: number = 6;
-	private readonly MAX_BALL_SPEED: number = 12;
-	private readonly INCREASE_SPEED_PERCENTAGE: number = 1.05;
+	private readonly GAME_WIDTH: number = this.configService.get<number>('game_width');
+	private readonly GAME_HEIGHT: number = this.configService.get<number>('game_height');
+	private readonly BASE_SPEED: number = this.configService.get<number>('base_speed');
+	private readonly BASE_VEL: number = this.configService.get<number>('base_vel');
+	private readonly BALL_RADIUS: number = this.configService.get<number>('ball_radius');
+	private readonly PADDLE_HEIGHT: number = 
+			this.configService.get<number>('paddle_height_screen_percentage') * this.GAME_HEIGHT;
+	private readonly PADDLE_WIDTH: number = 
+			this.configService.get<number>('paddle_width_screen_percentage') * this.GAME_WIDTH;
+	private readonly PADDLE_BORDER: number = 
+			this.configService.get<number>('paddle_border_width_screen_percentage') * this.GAME_WIDTH;
+	private readonly MAX_BALL_SPEED: number = this.configService.get<number>('max_ball_speed');
+	private readonly INCREASE_SPEED_PERCENTAGE: number = 
+			this.configService.get<number>('increase_speed_percentage');
 	private readonly MAX_ANGLE: number = Math.PI / 4;
 
-	private readonly EASY: number = 1;
-	private readonly DEFAULT_SCORE: number = 5;
-	private readonly DEFAULT_PADDLE_COLOR: string = 'white';
+	private readonly EASY: number = this.configService.get<number>('easy');
+	private readonly DEFAULT_SCORE: number = this.configService.get<number>('default_score');
+	private readonly DEFAULT_PADDLE_COLOR: string = this.configService.get<string>('default_paddle_color');
 
-	public readonly FRAMERATE: number = 1000 / 60;
-	public readonly TIME_GAME_SETUP: number = 10000;
-	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 1000;
+	public readonly FRAMERATE: number = 1000 / this.configService.get<number>('framerate');
+	public readonly TIME_GAME_SETUP: number = this.configService.get<number>('time_game_setup');
+	public readonly TIME_DISPLAY_SETUP_CHOOSE: number = 
+			this.configService.get<number>('time_display_setup_choose');;
 
+
+	/**
+	 * Finds which room the player belongs.
+	 * 
+	 * @param playerId Client socket ID.
+	 * @return A room object containing playerId. Null otherwise.
+	 */
+	findRoomByPlayerId(playerId: string) : RoomInterface
+	{
+		return this.rooms.find(el => el.player1Id === playerId || el.player2Id === playerId);
+	}
+
+	/**
+	 * Attributes a room to a player or a spectator.
+	 * 
+	 * @param userDbId The Id of an user in User's table.
+	 * @param playerId Client socket ID.
+	 * @return A RoomInterface object with all the game information.
+	 */
 	async joinRoom(userDbId: number, playerId: string) : Promise<RoomInterface>
 	{
-		// const user: User = await this.userRepository.findOne(userDbId);
-		let roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
+		const user: User = await this.usersService.findUserById(userDbId);
 
 		// Case spectator
-		// if (user.roomId != '')
-		// {
-		// 	roomToFill =  this.rooms.find(el => el.name === user.roomId);
-		// 	roomToFill.nbPeopleConnected++;
-		// 	this.userRepository.update(user.id, { playerStatus: 'spectating' });
+		if (user.roomId != 'none' && user.gameStatus === 'spectating') {
+			const roomToSpectate = this.rooms.find(el => el.name === user.roomId);
+			roomToSpectate.nbPeopleConnected++;
 			
-		// 	return roomToFill;
-		// }
+			return roomToSpectate;
+		}
 		
-		// Trying to find a room with only one player
-		// else if (roomToFill && roomToFill.nbPeopleConnected == 1)
-		if (roomToFill && roomToFill.nbPeopleConnected == 1)
-		{
+		this.usersService.updateGameStatus(userDbId, 'inGame');
+		const roomToFill: RoomInterface = this.rooms.find(el => el.nbPeopleConnected === 1);
+
+		if (roomToFill && roomToFill.nbPeopleConnected == 1) {
 			roomToFill.nbPeopleConnected++;
 			roomToFill.user2DbId = userDbId;
 			roomToFill.player2Id = playerId;
-			// this.userRepository.update(user.id, { roomId: roomToFill.name, playerStatus: 'inGame' });
+			this.usersService.updateRoomId(userDbId, roomToFill.name);
 
 			return roomToFill;
 		}
 
-		// Otherwise creating a new room
-		else
-		{
+		// Creating new room if nobody is waiting for another player.
+		else {
 			this.rooms.push({ 
 				name: playerId, 
 				user1DbId: userDbId,
@@ -81,49 +104,110 @@ export class GameService
 				nbPeopleConnected: 1,
 				game: this.resetGame(1)
 				 });
-			
-			// this.userRepository.update(user.id, { roomId: playerId, playerStatus: 'inGame' });
+
+			this.usersService.updateRoomId(userDbId, playerId);
 			this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
 
 			return this.rooms[this.rooms.length - 1];
         }
 	}
 
-	updateGame(playerId: string, room: RoomInterface) : boolean
+	/**
+	 * Makes every connected socket leaves a specific room in order to close it.
+	 * 
+	 * @param wss A websocket object.
+	 * @param intervalId Clear the interval if existing.
+	 * @param playerId Client socket ID.
+	 * @param roomName Room name where playerId belongs.
+	 */
+	removeRoom(wss: Socket, intervalId: NodeJS.Timer, roomName: string) : void
 	{
-		if (room.game.ball.x - room.game.ball.radius < 0)
-		{
+		clearInterval(intervalId);
+		wss.in(roomName).socketsLeave(roomName);
+		
+		this.logger.log(`Room closed (room id: ${roomName})`);
+		this.rooms = this.rooms.filter((el) => el.name != roomName);
+	}
+
+	/**
+	 * Updates setup options for one player.
+	 * 
+	 * @param playerId Client socket ID. If it's a spectator ID, function does nothing.
+	 * @param playerSetup Will be the new setup choose for this player.
+	 */
+	updateGameSetup(playerId: string, playerSetup: SetupInterface) : void
+	{
+		const room: RoomInterface = this.findRoomByPlayerId(playerId);
+
+		if (room && playerId === room.player1Id)
+			room.game.p1Left.setup = playerSetup;
+		else if (room && playerId === room.player2Id)
+			room.game.p2Right.setup = playerSetup;
+	}
+	
+	/**
+	 * Sets setup options for player 1 and player 2 after they choose. If they didn't
+	 * choose item for 'level' and 'score', the lowest choice will be chosen (ex: P1 choose
+	 * 'easy, P2 'medium', the level difficulty will be set to 'easy').
+	 * 
+	 * @param room Object with game information, will be updated with new setups.
+	 */
+	chooseGameSetup(room: RoomInterface) : void
+	{
+		const setup1: SetupInterface = room.game.p1Left.setup;
+		const setup2: SetupInterface = room.game.p2Right.setup;
+
+		if (setup1.level < setup2.level)
+			setup2.level = setup1.level;
+		else
+			setup1.level = setup2.level;
+		
+		if (setup1.score < setup2.score)
+			setup2.score = setup1.score;
+		else
+			setup1.score = setup2.score;
+	}
+
+
+	/**
+	 * Handles the whole game (player scoring, ball hit by a player...).
+	 * 
+	 * @param room Object with game information. Will be updated with new ball / players position.
+	 */
+	updateGame(room: RoomInterface) : boolean
+	{
+		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
 			room.game.ball = this.resetBall(room.game.ball.dir * -1);
 		}
-		else if (room.game.ball.x + room.game.ball.radius > room.game.width)
-		{
+
+		else if ((room.game.ball.x + room.game.ball.radius) > room.game.width) {
 			room.game.p1Score++;
 			room.game.ball = this.resetBall(room.game.ball.dir * -1);
 		}
-		else
-		{
+
+		else {
 			room.game.ball.x += room.game.ball.velX;
 			room.game.ball.y += room.game.ball.velY;
-			this.detectCollision(room);	
+			this.detectCollision(room);
 		}
 
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score)
-			return this.updateScores(room, playerId);
+			return this.updateScores(room);
 		
 		return false;
 	}
 
 	/**
-	 * Increment by one the number of wins / loses for a player depending on the result
+	 * Increments by one the number of wins / loses for a player depending on the result
 	 * of the game.
 	 * 
-	 * @param room Object with all the game information.
+	 * @param room Object with game information.
 	 * @param playerId Client socket ID.
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	updateScores(room: RoomInterface, playerId: string): boolean
+	updateScores(room: RoomInterface): boolean
 	{
 		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
 				this.usersService.incUserLoses(room.user1DbId);
@@ -134,33 +218,12 @@ export class GameService
 		return true;
 	}
 
-	updatePlayerPos(playerId: string, playerPosY: number) : void
-	{
-		const room: RoomInterface = this.rooms.find(el => el.player1Id === playerId || 
-				el.player2Id === playerId);
-		
-		if (room && room.player1Id === playerId)
-			playerPosY > room.game.p1Left.y ? this.userMoveDown(room, room.game.p1Left, playerPosY) :
-					this.userMoveUp(room, room.game.p1Left, playerPosY);
-
-		else if (room)
-			playerPosY > room.game.p2Right.y ? this.userMoveDown(room, room.game.p2Right, playerPosY) :
-					this.userMoveUp(room, room.game.p2Right, playerPosY);
-	}
-
-	private userMoveUp(room: RoomInterface, player : PlayerInterface, event: any) : void
-	{
-		player.y -= (player.y - event.y > player.velY) ? player.velY : player.y - event.y;
-		(player.y < room.game.paddle.height / 2) ? player.y = room.game.paddle.height / 2 : 0;
-	}
-	
-	private userMoveDown(room: RoomInterface, player : PlayerInterface, event: any) : void
-	{
-		player.y += (event.y - player.y > player.velY) ? player.velY : event.y - player.y;
-		(player.y > this.GAME_HEIGHT - room.game.paddle.height / 2) ? 
-				player.y = this.GAME_HEIGHT - room.game.paddle.height / 2 : 0;
-	}
-
+	/**
+	 * Detects if the ball meet a wall / a paddle, and calculates new ball direction if
+	 * it's the case.
+	 * 
+	 * @param room Object with game information, will be updated with new ball direction.
+	 */
 	private detectCollision(room: RoomInterface) : void
 	{
 		const ball: BallInterface = room.game.ball;
@@ -182,6 +245,12 @@ export class GameService
 			room.game.ball.velY = room.game.ball.velY * -1;
 	}
 
+	/**
+	 * Calculates the new ball's direction when player one hits the ball. Increases
+	 * ball' speed aswell.
+	 * 
+	 * @param room Object with game information, will be updated with new ball direction.
+	 */
 	private playerOneIntersectBall(room: RoomInterface) : void
 	{
 		const percentIntersect: number = (room.game.ball.y - room.game.p1Left.y)/ (room.game.paddle.height / 2);
@@ -196,6 +265,12 @@ export class GameService
 			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
 	
+	/**
+	 * Calculates the new ball's direction when player two hits the ball. Increase
+	 * ball' speed aswell.
+	 * 
+	 * @param room Object with game information, will be updated with new ball direction.
+	 */
 	private playerTwoIntersectBall(room: RoomInterface) : void
 	{
 		const percentIntersect: number = (room.game.ball.y - room.game.p2Right.y) / (room.game.paddle.height / 2);
@@ -209,7 +284,60 @@ export class GameService
 		if (room.game.ball.speed < this.MAX_BALL_SPEED)
 			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
+
+	/**
+	 * Updates player's paddle position accordingly to mouse Y position.
+	 * 
+	 * @param playerId Client socket ID. If it's a spectator ID, function does nothing.
+	 * @param playerPosY Y position of player's mouse.
+	 */
+	updatePlayerPos(playerId: string, playerPosY: number) : void
+	{
+		const room: RoomInterface = this.rooms.find(el => el.player1Id === playerId || 
+				el.player2Id === playerId);
+		
+		if (room && room.player1Id === playerId)
+			playerPosY > room.game.p1Left.y ? this.userMoveDown(room, room.game.p1Left, playerPosY) :
+					this.userMoveUp(room, room.game.p1Left, playerPosY);
+
+		else if (room)
+			playerPosY > room.game.p2Right.y ? this.userMoveDown(room, room.game.p2Right, playerPosY) :
+					this.userMoveUp(room, room.game.p2Right, playerPosY);
+	}
+
+	/**
+	 * Updates player's paddle position if it moove up its mouse.
+	 * 
+	 * @param room Object with game information.
+	 * @param player Object with player information. Will be updated with new player position.
+	 * @param event Player mouse's coordinates.
+	 */
+	private userMoveUp(room: RoomInterface, player : PlayerInterface, event: any) : void
+	{
+		player.y -= (player.y - event.y > player.velY) ? player.velY : player.y - event.y;
+		(player.y < room.game.paddle.height / 2) ? player.y = room.game.paddle.height / 2 : 0;
+	}
 	
+	/**
+	 * Updates player's paddle position if it moove down its mouse.
+	 * 
+	 * @param room Object with game information.
+	 * @param player Object with player information. Will be updated with new player position.
+	 * @param event Player mouse's coordinates.
+	 */
+	private userMoveDown(room: RoomInterface, player : PlayerInterface, event: any) : void
+	{
+		player.y += (event.y - player.y > player.velY) ? player.velY : event.y - player.y;
+		(player.y > this.GAME_HEIGHT - room.game.paddle.height / 2) ? 
+				player.y = this.GAME_HEIGHT - room.game.paddle.height / 2 : 0;
+	}
+
+	/**
+	 * @param dir Initial ball direction (should be 1 or -1).
+	 * @param _p1score Initial score of player 1.
+	 * @param _p2score Initial score of player 2.
+	 * @return A Game object with default configuration.
+	 */
 	resetGame(dir: number, _p1score = 0, _p2score = 0) : GameInterface
 	{
 		return {
@@ -224,6 +352,9 @@ export class GameService
 		};
 	}
 
+	/**
+	 * @return A Ball object with default configuration.
+	 */
 	private resetBall(dir: number) : BallInterface
 	{
 		return {
@@ -237,6 +368,9 @@ export class GameService
 		}
 	}
 
+	/**
+	 * @return A Player object with default configuration.
+	 */
 	private resetPlayer(left: boolean) : PlayerInterface
 	{
 		if (left)
@@ -257,6 +391,9 @@ export class GameService
 			}
 	}
 
+	/**
+	 * @return A Setup object with default configuration.
+	 */
 	private resetSetup() : SetupInterface
 	{
 		return {
@@ -266,6 +403,9 @@ export class GameService
 		}
 	}
 
+	/**
+	 * @return A Paddle object with default configuration.
+	 */
 	private resetPaddle() : PaddleInterface
 	{
 		return {
@@ -273,58 +413,5 @@ export class GameService
 			height: this.PADDLE_HEIGHT,
 			border: this.PADDLE_BORDER,
 		}
-	}
-
-	updateGameSetup(playerId: string, playerSetup: SetupInterface) : void
-	{
-		const room: RoomInterface = this.findRoomByPlayerId(playerId);
-
-		if (room && playerId === room.player1Id)
-			room.game.p1Left.setup = playerSetup;
-		else if (room && playerId === room.player2Id)
-			room.game.p2Right.setup = playerSetup;
-	}
-	
-	/**
-	 * Will set setup options for player 1 and player 2 after they choose. If they didn't
-	 * choose item for 'level' and 'score', the lowest choice will be chosen (ex: P1 choose
-	 * 'easy, P2 'medium', the level difficulty will be set to 'easy').
-	 * 
-	 * @param playerId The client socket ID.
-	 */
-	chooseGameSetup(playerId: string) : void
-	{
-		const room: RoomInterface = this.findRoomByPlayerId(playerId);
-
-		if (room && room.player1Id === playerId)
-		{
-			const setup1: SetupInterface = room.game.p1Left.setup;
-			const setup2: SetupInterface = room.game.p2Right.setup;
-
-			if (setup1.level < setup2.level)
-				setup2.level = setup1.level;
-			else
-				setup1.level = setup2.level;
-			
-			if (setup1.score < setup2.score)
-				setup2.score = setup1.score;
-			else
-				setup1.score = setup2.score;
-		}
-	}
-
-	findRoomByPlayerId(playerId: string) : RoomInterface
-	{
-		return this.rooms.find(el => el.player1Id === playerId || el.player2Id === playerId);
-	}
-
-	removeRoom(wss: Socket, intervalId: NodeJS.Timer, playerId: string, roomName: string) : void
-	{
-		clearInterval(intervalId);
-		wss.in(roomName).socketsLeave(roomName);
-		
-		this.logger.log(`Room closed (room id: ${roomName})`);
-		this.logger.log(`Room has been left (player id: ${playerId}, room id: ${roomName})`);
-		this.rooms = this.rooms.filter((el) => el.name != roomName);
 	}
 }

@@ -1,0 +1,18 @@
+export default () => ({
+	game_width: parseInt(process.env.GAME_WIDTH, 10) || 600,
+	game_height: parseInt(process.env.GAME_HEIGHT, 10) || 400,
+	base_speed: parseInt(process.env.BASE_SPEED, 10) || 6,
+	base_vel: parseInt(process.env.BASE_VEL, 10) || 30,
+	ball_radius: parseInt(process.env.BALL_RADIUS, 10) || 15,
+	paddle_height_screen_percentage: parseInt(process.env.PADDLE_HEIGHT_SCREEN_PERCENTAGE, 10) || 0.3,
+	paddle_width_screen_percentage: parseInt(process.env.PADDLE_WIDTH_SCREEN_PERCENTAGE, 10) || 0.033,
+	paddle_border_width_screen_percentage: parseInt(process.env.PADDLE_BORDER_WIDTH_SCREEN_PERCENTAGE, 10) || 0.01,
+	max_ball_speed: parseInt(process.env.MAX_BALL_SPEED, 10) || 12,
+	increase_speed_percentage: parseInt(process.env.INCREASE_SPEED_PERCENTAGE, 10) || 1.05,
+	easy: parseInt(process.env.EASY, 10) || 1,
+	default_score: parseInt(process.env.DEFAULT_SCORE, 10) || 5,
+	default_paddle_color: process.env.DEFAULT_PADDLE_COLOR,
+	framerate: parseInt(process.env.FRAMERATE, 10) || 60,
+	time_game_setup: parseInt(process.env.TIME_GAME_SETUP, 10) || 10000,
+	time_display_setup_choose: parseInt(process.env.TIME_DISPLAY_SETUP_CHOOSE, 10) || 3000,
+  });

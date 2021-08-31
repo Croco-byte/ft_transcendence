@@ -401,6 +401,7 @@ export class UsersService {
 		await this.usersRepository.save(user);
 	}
 
+
 	/* ==== Lucas' utility functions ==== */
 
 	/**
@@ -464,7 +465,7 @@ export class UsersService {
 	 * @param newStatus Should be a room ID or 'none' in case of a reset.
 	 * @return Promise with the User object updated in database.
 	 */
-	async updateRoomID(userDbId: number, roomId: string): Promise<User>
+	async updateRoomId(userDbId: number, roomId: string): Promise<User>
 	{
 		try {
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } });

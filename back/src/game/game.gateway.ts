@@ -16,14 +16,6 @@ import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
 
 /**
- * TO DO: 	- Rajouter le lien avec la base de données pour les spectateurs (notamment comment on join 
- * 			  la room, dans handle connection).
- * 			- Update les logs pour qu'on fasse la diff entre un player qui join et un spectateur.
- * 			- Gerer le emit room closed.
- * 			- Mieux gerer les cas de deconnexion et de changement de vue.
- */
-
-/**
  * HOW IT WORKS:
  * 
  * ---------------------------------------------------------------------------------------------------------------
@@ -32,9 +24,8 @@ import { AuthService } from '../auth/auth.service';
  * 
  * - 'joinRoom' (1 FOIS) 
  *	>>>	Quand quelqu'un se connecte pour la premiere fois à l'onglet game. Correspond
- *		au 'waiting another player'. Le joueur 1 a donc cet ecran qui s'affiche, le joueur
- * 		2 lui recevra l'event mais ne doit pas print l'ecran. On peut checker le nombre de joueurs
- * 		dans la room dans obj.room.nbPeopleConnected
+ *		au 'waiting another player'. Seul le joueur 1 recevra cet event.
+ *		On peut checker le nombre de joueurs dans la room dans obj.room.nbPeopleConnected.
  * 
  * - 'actualizeSetupScreen' (INTERVAL)
  *	>>> Envoie l'objet toutes les x ms avec les choix actuels des options pour joueur 1 et joueur 2.
@@ -104,19 +95,17 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	// all the game positions, and frontend will render the game using those coordinates.
 	async handleConnection(@ConnectedSocket() client: Socket): Promise<void>
 	{
-		try
-		{
+		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			client.data = { userDbId: user.id, username: user.username };
 			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
-		catch(e) 
-		{
+		catch(e) {
 			this.logger.log("Unauthorized client trying to connect");
 			client.disconnect();
 		}
 
-		const room: RoomInterface = await this.gameService.joinRoom(client.data.userDbId, client.id);
+		let room: RoomInterface = await this.gameService.joinRoom(client.data.userDbId, client.id);
 		
 		client.join(room.name);
 		this.logger.log(`Room joined (client id: ${client.id}, room id: ${room.name})`);
@@ -142,7 +131,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			// Display the match parameters choose by the player for x seconds.
 			}).then(() => {
 				return new Promise<void> ((resolve) => {
-					this.gameService.chooseGameSetup(client.id);
+					this.gameService.chooseGameSetup(room);
 					this.wss.to(room.name).emit('displaySetupChoose', { clientId: client.id, room });
 
 					setTimeout(() => {
@@ -158,11 +147,11 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 					this.wss.to(room.name).emit('actualizeGameScreen', { clientId: client.id, room });
 					
 					// Case somebody won, removing the room.
-					if (this.gameService.updateGame(client.id, room))
+					if (this.gameService.updateGame(room))
 					{
 						this.wss.to(room.name).emit('gameEnded', { clientId: client.id, room });
 						this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
-						this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
+						this.gameService.removeRoom(this.wss, this.intervalId, room.name);
 					}
 				}, this.gameService.FRAMERATE);
 			});
@@ -170,21 +159,21 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
-	// Emit to disconnect everybody in the room if one of the two players disconnect from the game
-	// (including people spectating).
+	// Emit to disconnect players and spectators of the room only if one of the two players 
+	// disconnected from the game. Doesn't disconnect people from the room if a spectator
+	// leaves.
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
 		this.logger.log(`Client disconnected: client id: ${client.id})`);
-		// this.gameService.updatePlayerStatus(client.data.id);
+		this.usersService.updateGameStatus(client.data.userDbId, 'none');
+		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
 		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 
-		// Removing a room if one of the two players left the game (except if player is alone in the room),
-		// will be automatically removed.
-		if (room && room.name && room.nbPeopleConnected > 1)
-		{
+		// No need to remove the room if only 1 people is in it (automatically removed).
+		if (room && room.name && room.nbPeopleConnected > 1) {
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.gameService.removeRoom(this.wss, this.intervalId, client.id, room.name);
+			this.gameService.removeRoom(this.wss, this.intervalId, room.name);
 		}
 	}
 
