@@ -15,6 +15,7 @@ import GamePlay from './game/GamePlay.vue'
 import GameJoin from './game/GameJoin.vue'
 import io from 'socket.io-client'
 import authHeader from '../services/auth-header';
+import { RoomInterface } from '../types/game.interface'
 
 export default defineComponent({
   
@@ -44,32 +45,32 @@ export default defineComponent({
       console.log(`in joinRoom function`);
 		},
 
-		actualizeSetupScreen(obj: SocketDataInterface) {
+		actualizeSetupScreen(room: RoomInterface) {
       this.isWaiting = false;
       this.optGame = true;
 		},
 
 
-		displaySetupChoose(obj: SocketDataInterface) { obj;
+		displaySetupChoose(room: RoomInterface) { room;
 		},
 
-    // startingGame(obj: SocketDataInterface) : void
+    // startingGame(room: RoomInterface) : void
     // {
-    //   if (!this.isSpec(obj))
+    //   if (!this.isSpec(room))
     //     this.pongEvent();
     // },
 
-    actualizeGameScreen(obj: SocketDataInterface) {
-      this.room = obj.room;
+    actualizeGameScreen(room: RoomInterface) {
+      this.room = room;
       this.optGame = false;
       this.isPlaying = true;
     },
 
-    gameEnded(obj: SocketDataInterface) : void
+    gameEnded(room: RoomInterface) : void
     {
-      this.socket.emit('opponentLeft', obj.room);
+      this.socket.emit('opponentLeft', room);
 
-      let msg = obj.room.game.p1Score > obj.room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
+      let msg = room.game.p1Score > room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
       alert(msg);
       cancelAnimationFrame(this.gameID);
       this.backColor = 'purple';
@@ -118,28 +119,28 @@ export default defineComponent({
 			});
 
 			// ecran choisir option qunad les joueurs cliquent sur les options
-			this.socket.on('actualizeSetupScreen', (obj: SocketDataInterface) => {
-				this.actualizeSetupScreen(obj);
+			this.socket.on('actualizeSetupScreen', (room: RoomInterface) => {
+				this.actualizeSetupScreen(room);
 			});
 
 			// // ecran qui montre pendant quelques secondes les options choisies
-			// this.socket.on('displaySetupChoose', (obj: SocketDataInterface) => {
-			// 	this.displaySetupChoose(obj);
+			// this.socket.on('displaySetupChoose', (room: RoomInterface) => {
+			// 	this.displaySetupChoose(room);
 			// });
 
 			// //event qui permet de lancer la game apres que les options aient ete choisi
-			// this.socket.on('startingGame', (obj: SocketDataInterface) => {
-			// 	this.startingGame(obj);
+			// this.socket.on('startingGame', (room: RoomInterface) => {
+			// 	this.startingGame(room);
 			// });
 
 			// ecran de rendu du jeu
-			this.socket.on('actualizeGameScreen', (obj: SocketDataInterface) => {
-				this.actualizeGameScreen(obj);
+			this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
+				this.actualizeGameScreen(room);
 			});
 			
 			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			this.socket.on('gameEnded', (obj: SocketDataInterface) => {
-				this.gameEnded(obj);
+			this.socket.on('gameEnded', (room: RoomInterface) => {
+				this.gameEnded(room);
 			});
 
 			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)

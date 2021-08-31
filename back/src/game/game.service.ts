@@ -25,23 +25,27 @@ export class GameService
 	private rooms: RoomInterface[] = [];
 	private logger: Logger = new Logger('GameService');
 
+	private readonly EASY: number = 1;
+	private readonly MEDIUM: number = 2;
+	private readonly HARD: number = 3;
+
 	private readonly GAME_WIDTH: number = this.configService.get<number>('game_width');
 	private readonly GAME_HEIGHT: number = this.configService.get<number>('game_height');
 	private readonly BASE_SPEED: number = this.configService.get<number>('base_speed');
 	private readonly BASE_VEL: number = this.configService.get<number>('base_vel');
 	private readonly BALL_RADIUS: number = this.configService.get<number>('ball_radius');
-	private readonly PADDLE_HEIGHT: number = 
-			this.configService.get<number>('paddle_height_screen_percentage') * this.GAME_HEIGHT;
+	private PADDLE_HEIGHT: number = 
+			this.configService.get<number>('paddle_height_screen_percentage_easy') * this.GAME_HEIGHT;
 	private readonly PADDLE_WIDTH: number = 
 			this.configService.get<number>('paddle_width_screen_percentage') * this.GAME_WIDTH;
 	private readonly PADDLE_BORDER: number = 
 			this.configService.get<number>('paddle_border_width_screen_percentage') * this.GAME_WIDTH;
 	private readonly MAX_BALL_SPEED: number = this.configService.get<number>('max_ball_speed');
-	private readonly INCREASE_SPEED_PERCENTAGE: number = 
-			this.configService.get<number>('increase_speed_percentage');
+	private INCREASE_SPEED_PERCENTAGE: number = 
+			this.configService.get<number>('increase_speed_percentage_easy');
 	private readonly MAX_ANGLE: number = Math.PI / 4;
 
-	private readonly EASY: number = this.configService.get<number>('easy');
+	private readonly DEFAULT_LEVEL: number = this.configService.get<number>('default_level');
 	private readonly DEFAULT_SCORE: number = this.configService.get<number>('default_score');
 	private readonly DEFAULT_PADDLE_COLOR: string = this.configService.get<string>('default_paddle_color');
 
@@ -162,6 +166,15 @@ export class GameService
 		else
 			setup1.level = setup2.level;
 		
+		if (setup1.level === this.MEDIUM) {
+			this.PADDLE_HEIGHT = this.configService.get<number>('paddle_height_screen_percentage_medium');
+			this.INCREASE_SPEED_PERCENTAGE = this.configService.get<number>('increase_speed_percentage_medium');
+		}
+		else if (setup1.level === this.HARD) {
+			this.PADDLE_HEIGHT = this.configService.get<number>('paddle_height_screen_percentage_hard');
+			this.INCREASE_SPEED_PERCENTAGE = this.configService.get<number>('increase_speed_percentage_hard');
+		}
+
 		if (setup1.score < setup2.score)
 			setup2.score = setup1.score;
 		else
@@ -397,7 +410,7 @@ export class GameService
 	private resetSetup() : SetupInterface
 	{
 		return {
-			level: this.EASY,
+			level: this.DEFAULT_LEVEL,
 			score: this.DEFAULT_SCORE,
 			paddleColor: this.DEFAULT_PADDLE_COLOR,
 		}
