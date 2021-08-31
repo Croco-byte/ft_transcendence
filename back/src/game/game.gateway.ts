@@ -91,8 +91,16 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.logger.log('Init done');
 	}
 
-	// The new client will join a room. If 2 players in a room, will then emit x milliseconds
-	// all the game positions, and frontend will render the game using those coordinates.
+	/**
+	 * Connects the user to a room, and when a room is fulfilled with two players, launches the game.
+	 * Game will be proceed as following:
+	 * 		- Allows players to choose game options for x seconds.
+	 * 		- Displays options choosed during x seconds.
+	 * 		- Runs the game.
+	 * 		- Displays end screen when a player won the game or one disconnect.
+	 * 
+	 * @param client Will be updated with database id for this user (client.data.userDbId).
+	 */
 	async handleConnection(@ConnectedSocket() client: Socket): Promise<void>
 	{
 		try {
@@ -101,7 +109,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
 		catch(e) {
-			this.logger.log("Unauthorized client trying to connect");
+			this.logger.log('Unauthorized client trying to connect');
 			client.disconnect();
 		}
 
@@ -159,9 +167,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
-	// Emit to disconnect players and spectators of the room only if one of the two players 
-	// disconnected from the game. Doesn't disconnect people from the room if a spectator
-	// leaves.
+	/**
+	 * When an user disconnect, updates the database with new status. If it was a player,
+	 * emits to everybody from its room to indicate that game is over and removes the room.
+	 * 
+	 * @param client Need to contain user db id (client.data.userDbId).
+	 */
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
 		this.logger.log(`Client disconnected: client id: ${client.id})`);
@@ -177,21 +188,35 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
-	// If a player click on another option, updating his choice to all people in the room.
+	/**
+	 * Updates the player' setup options with its new choice.
+	 * 
+	 * @param client Socket object with user information.
+	 * @param setup New setup options for this user.
+	 */
 	@SubscribeMessage('updateGameSetup')
 	handleUpdateGameSetup(@ConnectedSocket() client: Socket, @MessageBody() setup: SetupInterface) : void
 	{
 		this.gameService.updateGameSetup(client.id, setup);
 	}
 
-	// Update player's paddle position when a player mooves his mouse.
+	/**
+	 * Updates player's paddle position accordingly to its mouse position.
+	 * 
+	 * @param client Socket object with user information.
+	 * @param playerPosY Paddle will be move to this position.
+	 */
 	@SubscribeMessage('pongEvent')
 	handlePongEvent(@ConnectedSocket() client: Socket, @MessageBody() playerPosY: number): void
 	{
 		this.gameService.updatePlayerPos(client.id, playerPosY);
 	}
 	
-	// Occurs when someone leaves the game vue in front.
+	/**
+	 * Disconnect the client when it leaves the game vue.
+	 * 
+	 * @param client Socket object with user information.
+	 */
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
