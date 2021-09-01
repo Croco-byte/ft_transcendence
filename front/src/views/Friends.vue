@@ -1,9 +1,14 @@
 <template>
 <div id="container">
-	<UserSearch/>
-	<FriendList/>
-	<ReceivedFriendRequests/>
-	<SentFriendRequests/>
+	<div class="friends_list">
+		<FriendList/>
+	</div>
+	<div class="friends_search_requests_container">
+		<UserSearch/>
+		<FriendRequests/>
+		<!-- <ReceivedFriendRequests/> -->
+		<!-- <SentFriendRequests/> -->
+	</div>
 </div>
 </template>
 
@@ -13,47 +18,49 @@
 
 import { defineComponent } from 'vue'
 
-import FriendList from "../components/FriendList.vue"
-import UserSearch from "../components/UserSearch.vue"
+import FriendList from "../components/FriendList_v2.vue"
+import UserSearch from "../components/UserSearch_v2.vue"
 import ReceivedFriendRequests from "../components/ReceivedFriendRequests.vue"
 import SentFriendRequests from "../components/SentFriendRequests.vue"
+import FriendRequests from '../components/FriendRequests.vue'
 
 export default defineComponent({
 	name: 'Friends',
 	components: {
 		FriendList,
 		UserSearch,
-		ReceivedFriendRequests,
-		SentFriendRequests
+		FriendRequests,
+		// ReceivedFriendRequests,
+		// SentFriendRequests
 	}
 })
 </script>
 
-<style scoped>
-	#container {
-		display: flex;
-	}
+<style>
 
-	#yourFriends {
-		width: 50%;
-		margin: 0 auto;
-		border: solid;
-	}
+body
+{
+	background: #F9F9F9;
+}
 
-	#receivedFriendRequests {
-		width: 50%;
-		margin: 0 auto;
-		border: solid;
-	}
+#container
+{
+	display: flex;
+	justify-content: space-around;
+	padding: 2rem;
+	width: 100%;
+}
 
-	#sentFriendRequests {
-		width: 50%;
-		margin: 0 auto;
-		border: solid;
-	}
+.friends_list
+{
+	width: 45%;
+}
 
-	li a {
-		text-decoration: underline;
-		color: blue;
-	}
+.friends_search_requests_container
+{
+	display: flex;
+	flex-direction: column;
+	width: 45%;
+}
+
 </style>

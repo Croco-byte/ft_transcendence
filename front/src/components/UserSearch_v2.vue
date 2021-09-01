@@ -1,32 +1,3 @@
-<template>
-		<div id="searchUser">
-			<h2 style="text-align: center;">Search a user</h2>
-			<form id="userSearchForm">
-				<input type="text" name="searchUserInput" placeholder="Search a user" style="margin-right: 20px; margin-left: 20px;">
-				<button type="button" v-on:click="searchUser()">Search</button>
-			</form>
-			<div v-if="searchResults.length > 0">
-			<ul>
-				<li v-for="result in searchResults" :key="result.displayName">
-					<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
-					<br/>
-					<UserStatus :status="result.status"/>
-				</li>
-			</ul>
-			<div id="paginationMenu" v-if="searchResults.length > 0">
-				<p style="display: flex; justify-content: space-around;">
-					<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
-					<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToSearchPage"><input name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ searchMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-					<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
-				</p>
-			</div>
-		</div>
-		<div v-else>
-			<p>No search results</p>
-		</div>
-	</div>
-</template>
-
 <script lang="ts">
 
 /* This component allows to search for users by displayName. If no displayName is provided, all the users are returned.
@@ -50,7 +21,7 @@ interface UserSearchComponentData
 export default defineComponent({
 	name: "UserSearch",
 	components: {
-		UserStatus
+		// UserStatus
 	},
 	data(): UserSearchComponentData {
 		return {
@@ -79,13 +50,19 @@ export default defineComponent({
 
 	methods: {
 		/* This function uses the UserService to return the corresponding displayName when the user clicks on "Search". */
-		searchUser: function(): void {
+		searchUser: function(username): void
+		{
 			var ref = this;
-			let data: FormData = new FormData(document.getElementById("userSearchForm") as HTMLFormElement);
-			this.searchDisplayName = data.get('searchUserInput') as string | null;
-			if (this.searchDisplayName === null) this.searchDisplayName = '';
+			this.searchDisplayName = username;
+			if (!this.searchDisplayName)
+			{
+				this.searchDisplayName = '';
+				this.searchResults = [];
+				return ;
+			}
 			UserService.searchUser(this.searchDisplayName).then(
-				response => {
+				response =>
+				{
 					ref.searchResults = response.data.items;
 					ref.searchMeta = response.data.meta;
 				},
@@ -142,42 +119,144 @@ export default defineComponent({
 })
 </script>
 
+<template>
+	<div id="searchUser">
+		<h2>Search</h2>
+		<input type="text" placeholder="Search for a user..." @input="searchUser($event.target.value)"/>
+		<div class="friends_item_container">
+			<div class="friend_item" v-for="result in searchResults" :key="result.displayName">
+				<div class="score">
+					187
+					<i class="fas fa-trophy"></i>
+				</div>
+				<div class="image">
+					<img :src="$store.state.avatar"/>
+				</div>
+				<p class="username">
+					{{ result.displayName }}
+				</p>
+				<div class="add_friend_button">
+					Add
+				</div>
+			</div>
+		</div>
+	</div>
+</template>
+
 <style scoped>
-	#searchUser {
-		border: solid;
-		width: 50%;
-		margin: 0 auto;
-	}
-	
-	li a {
-		text-decoration: underline;
-		color: blue;
-	}
 
-	.green-dot {
-		height: 25px;
-		width: 25px;
-		background-color: green;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+#searchUser
+{
+	width: 100%;
+	height: 50%;
+	display: flex;
+	flex-direction: column;
+	padding: 1rem;
+	margin: 1rem 0;
+	background-color: white;
+	/* border: solid 1px black; */
+}
 
-	.red-dot {
-		height: 25px;
-		width: 25px;
-		background-color: red;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+h2
+{
+	text-align: left;
+	font-weight: normal;
+	font-size: 1.5rem;
+	padding: 0.5rem 1rem;
+	margin: 0;
+}
 
-	.orange-dot {
-		height: 25px;
-		width: 25px;
-		background-color: orange;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+input
+{
+	padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    border: solid 1px #959595;
+	outline: none;
+	margin: 1rem 0;
+}
+
+input:placeholder
+{
+	font-size: 1rem;
+}
+
+.friends_item_container
+{
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+}
+
+.friend_item
+{
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	height: 5rem;
+	border: solid 1px #39D88F;
+	background: white;
+	margin: 0.25rem 0;
+	overflow-y: hidden;
+}
+
+.friend_item .score
+{
+	display: flex;
+	align-items: center;
+	height: 100%;
+	color: white;
+	padding: 0 1rem;
+	font-size: 1.125rem;
+	align-self: center;
+	background-color: #39D88F;
+}
+
+.friend_item .score i
+{
+	padding: 0 0.25rem;
+}
+
+.friend_item .image
+{
+	display: flex;
+	align-items: center;
+	padding: 1rem 0;
+	overflow: hidden;
+}
+
+.friend_item img
+{
+	width: auto;
+	height: auto;
+	max-width: 4.5rem;
+	max-height: 100%;
+	border-radius: 100%;
+}
+
+.friend_item p
+{
+	margin: 0 1rem;
+}
+
+.add_friend_button
+{
+	padding: 0.25rem 1rem;
+	background-color: #39d88f;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px #39d88f;
+	transition: all 0.25s;
+}
+
+.add_friend_button:hover
+{
+	border-color: #39d88f;
+	color: #39d88f;
+	background-color: white;
+}
+
 </style>
