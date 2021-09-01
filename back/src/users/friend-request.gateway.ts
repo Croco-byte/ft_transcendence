@@ -5,6 +5,11 @@ import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessa
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
 
+/* This is the Gateway that handles friendrequests. It allows to :
+** >> Accept, decline, or send a friendrequest, unfriend a user
+** >> Each time a user accepts, declines, sends a friendrequest, or unfriend a user, a message is sent to all other users, with the IDs of the two user concerned
+*/
+
 @WebSocketGateway({ cors: true, namespace: '/friendRequests' })
 export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
@@ -21,14 +26,14 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 			this.logger.log(`Client disconnected to FriendRequests Gateway. ${client.id}`)
 	}
 
+
 	async handleConnection(client: Socket, args: any[]) {
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userId: user.id, username: user.username };
 			this.logger.log(`Client connected to FriendRequests Gateway. ${client.id}`);
 		} catch(e) {
 			client.disconnect();
-			console.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
+			this.logger.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
 		}
 		
 	}
@@ -62,7 +67,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 			const result = await this.userService.sendFriendRequest(data.receiverId, data.user.id);
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 		} catch(e) {
-			console.log(e.message);
+			this.logger.log(e.message);
 			throw e;
 		}
 

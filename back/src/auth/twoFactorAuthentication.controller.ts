@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 export class TwoFactorAuthenticationController {
 	constructor(private readonly twoFactorAuthenticationService: TwoFactorAuthenticationService, private readonly usersService: UsersService, private readonly jwtService: JwtService) {}
 
+	/* Endpoint generating a QR Code that allows to register the application to Google Authenticator, from the 2FA secret of the user. */
 	@Post('generate')
 	@UseGuards(JwtAuthenticationGuard)
 	async register(@Res() response: Response, @Req() req) {
@@ -18,6 +19,9 @@ export class TwoFactorAuthenticationController {
 		return this.twoFactorAuthenticationService.pipeQrCodeStream(response, otpauthUrl);
 	}
 
+	/* Endpoint allowing to activate 2FA. At the same time, it returns a JWT with isSecondFactorAuthenticated set to "true", since we don't want
+	** to kick the user that just activated 2FA for his account
+	*/
 	@Post('turn-on')
 	@HttpCode(200)
 	@UseGuards(JwtAuthenticationGuard)
@@ -34,6 +38,7 @@ export class TwoFactorAuthenticationController {
 		return (returnObject);
 	}
 
+	/* Endpoint allowing to turn off 2FA */
 	@Post('turn-off')
 	@HttpCode(200)
 	@UseGuards(JwtTwoFactorGuard)
@@ -41,6 +46,9 @@ export class TwoFactorAuthenticationController {
 		await this.usersService.turnOffTwoFactorAuthentication(req.user.id);
 	}
 
+	/* Endpoint allowing to authenticate with 2FA. This simply verifies the validity of the 2FA code passed in the body of the request,
+	** and if it is valid, issues a 2FA JWT
+	*/
 	@Post('authenticate')
 	@HttpCode(200)
 	@UseGuards(JwtAuthenticationGuard)

@@ -141,6 +141,7 @@ export default defineComponent({
 		},
 
 		refreshScreen(): void {
+			// console.log('refresh');
 			this.drawGame(this.room);
 			let id = requestAnimationFrame(this.refreshScreen);
       this.$emit('gameId', id);
@@ -157,6 +158,8 @@ export default defineComponent({
     this.canvas.width = this.fullGameWindow.clientWidth;
     this.canvas.height = this.fullGameWindow.clientHeight;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+
+	console.log('mounted');
 
     this.pongEvent();
     this.refreshScreen();

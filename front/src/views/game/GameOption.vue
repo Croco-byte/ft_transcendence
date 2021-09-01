@@ -1,28 +1,27 @@
 <template>
-<div>
-  <h2>BALL SPEED</h2>
-  <OptionButton msg="Easy" @setEasy="setLevel(1)"></OptionButton>
-  <OptionButton msg="Medium" @setMedium="setLevel(2)"></OptionButton>
-  <OptionButton msg="Hard" @setHard="setLevel(3)"></OptionButton>
-
-  <OptionButton msg="Easy" :p2Opt='true'></OptionButton>
-  <OptionButton msg="Medium" :p2Opt='true'></OptionButton>
-  <OptionButton msg="Hard" :p2Opt='true'></OptionButton>
-</div> 
-
-<div>
-  <h2>MAX SCORE</h2>
-  <OptionButton msg="5" @setScore5="setScore(5)"></OptionButton>
-  <OptionButton msg="10" @setScore10="setScore(10)"></OptionButton>
-  <OptionButton msg="15" @setScore15="setScore(15)"></OptionButton>
-</div>
-
-<div>
-  <h2>PAD COLOR</h2>
-  <OptionButton msg="Yellow" @setPadYellow="setPadColor('Yellow')"></OptionButton>
-  <OptionButton msg="Blue" @setPadBlue="setPadColor('Blue')"></OptionButton>
-  <OptionButton msg="Red" @setPadRed="setPadColor('Red')"></OptionButton>
-</div>
+	<div class="level">
+		<p>BALL SPEEED</p>
+		<button @click="setLevel(1)">EASY</button>
+		<button @click="setLevel(2)">MEDIUM</button>
+		<button @click="setLevel(3)">HARD</button>
+	</div>
+	<div class="score">
+		<p>SCORE MAX</p>
+		<button @click="setScore(5)">5</button>
+		<button @click="setScore(10)">10</button>
+		<button @click="setScore(15)">15</button>
+	</div>
+	<div class="color">
+		<p>COLOR OF PAD</p>
+		<button @click="setPadColor('white')">white</button>
+		<button @click="setPadColor('yellow')">yellow</button>
+		<button @click="setPadColor('blue')">blue</button>
+		<button @click="setPadColor('red')">red</button>
+		<button @click="setPadColor('green')">green</button>
+	</div>
+	<div class="start">
+		<button @click="startGame()">START GAME</button>
+	</div>
 
 </template>
 
@@ -33,41 +32,44 @@ import OptionButton from '../../components/OptionButton.vue'
 
 export default defineComponent({
 
-  components: { OptionButton },
+	name: 'OptionGame',
+	emits: ["setupChosen"],
 
-  emits: [ "updateGameSetup" ],
+	data() {
+		return {
+			opt: { level: 1, score: 5, paddleColor: 'white' } as SetupInterface,
+		}
+	},
 
-  data() {
-    return {
-      opt: { level: 1, score: 5, paddleColor: 'blue' } as SetupInterface,
-    }
-  },
+	methods: {
+		setLevel(value: number)
+		{
+			if (value != undefined)
+				this.opt.level = value;
+			console.log(`level: ${this.opt.level}`);
+		},
 
-  name: 'OptionGame',
+		setScore(value: number)
+		{
+			if (value != undefined)
+				this.opt.score = value;
+			console.log(`score: ${this.opt.score}`);
+		},
 
-  methods: {
-    setLevel(value: number) {
-      if (value != undefined){
-        this.opt.level = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
-      }
-    },
+		setPadColor(value: string)
+		{
+			if (value != undefined)
+				this.opt.paddleColor = value;
+			console.log(`color ${this.opt.paddleColor}`);
+		},
 
-    setScore(value: number) {
-      if (value != undefined){
-        this.opt.score = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
-      }
-    },
-
-    setPadColor(value: string) {
-      if (value != undefined){
-        this.opt.paddleColor = value;
-        this.$emit('updateGameSetup', this.opt as SetupInterface);
-      }
-    }
-  }
-  
+		startGame()
+		{
+			console.log('start game');
+			this.$emit('setupChosen', this.opt as SetupInterface);
+		}
+	}
+	
 })
 </script>
 

@@ -1,5 +1,7 @@
 import axios from "../axios-instance";
 import authHeader from './auth-header';
+import { LocalStorageUserInterface } from '../types/user.interface'
+
 
 const API_URL = "http://127.0.0.1:3000/";
 
@@ -8,7 +10,7 @@ class AuthService {
 	/* Simple function to parse the JWT token and extract the user ID from the front.
 	** If the JWT was modified to manipulate the ID, the user will be logged out on his next interaction with backend. */
 	parseJwt(): { id: number, username: string, isSecondFactorAuthenticated: boolean } {
-		const user: { username: string, accessToken: string, twoFARedirect?: boolean } = JSON.parse(localStorage.getItem('user') as string);
+		const user: LocalStorageUserInterface = JSON.parse(localStorage.getItem('user') as string);
 		return JSON.parse(atob(user.accessToken.split('.')[1]));
 	}
 

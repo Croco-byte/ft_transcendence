@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { HttpService } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
