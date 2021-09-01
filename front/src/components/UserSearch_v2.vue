@@ -105,7 +105,12 @@ export default defineComponent({
 					this.searchResults[i].status = data.status;
 				}
 			}
-		}
+		},
+
+		sendFriendRequest: function(userId): void
+		{
+			this.$store.state.websockets.friendRequestsSocket.emit('sendFriendRequest', { receiverId: userId, user: null });
+		},
 	},
 
 	/* Starting then stopping the listeners that handle the status change of displayed users */
@@ -135,7 +140,7 @@ export default defineComponent({
 				<p class="username">
 					{{ result.displayName }}
 				</p>
-				<div class="add_friend_button">
+				<div class="add_friend_button" @click="sendFriendRequest(result.id)">
 					Add
 				</div>
 			</div>
