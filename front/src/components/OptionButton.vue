@@ -1,10 +1,11 @@
 <template>
-    <button class="butt" :class="{p2 : p2Opt}" @click="setOption()">{{ msg }}</button>
+    <button class="butt" :class="{p2 : leftSideButton}" @click="setOption()">{{ msg }}</button>
 </template>
 
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, PropType } from 'vue'
+import { SocketDataInterface } from '../types/game.interface'
 
 export default defineComponent({
   emits: [ "setEasy", "setMedium", "setHard", "setScore5", "setScore10", "setScore15", 
@@ -16,8 +17,14 @@ export default defineComponent({
       type: String
     },
 
-    p2Opt: {
+    leftSideButton: {
+      required: true,
       type: Boolean
+    },
+
+    dataInterface: {
+      required: true,
+      type: Object as PropType<SocketDataInterface>
     }
     
   },
@@ -40,8 +47,15 @@ export default defineComponent({
   
   methods: {
     setOption() {
-      this.$emit(this.optionEmit[this.msg])
-    }
+      // if (this.leftSideButton && (this.dataInterface.clientId))
+      // this.$emit(this.optionEmit[this.msg])
+    },
+
+    
+  },
+
+  mounted() {
+    console.log(`leftSide ${this.leftSideButton}`);
   }
 
 })

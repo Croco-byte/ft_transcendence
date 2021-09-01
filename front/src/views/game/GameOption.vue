@@ -26,8 +26,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { SetupInterface } from '../../types/game.interface'
+import { defineComponent, PropType } from 'vue'
+import { SetupInterface, SocketDataInterface } from '../../types/game.interface'
 import OptionButton from '../../components/OptionButton.vue'
 
 export default defineComponent({
