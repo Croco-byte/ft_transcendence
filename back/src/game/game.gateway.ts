@@ -71,11 +71,11 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.usersService.updateGameStatus(client.data.userDbId, 'none');
 		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
-		const room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
+		let room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
 
 		if (room && room.name && room.nbPeopleConnected) {
 			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.gameService.removeRoom(this.wss, this.intervalId, room.name);
+			this.gameService.removeRoom(this.wss, this.intervalId, room, false);
 		}
 	}
 
@@ -109,7 +109,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 				this.wss.to(room.name).emit('actualizeGameScreen', room);
 				
 				if (this.gameService.updateGame(client.id, this.wss, this.intervalId, room))
-					this.wss.to(room.name).emit('gameEnded', room);
+					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
+					
 					
 			}, this.gameService.FRAMERATE);
 		}

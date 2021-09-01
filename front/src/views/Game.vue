@@ -68,7 +68,6 @@ export default defineComponent({
 			cancelAnimationFrame(this.gameID);
 			let msg = room.game.p1Score > room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
 			alert(msg);
-			this.backColor = 'purple';
 		},
 
 		opponentLeft(obj: SocketDataInterface) : void
@@ -78,7 +77,6 @@ export default defineComponent({
 			let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
 											'player 2 has disconnected. You won !';
 			alert(msg);
-			this.backColor = 'blue';
 		},
 
 		updateGameId(id: number)

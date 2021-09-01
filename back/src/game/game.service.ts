@@ -143,16 +143,19 @@ export class GameService
 	 * 
 	 * @param wss A websocket object.
 	 * @param intervalId Clear the interval if existing.
-	 * @param playerId Client socket ID.
-	 * @param roomName Room name where playerId belongs.
+	 * @param room Room object with all the game information.
+	 * @param gameEnded True if game ended correctly. False if somebody disconnects from the game.
 	 */
-	removeRoom(wss: Socket, intervalId: NodeJS.Timer, roomName: string) : void
+	removeRoom(wss: Socket, intervalId: NodeJS.Timer, room: RoomInterface, gameEnded: boolean) : void
 	{
+		if (gameEnded)
+			wss.to(room.name).emit('gameEnded', room);
+
 		clearInterval(intervalId);
-		wss.in(roomName).socketsLeave(roomName);
+		wss.in(room.name).socketsLeave(room.name);
 		
-		this.logger.log(`Room closed (room id: ${roomName})`);
-		this.rooms = this.rooms.filter((el) => el.name != roomName);
+		this.logger.log(`Room closed (room id: ${room.name})`);
+		this.rooms = this.rooms.filter((el) => el.name != room.name);
 	}
 
 	/**
@@ -198,8 +201,7 @@ export class GameService
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score) {
 					
-			this.logger.log(`Game won (client id: ${playerId} (room id: ${room.name})`);
-			this.removeRoom(wss, intervalId, room.name);
+			this.removeRoom(wss, intervalId, room, true);
 			return this.updateScores(room);
 		}
 		
