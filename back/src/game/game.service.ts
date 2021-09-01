@@ -83,7 +83,7 @@ export class GameService
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
 		if (roomToFill) 
-			return this.playerJoinRoom(roomToFill, userDbId, playerId);
+			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
 			return this.createNewRoom(setupChosen, userDbId, playerId);
 	}
@@ -93,15 +93,17 @@ export class GameService
 	 * Updates gameStatus to 'inGame' and roomId in database for both players.
 	 * 
 	 * @param roomToFill A RoomInterface object with information for only one player.
+	 * @param setupChosen Setup chosen by player.
 	 * @param userDbId Player 2 database id.
 	 * @param playerId Player 2 socket id.
 	 * @return A RoomInterface object with all the game information, so the game can be started.
 	 */
-	playerJoinRoom(roomToFill: RoomInterface, userDbId: number, playerId: string) : RoomInterface
+	playerJoinRoom(roomToFill: RoomInterface, setupChosen: SetupInterface, userDbId: number, playerId: string) : RoomInterface
 	{
 		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
+		roomToFill.game.p2Right.setup = setupChosen;
 		
 		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
 		this.usersService.updateRoomId(roomToFill.user2DbId, playerId);

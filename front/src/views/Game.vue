@@ -1,9 +1,9 @@
 <template>
-    <div class="game">
-        <GameJoin v-if="isWaiting" :backColor="backColor"></GameJoin>
-        <GameOption v-if="optGame" @updateGameSetup="updateGameSetup($event)"/>
-        <GamePlay v-if="isPlaying" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
-    </div>
+	<div class="game">
+		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
+		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor"></GameJoin>
+		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
+	</div>
 </template>
 
 
@@ -18,143 +18,192 @@ import authHeader from '../services/auth-header';
 import { RoomInterface } from '../types/game.interface'
 
 export default defineComponent({
-  
-  name: 'game',
-  components: { GameOption, GamePlay, GameJoin },
+	
+	name: 'game',
+	components: { GameOption, GamePlay, GameJoin },
 
-
-  data() {
-    return {
-      room: null as any,
-      isWaiting: true as boolean,
-      isPlaying: false as boolean,
-      optGame: false as boolean,
-      backColor: 'orange' as string,
-      socket: null as any,
-      gameID: 0 as number,
-    }
-  },
-
-
-  methods: {
-  
-    // ----------------------------------------
-		// ----------- SOCKET LISTENERS -----------
-		joinRoom(obj: SocketDataInterface) {
-      this.backColor = "orange"
-      console.log(`in joinRoom function`);
-		},
-
-		actualizeSetupScreen(room: RoomInterface) {
-      this.isWaiting = false;
-      this.optGame = true;
-		},
-
-
-		displaySetupChoose(room: RoomInterface) { room;
-		},
-
-    // startingGame(room: RoomInterface) : void
-    // {
-    //   if (!this.isSpec(room))
-    //     this.pongEvent();
-    // },
-
-    actualizeGameScreen(room: RoomInterface) {
-      this.room = room;
-      this.optGame = false;
-      this.isPlaying = true;
-    },
-
-    gameEnded(room: RoomInterface) : void
-    {
-      this.socket.emit('opponentLeft', room);
-
-      let msg = room.game.p1Score > room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
-      alert(msg);
-      cancelAnimationFrame(this.gameID);
-      this.backColor = 'purple';
-      this.isPlaying = false;
-    },
-
-    opponentLeft(obj: SocketDataInterface) {
-      this.socket.emit('opponentLeft', obj.room);
-
-      let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
-                      'player 2 has disconnected. You won !';
-      alert(msg);
-      cancelAnimationFrame(this.gameID);
-      this.backColor = 'blue';
-      this.isPlaying = false;
-      this.isWaiting = true;
-    },
-
-    updateGameId(id: number) {
-      this.gameID = id;
-    },
-
-    // ----------------------------------------
-    // ----------- SOCKET EMETTERS ------------
-    updateGameSetup(obj: SetupInterface) {
-      this.socket.emit('updateGameSetup', obj);
-    },
-
-    updatePosition(obj: {x: number, y: number}) {
-      this.socket.emit('pongEvent', obj);
-    }
-  },
-
-	created() 
-	{ 
-		this.socket = io('http://localhost:3000/game', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
-		// this.socket = io('http://localhost:3000/game');
-		
-		if (this.socket) {
-
-			// ecran waiting en attendant un autre joueur
-			this.socket.on('joinRoom', (obj: SocketDataInterface) => {
-				console.log('room joined');
-				this.joinRoom(obj);
-			});
-
-			// ecran choisir option qunad les joueurs cliquent sur les options
-			this.socket.on('actualizeSetupScreen', (room: RoomInterface) => {
-				this.actualizeSetupScreen(room);
-			});
-
-			// // ecran qui montre pendant quelques secondes les options choisies
-			// this.socket.on('displaySetupChoose', (room: RoomInterface) => {
-			// 	this.displaySetupChoose(room);
-			// });
-
-			// //event qui permet de lancer la game apres que les options aient ete choisi
-			// this.socket.on('startingGame', (room: RoomInterface) => {
-			// 	this.startingGame(room);
-			// });
-
-			// ecran de rendu du jeu
-			this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
-				this.actualizeGameScreen(room);
-			});
-			
-			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			this.socket.on('gameEnded', (room: RoomInterface) => {
-				this.gameEnded(room);
-			});
-
-			// ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
-				this.opponentLeft(obj);
-			});
+	data() {
+		return {
+			socket: null as any,
+			room: null as any,
+			RenderGameJoin: false as boolean,
+			RenderGamePlay: false as boolean,
+			isStarting: false as boolean,
+			RenderGameOption: true as boolean,
+			backColor: 'orange' as string,
+			gameID: 0 as number,
 		}
 	},
 
-  // Permet de gerer quand quelqu'un quitte la vue. Peut etre rajouter un message de confirmation si in game 
-  // un message pour etre sur si il leave.
-  beforeRouteLeave (to, from , next)
-  {
+
+	methods: 
+	{
+		// ----------------------------------------
+		// ----------- SOCKET LISTENERS -----------
+		waitingForPlayer() : void
+		{
+			this.RenderGameOption = false;
+			this.RenderGameJoin = true;
+		},
+		
+		startingGame() : void
+		{
+			this.RenderGameOption = false;
+			this.RenderGameJoin = true;
+			this.isStarting = true;
+		},
+
+		actualizeGameScreen(room: RoomInterface) : void
+		{
+			this.room = room;
+			if (this.RenderGameJoin) {
+				this.RenderGameJoin = false
+				this.RenderGamePlay = true;
+			}
+		},
+
+		gameEnded(room: RoomInterface) : void
+		{
+			this.RenderGamePlay = false;
+			cancelAnimationFrame(this.gameID);
+			let msg = room.game.p1Score > room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
+			alert(msg);
+			this.backColor = 'purple';
+		},
+
+		opponentLeft(obj: SocketDataInterface) : void
+		{
+			this.RenderGamePlay = false;
+			cancelAnimationFrame(this.gameID);
+			let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
+											'player 2 has disconnected. You won !';
+			alert(msg);
+			this.backColor = 'blue';
+		},
+
+		updateGameId(id: number)
+		{
+			this.gameID = id;
+		},
+
+		// joinRoom(obj: SocketDataInterface)
+		// {
+		// 	this.backColor = "orange"
+		// 	console.log(`in joinRoom function`);
+		// },
+
+		// actualizeSetupScreen(room: RoomInterface)
+		// {
+		// 	this.RenderGameJoin = false;
+		// 	this.RenderGameOption = true;
+		// },
+
+
+		// displaySetupChoose(room: RoomInterface)
+		// { 
+		// 	room;
+		// },
+
+		// startingGame(room: RoomInterface) : void
+		// {
+		//	 if (!this.isSpec(room))
+		//		 this.pongEvent();
+		// },
+
+		// ----------------------------------------
+		// ----------- SOCKET EMETTERS ------------
+		setupChosen(setup: SetupInterface)
+		{
+			this.socket.emit('setupChosen', setup);
+		},
+
+		updatePosition(obj: {x: number, y: number})
+		{
+			this.socket.emit('pongEvent', obj);
+		}
+	},
+
+	created() 
+	{ 
+		this.socket = io('http://localhost:3000/game', 
+				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
+		
+		/*
+		LISTENERS
+		- opponentLeft
+		- waitingForPlayer
+		- startingGame
+		- actualizeGameScreen
+		- gameEnded
+		*/
+		
+		if (this.socket) {
+			this.socket.on('waitingForPlayer', () => {
+				this.waitingForPlayer();
+			});
+
+			this.socket.on('startingGame', () => {
+				this.startingGame();
+			});
+
+			this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
+				this.actualizeGameScreen(room);
+			});
+
+			this.socket.on('gameEnded', (room: RoomInterface) => {
+				console.log('gameEnded listener');
+				this.gameEnded(room);
+			});
+
+			this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
+				console.log('opponentLeft listener');
+				this.opponentLeft(obj);
+			});
+
+			// ecran waiting en attendant un autre joueur
+			// this.socket.on('joinRoom', (obj: SocketDataInterface) => {
+			// 	console.log('room joined');
+			// 	this.joinRoom(obj);
+			// });
+
+			// // ecran choisir option qunad les joueurs cliquent sur les options
+			// this.socket.on('actualizeSetupScreen', (room: RoomInterface) => {
+			// 	this.actualizeSetupScreen(room);
+			// });
+
+			// // // ecran qui montre pendant quelques secondes les options choisies
+			// // this.socket.on('displaySetupChoose', (room: RoomInterface) => {
+			// // 	this.displaySetupChoose(room);
+			// // });
+
+			// // //event qui permet de lancer la game apres que les options aient ete choisi
+			// // this.socket.on('startingGame', (room: RoomInterface) => {
+			// // 	this.startingGame(room);
+			// // });
+
+			// // ecran de rendu du jeu
+			// this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
+			// 	this.actualizeGameScreen(room);
+			// });
+			
+			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
+			// this.socket.on('gameEnded', (room: RoomInterface) => {
+			// 	this.gameEnded(room);
+			// });
+
+			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
+			// this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
+			// 	this.opponentLeft(obj);
+			// });
+		}
+	},
+
+	// Permet de gerer quand quelqu'un quitte la vue. Peut etre rajouter un message de confirmation si in game 
+	// un message pour etre sur si il leave.
+	beforeRouteLeave (to, from , next)
+	{
 		this.socket.emit('disconnectClient');
 		next();
-  }
+	}
 })
 </script>
