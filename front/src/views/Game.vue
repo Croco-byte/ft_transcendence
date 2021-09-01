@@ -84,30 +84,6 @@ export default defineComponent({
 			this.gameID = id;
 		},
 
-		// joinRoom(obj: SocketDataInterface)
-		// {
-		// 	this.backColor = "orange"
-		// 	console.log(`in joinRoom function`);
-		// },
-
-		// actualizeSetupScreen(room: RoomInterface)
-		// {
-		// 	this.RenderGameJoin = false;
-		// 	this.RenderGameOption = true;
-		// },
-
-
-		// displaySetupChoose(room: RoomInterface)
-		// { 
-		// 	room;
-		// },
-
-		// startingGame(room: RoomInterface) : void
-		// {
-		//	 if (!this.isSpec(room))
-		//		 this.pongEvent();
-		// },
-
 		// ----------------------------------------
 		// ----------- SOCKET EMETTERS ------------
 		setupChosen(setup: SetupInterface)
@@ -125,15 +101,6 @@ export default defineComponent({
 	{ 
 		this.socket = io('http://localhost:3000/game', 
 				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
-		
-		/*
-		LISTENERS
-		- opponentLeft
-		- waitingForPlayer
-		- startingGame
-		- actualizeGameScreen
-		- gameEnded
-		*/
 		
 		if (this.socket) {
 			this.socket.on('waitingForPlayer', () => {
@@ -157,42 +124,6 @@ export default defineComponent({
 				console.log('opponentLeft listener');
 				this.opponentLeft(obj);
 			});
-
-			// ecran waiting en attendant un autre joueur
-			// this.socket.on('joinRoom', (obj: SocketDataInterface) => {
-			// 	console.log('room joined');
-			// 	this.joinRoom(obj);
-			// });
-
-			// // ecran choisir option qunad les joueurs cliquent sur les options
-			// this.socket.on('actualizeSetupScreen', (room: RoomInterface) => {
-			// 	this.actualizeSetupScreen(room);
-			// });
-
-			// // // ecran qui montre pendant quelques secondes les options choisies
-			// // this.socket.on('displaySetupChoose', (room: RoomInterface) => {
-			// // 	this.displaySetupChoose(room);
-			// // });
-
-			// // //event qui permet de lancer la game apres que les options aient ete choisi
-			// // this.socket.on('startingGame', (room: RoomInterface) => {
-			// // 	this.startingGame(room);
-			// // });
-
-			// // ecran de rendu du jeu
-			// this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
-			// 	this.actualizeGameScreen(room);
-			// });
-			
-			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			// this.socket.on('gameEnded', (room: RoomInterface) => {
-			// 	this.gameEnded(room);
-			// });
-
-			// // ecran si un joueur deconnecte (peut etre aussi ecran de victoire)
-			// this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
-			// 	this.opponentLeft(obj);
-			// });
 		}
 	},
 

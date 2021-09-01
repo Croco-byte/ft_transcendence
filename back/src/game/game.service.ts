@@ -180,7 +180,7 @@ export class GameService
 	 * @param intervalId Clear the interval if existing.
 	 * @param room Object with game information. Will be updated with new ball / players position.
 	 */
-	updateGame(playerId: string, wss: Socket, intervalId: NodeJS.Timer, room: RoomInterface) : boolean
+	updateGame(wss: Socket, intervalId: NodeJS.Timer, room: RoomInterface) : boolean
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
@@ -342,6 +342,20 @@ export class GameService
 	}
 
 	/**
+	 * Sets the game parameter (paddle height and increase ball speed) to the difficulty level 
+	 * chosen.
+	 * 
+	 * @param level The game difficulty level.
+	 */
+	setOptions(level: string)
+	{
+		this.PADDLE_HEIGHT = this.configService.get<number>('paddle_height_screen_percentage_' + level)
+				* this.GAME_HEIGHT;
+		this.INCREASE_SPEED_PERCENTAGE = 
+				this.configService.get<number>('increase_speed_percentage_' + level);
+	}
+
+	/**
 	 * @param setupChosen Setup chosen by player one.
 	 * @param dir Initial ball direction (should be 1 or -1).
 	 * @param _p1score Initial score of player 1.
@@ -350,6 +364,11 @@ export class GameService
 	 */
 	resetGame(setup: SetupInterface, dir = 1, _p1score = 0, _p2score = 0) : GameInterface
 	{
+		if (setup.level === this.MEDIUM)
+			this.setOptions('medium');
+		else if (setup.level === this.HARD)
+			this.setOptions('hard');
+
 		return {
 			width: this.GAME_WIDTH,
 			height: this.GAME_HEIGHT,
