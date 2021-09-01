@@ -3,48 +3,266 @@
 import axios, { AxiosResponse } from 'axios';
 //import axios from '../axios-instance';
 import { io, Socket } from 'socket.io-client';
-import { Vue } from 'vue-class-component'
+import Vue, { defineComponent } from 'vue'
 import ChannelInterface from '../interface/channel.interface';
 import MessageInterface from '../interface/message.interface';
 import DOMEventInterface from '../interface/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
 
-class Chat extends Vue
+export default defineComponent(
 {
-	mode: string = 'normal' as string;
-	socket: Socket | null = null;
-	channel: ChannelInterface =
-	{
-		id: -1,
-		name: '',
-		requirePassword: false,
-		password: '',
-		messages: [],
-		has_new_message: false,
-		members: [],
-		administrators: [],
-	};
-	channels: Array<ChannelInterface> = [];
-	serverURL: string = "http://" + window.location.hostname + ":3000";
-	websocketServerURL: string = "http://" + window.location.hostname + ":3000/chat";
+	name: 'Chat',
+	data() {
+		return {
+			mode: 'normal' as string,
+			socket: null as Socket | null,
+			channel:
+			{
+				id: -1,
+				name: '',
+				requirePassword: false,
+				password: '',
+				messages: [],
+				has_new_message: false,
+				members: [],
+				administrators: [],
+			} as ChannelInterface,
+			channels: [] as Array<ChannelInterface>,
+			serverURL: "http://" + window.location.hostname + ":3000" as string,
+			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
+		}
+	},
 
-	get placeholder(): string
+	computed:
 	{
-		return 'Dites-bonjour à ' + this.channel.name + '...';
-	}
+		placeholder(): string
+		{
+			return 'Dites-bonjour à ' + this.channel.name + '...';
+		}
+	},
 	
-	timestampzToDate(str: string): string
+	methods:
 	{
-		return (str.toString().split('T')[0])
-	}
+		timestampzToDate(str: string): string
+		{
+			return (str.toString().split('T')[0])
+		},
+
+		switchChat(event: DOMEventInterface<HTMLInputElement>): void
+		{
+			let id: number;
+			id = parseInt($(event.currentTarget).attr('data-id') as string);
+			$('.chat_item.selected').removeClass('selected');
+			$(event.currentTarget).addClass('selected');
+
+			this.channel = this.channels[id];
+			this.channels[id].has_new_message = false;
+
+			axios.get(this.serverURL + "/channels/" + this.channels[id].id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
+			{
+				this.channel.messages = res.data;
+			})
+			.catch(error =>
+			{
+				alert(error);
+			});
+
+			// this.channel.id = this.channels[id].id;
+			// this.channel.name = this.channels[id].name;
+			// this.channel.has_new_message = false;
+			// this.channel.members = this.channels[id].members;
+			// this.channel.messages = [];
+			//$('.view').scrollTop(document.getElementsByClassName('.view').scrollHeight);
+		},
+		
+		createChannel(): void
+		{
+			let name = ($('#create_channel_input').val() as string).trim() as string;
+			
+			if (name && name.length > 0)
+			{
+				// Axios send to nestjs the name
+				this.mode = 'normal';
+				alert("Create channel named '" + name + "'");
+
+				axios.post(this.serverURL + '/channels', {name: name}, {headers: authHeader()})
+				.then(() =>
+				{
+					this.loadChannelsList();
+				})
+				.catch(error =>
+				{
+					console.log(error)
+				})
+			}
+		},
+
+		expandInfoSection(event: DOMEventInterface<HTMLInputElement>): void
+		{
+			$(event.target).closest('section').toggleClass('active');
+		},
+
+		changeMode(mode: string): void
+		{
+			this.mode = mode;
+			if (this.mode == "channel_info")
+				this.loadChannelInfo();
+		},
+
+		loadChannelInfo(): void
+		{
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/info", {headers: authHeader()}).then((res: AxiosResponse) =>
+			{
+				this.channel.members = res.data.users;
+				this.channel.administrators = res.data.administrators;
+			})
+			.catch(error =>
+			{
+				alert(error);
+			});
+		},
+
+		async addMember(): Promise<void>
+		{
+			let username = $('#add_member_input').val() as string;
+			await axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username}, {headers: authHeader()});
+		},
+
+		async addAdmin(): Promise<void>
+		{
+			let username = $('#add_admin_input').val() as string;
+			await axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()});
+		},
+
+		createMatch(): void
+		{
+			if (window.confirm("Do you want to start match with " + this.channel.name + " ?"))
+			{
+				alert("Start");
+			}
+		},
+
+		async sendMessage(): Promise<void>
+		{
+			let message = $('#msg_input').val() as string;
+			if (message && message.length > 0)
+				await axios.post(this.serverURL + "/channels/" + this.channel.id + "/messages", {channel: this.channel.id, content: message}, {headers: authHeader()});
+				//this.socket.emit('message', {channel: this.channel.id, user: this.username, content: message});
+			
+			$('#msg_input').val('');
+		},
+
+		muteMember(username: string): void
+		{
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/mute', {}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				console.log(error)
+			})
+		},
+
+		unmuteMember(username: string): void
+		{
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unmute', {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				console.log(error)
+			})
+		},
+
+		banMember(username: string): void
+		{
+			alert(username);
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/ban', {}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				console.log(error)
+			})
+		},
+
+		unbanMember(username: string): void
+		{
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unban', {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				console.log(error)
+			})
+		},
+
+		async setRequirePassword(): Promise<void>
+		{
+			let checked = $('#active_password:checked').length != 0;
+			if (checked)
+				this.channel.requirePassword = true;
+			else
+				this.channel.requirePassword = false;
+
+			let url;
+			if (!this.channel.requirePassword)
+			{
+				url = this.serverURL + '/channels/' + this.channel.id + '/password';
+				await axios.delete(url, {headers: authHeader()});
+			}
+		},
+
+		async updateChannelPassword(): Promise<void>
+		{
+			let password = $('#channel_password').val() as string;
+			alert("Set channel password to '" + password + "'");
+			await axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password}, {headers: authHeader()});
+		},
+
+		updateChannelName(): void
+		{
+			let new_name : string = $('#channel_name_input').val() as string;
+			let id  = this.channel.id;
+			alert("Update channel name to '" + new_name + "'");
+			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/name', {id: id, new_name: new_name}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelsList();
+				this.channel.name = new_name;
+			})
+			.catch(error =>
+			{
+				console.log(error)
+			})
+		},
+
+		async loadChannelsList(): Promise<void>
+		{
+			await axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
+			{
+				console.log(res.data);
+				this.channels = res.data;
+			})
+			.catch(err => console.log(err));
+		},
+	},
 
 	created(): void
 	{
 		this.mode = 'normal';
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});
 		this.loadChannelsList();
-	}
+	},
 
 	mounted(): void
 	{
@@ -64,217 +282,8 @@ class Chat extends Vue
 			else
 				this.channel.messages.push(data);
 		})
-	}
-
-	switchChat(event: DOMEventInterface<HTMLInputElement>): void
-	{
-		let id: number;
-		id = parseInt($(event.currentTarget).attr('data-id') as string);
-		$('.chat_item.selected').removeClass('selected');
-		$(event.currentTarget).addClass('selected');
-
-		this.channel = this.channels[id];
-		this.channels[id].has_new_message = false;
-
-		axios.get(this.serverURL + "/channels/" + this.channels[id].id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
-		{
-			this.channel.messages = res.data;
-		})
-		.catch(error =>
-		{
-			alert(error);
-		});
-
-		// this.channel.id = this.channels[id].id;
-		// this.channel.name = this.channels[id].name;
-		// this.channel.has_new_message = false;
-		// this.channel.members = this.channels[id].members;
-		// this.channel.messages = [];
-		//$('.view').scrollTop(document.getElementsByClassName('.view').scrollHeight);
-	}
-	
-	createChannel(): void
-	{
-		let name = ($('#create_channel_input').val() as string).trim() as string;
-		
-		if (name && name.length > 0)
-		{
-			// Axios send to nestjs the name
-			this.mode = 'normal';
-			alert("Create channel named '" + name + "'");
-
-			axios.post(this.serverURL + '/channels', {name: name}, {headers: authHeader()})
-			.then(() =>
-			{
-				this.loadChannelsList();
-			})
-			.catch(error =>
-			{
-				console.log(error)
-			})
-		}
-	}
-
-	expandInfoSection(event: DOMEventInterface<HTMLInputElement>): void
-	{
-		$(event.target).closest('section').toggleClass('active');
-	}
-
-	changeMode(mode: string): void
-	{
-		this.mode = mode;
-		if (this.mode == "channel_info")
-			this.loadChannelInfo();
-	}
-
-	loadChannelInfo(): void
-	{
-		axios.get(this.serverURL + "/channels/" + this.channel.id + "/info", {headers: authHeader()}).then((res: AxiosResponse) =>
-		{
-			this.channel.members = res.data.users;
-			this.channel.administrators = res.data.administrators;
-		})
-		.catch(error =>
-		{
-			alert(error);
-		});
-	}
-
-	async addMember(): Promise<void>
-	{
-		let username = $('#add_member_input').val() as string;
-		await axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username}, {headers: authHeader()});
-	}
-
-	async addAdmin(): Promise<void>
-	{
-		let username = $('#add_admin_input').val() as string;
-		await axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()});
-	}
-
-	createMatch(): void
-	{
-		if (window.confirm("Do you want to start match with " + this.channel.name + " ?"))
-		{
-			alert("Start");
-		}
-	}
-
-	async sendMessage(): Promise<void>
-	{
-		let message = $('#msg_input').val() as string;
-		if (message && message.length > 0)
-			await axios.post(this.serverURL + "/channels/" + this.channel.id + "/messages", {channel: this.channel.id, content: message}, {headers: authHeader()});
-			//this.socket.emit('message', {channel: this.channel.id, user: this.username, content: message});
-		
-		$('#msg_input').val('');
-	}
-
-	muteMember(username: string): void
-	{
-		axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/mute', {}, {headers: authHeader()})
-		.then(() =>
-		{
-			this.loadChannelInfo();
-		})
-		.catch(error =>
-		{
-			console.log(error)
-		})
-	}
-
-	unmuteMember(username: string): void
-	{
-		axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unmute', {headers: authHeader()})
-		.then(() =>
-		{
-			this.loadChannelInfo();
-		})
-		.catch(error =>
-		{
-			console.log(error)
-		})
-	}
-
-	banMember(username: string): void
-	{
-		alert(username);
-		axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/ban', {}, {headers: authHeader()})
-		.then(() =>
-		{
-			this.loadChannelInfo();
-		})
-		.catch(error =>
-		{
-			console.log(error)
-		})
-	}
-
-	unbanMember(username: string): void
-	{
-		axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unban', {headers: authHeader()})
-		.then(() =>
-		{
-			this.loadChannelInfo();
-		})
-		.catch(error =>
-		{
-			console.log(error)
-		})
-	}
-
-	async setRequirePassword(): Promise<void>
-	{
-		let checked = $('#active_password:checked').length != 0;
-		if (checked)
-			this.channel.requirePassword = true;
-		else
-			this.channel.requirePassword = false;
-
-		let url;
-		if (!this.channel.requirePassword)
-		{
-			url = this.serverURL + '/channels/' + this.channel.id + '/password';
-			await axios.delete(url, {headers: authHeader()});
-		}
-	}
-
-	async updateChannelPassword(): Promise<void>
-	{
-		let password = $('#channel_password').val() as string;
-		alert("Set channel password to '" + password + "'");
-		await axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password}, {headers: authHeader()});
-	}
-
-	updateChannelName(): void
-	{
-		let new_name : string = $('#channel_name_input').val() as string;
-		let id  = this.channel.id;
-		alert("Update channel name to '" + new_name + "'");
-		axios.patch(this.serverURL + '/channels/' + this.channel.id + '/name', {id: id, new_name: new_name}, {headers: authHeader()})
-		.then(() =>
-		{
-			this.loadChannelsList();
-			this.channel.name = new_name;
-		})
-		.catch(error =>
-		{
-			console.log(error)
-		})
-	}
-
-	async loadChannelsList(): Promise<void>
-	{
-		await axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
-		{
-			console.log(res.data);
-			this.channels = res.data;
-		})
-		.catch(err => console.log(err));
-	}
-}
-
-export default Chat;
+	},
+});
 
 // export default
 // {
@@ -733,7 +742,6 @@ export default Chat;
 </template>
 
 <style>
-	@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css');
 
 	h1
 	{
