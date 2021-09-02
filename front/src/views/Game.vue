@@ -91,9 +91,9 @@ export default defineComponent({
 			this.socket.emit('setupChosen', setup);
 		},
 
-		updatePosition(obj: {x: number, y: number})
+		updatePosition(playerPosY: number)
 		{
-			this.socket.emit('pongEvent', obj);
+			this.socket.emit('pongEvent', playerPosY);
 		}
 	},
 

@@ -111,7 +111,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 				if (this.gameService.updateGame(this.wss, this.intervalId, room))
 					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
 					
-					
 			}, this.gameService.FRAMERATE);
 		}
 	}

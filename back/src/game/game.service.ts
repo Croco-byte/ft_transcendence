@@ -321,9 +321,9 @@ export class GameService
 	 * @param player Object with player information. Will be updated with new player position.
 	 * @param event Player mouse's coordinates.
 	 */
-	private userMoveUp(room: RoomInterface, player : PlayerInterface, event: any) : void
+	private userMoveUp(room: RoomInterface, player : PlayerInterface, playerPosY: number) : void
 	{
-		player.y -= (player.y - event.y > player.velY) ? player.velY : player.y - event.y;
+		player.y -= (player.y - playerPosY > player.velY) ? player.velY : player.y - playerPosY;
 		(player.y < room.game.paddle.height / 2) ? player.y = room.game.paddle.height / 2 : 0;
 	}
 	
@@ -334,9 +334,9 @@ export class GameService
 	 * @param player Object with player information. Will be updated with new player position.
 	 * @param event Player mouse's coordinates.
 	 */
-	private userMoveDown(room: RoomInterface, player : PlayerInterface, event: any) : void
+	private userMoveDown(room: RoomInterface, player : PlayerInterface, playerPosY: number) : void
 	{
-		player.y += (event.y - player.y > player.velY) ? player.velY : event.y - player.y;
+		player.y += (playerPosY - player.y > player.velY) ? player.velY : playerPosY - player.y;
 		(player.y > this.GAME_HEIGHT - room.game.paddle.height / 2) ? 
 				player.y = this.GAME_HEIGHT - room.game.paddle.height / 2 : 0;
 	}
