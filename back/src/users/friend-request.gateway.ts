@@ -33,7 +33,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 			this.logger.log(`Client connected to FriendRequests Gateway. ${client.id}`);
 		} catch(e) {
 			client.disconnect();
-			console.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
+			this.logger.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
 		}
 		
 	}
@@ -67,7 +67,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 			const result = await this.userService.sendFriendRequest(data.receiverId, data.user.id);
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 		} catch(e) {
-			console.log(e.message);
+			this.logger.log(e.message);
 			throw e;
 		}
 

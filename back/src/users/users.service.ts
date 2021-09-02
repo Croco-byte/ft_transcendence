@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { from, Observable, map } from 'rxjs';
@@ -8,12 +9,17 @@ import { User } from './users.entity';
 import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { UserStatus, User_Status } from './status.interface';
 import { unlink } from 'fs';
-import UserRepository from './user.repository';
+import { Logger } from '@nestjs/common'
 
 @Injectable()
 export class UsersService {
-	constructor(@InjectRepository(User) private usersRepository: Repository<User>, @InjectRepository(FriendRequestEntity) private friendRequestRepository: Repository<FriendRequestEntity>) {}
+	constructor(
+		@InjectRepository(User) 
+		private usersRepository: Repository<User>, 
+		@InjectRepository(FriendRequestEntity) 
+		private friendRequestRepository: Repository<FriendRequestEntity>) {}
 
+		private logger: Logger = new Logger('UsersService');
 
 	/*
 	** ==== Functions related to the Two Factor Authentication ====
@@ -218,9 +224,9 @@ export class UsersService {
 	/* Allows to unfriend a user by simply deleting the associated friend request in the database. */
 	async unfriendUser(currUserId: number, friendId: number): Promise<{ creatorId: number, receiverId: number }> {
 		try {
-			var friend = await this.findUserById(friendId);
-			var currentUser = await this.findUserById(currUserId);
-			var friendRequest = await this.friendRequestRepository.findOne({
+			let friend = await this.findUserById(friendId);
+			let currentUser = await this.findUserById(currUserId);
+			let friendRequest = await this.friendRequestRepository.findOne({
 				where: [
 					{ creator: currentUser, receiver: friend, status: 'accepted'},
 					{ creator: friend, receiver: currentUser, status: 'accepted'}
@@ -394,10 +400,82 @@ export class UsersService {
 	{
 		await this.usersRepository.save(user);
 	}
+
+
+	/* ==== Lucas' utility functions ==== */
+
+	/**
+	 * Increment by one the number of wins for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @return Promise with an the User updated in database.
+	 */
+	async incUserWins(userDbId: number): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } })
+			user.wins++;
+			return this.usersRepository.save(user);
+		} 
+		catch (e) {
+			this.logger.log('Couldn\'t find user required in order to increment wins');
+		}
+	}
+
+	/**
+	 * Increment by one the number of loses for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @return Promise with the User object updated in database.
+	 */
+	async incUserLoses(userDbId: number): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			user.loses++;
+			return this.usersRepository.save(user);
+		} 
+		catch (e) {
+			this.logger.log('Couldn\'t find user required in order to increment loses');
+		}
+	}
+
+	/**
+	 * Update the game status for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
+	 * @return Promise with the User object updated in database.
+	 */
+	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			user.gameStatus = newStatus;
+			return this.usersRepository.save(user);
+		} catch(e) {
+			this.logger.log('Could\'t find user required in order to update game status');
+		}
+	}
+
+	/**
+	 * Update the room ID for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @param newStatus Should be a room ID or 'none' in case of a reset.
+	 * @return Promise with the User object updated in database.
+	 */
+	async updateRoomId(userDbId: number, roomId: string): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			user.roomId = roomId;
+			return this.usersRepository.save(user);
+		} catch(e) {
+			this.logger.log('Could\'t find user required in order to update room ID');
+		}
+	}
 }
-
-
-
 
 
 

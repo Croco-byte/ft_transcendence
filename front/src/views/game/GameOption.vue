@@ -1,40 +1,74 @@
 <template>
-    <button @click="setOption(1)">EASY</button>
-    <button @click="setOption(2)">MEDIUM</button>
-    <button @click="setOption(3)">HARD</button>
+	<div class="level">
+		<p>BALL SPEEED</p>
+		<button @click="setLevel(1)">EASY</button>
+		<button @click="setLevel(2)">MEDIUM</button>
+		<button @click="setLevel(3)">HARD</button>
+	</div>
+	<div class="score">
+		<p>SCORE MAX</p>
+		<button @click="setScore(5)">5</button>
+		<button @click="setScore(10)">10</button>
+		<button @click="setScore(15)">15</button>
+	</div>
+	<div class="color">
+		<p>COLOR OF PAD</p>
+		<button @click="setPadColor('white')">white</button>
+		<button @click="setPadColor('yellow')">yellow</button>
+		<button @click="setPadColor('blue')">blue</button>
+		<button @click="setPadColor('red')">red</button>
+		<button @click="setPadColor('green')">green</button>
+	</div>
+	<div class="start">
+		<button @click="startGame()">START GAME</button>
+	</div>
+
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { SetupInterface } from '../../types/game.interface'
+
 
 export default defineComponent({
 
-  emits: ["optionChosen"],
+	name: 'OptionGame',
+	emits: ["setupChosen"],
 
-  props: {
-      ctx: {
-          required: true,      // add true
-          type: CanvasRenderingContext2D
-      },
-      canvas: {
-          required: true,
-          type: HTMLCanvasElement
-      }
-  },
+	data() {
+		return {
+			opt: { level: 1, score: 5, paddleColor: 'white' } as SetupInterface,
+		}
+	},
 
-  name: 'OptionGame',
+	methods: {
+		setLevel(value: number)
+		{
+			if (value != undefined)
+				this.opt.level = value;
+			console.log(`level: ${this.opt.level}`);
+		},
 
-  methods: {
-    setOption(value: number) {
-      if (value != undefined) {
-        this.$emit('optionChosen', value);
-      }
-    }
-  },
+		setScore(value: number)
+		{
+			if (value != undefined)
+				this.opt.score = value;
+			console.log(`score: ${this.opt.score}`);
+		},
 
-  mounted() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  }
-  
+		setPadColor(value: string)
+		{
+			if (value != undefined)
+				this.opt.paddleColor = value;
+			console.log(`color ${this.opt.paddleColor}`);
+		},
+
+		startGame()
+		{
+			console.log('start game');
+			this.$emit('setupChosen', this.opt as SetupInterface);
+		}
+	}
+	
 })
 </script>

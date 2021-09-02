@@ -10,7 +10,7 @@ services:
        - "postgres"
     volumes:
       - ./back:/usr/src/app
-      - /usr/src/app/node_modules
+      - node_modules_back:/usr/src/app/node_modules
     ports:
       - 3000:3000
       - 9229:9229
@@ -28,7 +28,7 @@ services:
     container_name: phppgadmin
     image: neimheadh/phppgadmin:7.13.0
     ports:
-      - "8000:80"
+      - 8000:80
     links:
       - "postgres"
     env_file:
@@ -65,7 +65,7 @@ services:
       target: development
     volumes:
       - ./front:/usr/src/app
-      - /usr/src/app/node_modules
+      - node_modules_front:/usr/src/app/node_modules
     ports:
       - 8080:8080
       - 9228:9228
@@ -80,3 +80,5 @@ networks:
   webnet:
 volumes:
   pgdata:
+  node_modules_front:
+  node_modules_back:
