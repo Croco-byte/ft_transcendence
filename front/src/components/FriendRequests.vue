@@ -10,29 +10,30 @@
 import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
-import UserStatus from '../components/UserStatus.vue'
 import { FriendRequest, FriendStatusChangeData } from '../types/friends.interface';
 import { PaginationMeta } from '../types/pagination.interface';
 import { UserStatusChangeData } from '../types/user.interface';
 
-interface SentFriendRequestsComponentData
+interface FriendsRequestComponentData
 {
 	currUserId: number;
 	sentRequests: FriendRequest[];
 	sentRequestsMeta: PaginationMeta;
-
+	receivedRequests: FriendRequest[];
+	receivedRequestsMeta: PaginationMeta;
+	mode: string;
 }
 
 export default defineComponent({
-	name: "SentFriendRequests",
-	components: {
-		// UserStatus
-	},
-	data(): SentFriendRequestsComponentData {
+	name: "FriendRequests",
+	data(): FriendsRequestComponentData {
 		return {
 			currUserId: 0,
 			sentRequests: [],
 			sentRequestsMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
+			receivedRequests: [],
+			receivedRequestsMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
+			mode: 'received',
 		}
 	},
 
@@ -83,9 +84,15 @@ export default defineComponent({
 		** If the user ID of this user corresponds to a friend that we are currently displaying, we update the friend's status accordingly.
 		*/
 		changeUserStatus: function(data: UserStatusChangeData): void {
-			for(var i=0; i < this.sentRequests.length; i++) {
+			for(let i=0; i < this.sentRequests.length; i++) {
 				if (this.sentRequests[i].receiver.id == data.userId) {
 					this.sentRequests[i].receiver.status = data.status;
+				}
+			}
+
+			for(let i=0; i < this.receivedRequests.length; i++) {
+				if (this.receivedRequests[i].creator.id == data.userId) {
+					this.receivedRequests[i].creator.status = data.status;
 				}
 			}
 		},
@@ -94,17 +101,80 @@ export default defineComponent({
 		** If we were the creator of this request, we update the sent friendrequests list.
 		*/
 		changeFriendRequestStatus: function(data: FriendStatusChangeData): void {
-			if (data.creatorId == this.currUserId) this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+			if (data.creatorId == this.currUserId)
+				this.getFriendRequestsToRecipients(this.sentRequestsMeta.currentPage);
+			if (data.receiverId == this.currUserId)
+				this.getFriendRequestsFromRecipients(this.receivedRequestsMeta.currentPage);
 		},
+
+		/* This method uses the UserService to get the list of the received friend requests, for the specified page (default to 1, does nothing if the page number is invalid).
+		** The function retrieves all the accessible informations about the user that sent the request ; we use it to display his displayName, and status.
+		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
+		*/
+		getFriendRequestsFromRecipients: function(page = 1): void {
+			var ref = this;
+			if (this.receivedRequestsMeta.totalPages > 0 && (Number.isNaN(page) || page < 1 || page > this.receivedRequestsMeta.totalPages)) return ;
+			UserService.getFriendRequestsFromRecipients(page).then(
+				response => {
+					ref.receivedRequests = response.data.items;
+					ref.receivedRequestsMeta = response.data.meta;
+					if (ref.receivedRequestsMeta.itemCount < 1 && ref.receivedRequestsMeta.currentPage > 1) ref.getFriendRequestsFromRecipients(ref.receivedRequestsMeta.currentPage - 1);
+				},
+				() => { console.log("Couldn't retrieve received friend requests from backend")})
+		},
+
+		/* This function allow the user to type a page number to directly go to the specified page, if the number is valid and within the result range */
+		goToReceivedRequestsPage: function(): void {
+			let data: FormData = new FormData(document.getElementById("goToReceivedRequestsPage") as HTMLFormElement);
+			const destinationPage: number | null = data.get('goToReceivedRequestsPageInput') as number | null;
+			if (destinationPage !== null && !Number.isNaN(destinationPage) && destinationPage >= 1 && destinationPage <= this.receivedRequestsMeta.totalPages) {
+				this.getFriendRequestsFromRecipients(destinationPage);
+			}
+		},
+
+		/* This function emits the signal that allows to accept the friendRequest. Upon reception of the signal, the WebSocket server will
+		** send the "friendStatusChanged" signal, that will be caught by the current user and the friend, allowing them to update their requests / friend list
+		*/
+		acceptFriendRequest: function(friendRequestId: number): void {
+			this.$store.state.websockets.friendRequestsSocket.emit('acceptFriendRequest', { friendRequestId });
+		},
+
+		/* This function emits the signal that allows to decline the friendRequest. Upon reception of the signal, the WebSocket server will
+		** send the "friendStatusChanged" signal, that will be caught by the current user and the former friend, allowing them to update their requests / friend list
+		*/
+		declineFriendRequest: function(friendRequestId: number): void {
+			this.$store.state.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
+		},
+
+		/**
+		 * Remove a friend request
+		 */
+		removeFriendRequest: function(friendRequestId: number): void {
+			this.$store.state.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
+		},
+
+		/**
+		 * Change viewed request mode : received or sent
+		 */
+		changeMode(event, mode)
+		{
+			let elem = document.getElementById(this.mode + '_button');
+			if (elem)
+				elem.classList.remove('selected');
+			event.currentTarget.classList.add('selected');
+			this.mode = mode;
+		}
 	},
 
 	created(): void {
 		/* Getting initial informations */
 		this.getFriendRequestsToRecipients();
+		this.getFriendRequestsFromRecipients();
 		this.currUserId = authService.parseJwt().id;
 	},
 
-	mounted(): void {
+	mounted(): void
+	{
 		/* Starting listeners to automatically update users' status and friendrequests */
 		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
 		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
@@ -123,12 +193,12 @@ export default defineComponent({
 		<div class="flex j-sb">
 			<h2>Requests</h2>
 			<div class="buttons_container">
-				<div class="selected">Received</div>
-				<div>Sent</div>
+				<div class="selected" id="received_button" @click="changeMode($event, 'received')">Received</div>
+				<div id="sent_button" @click="changeMode($event, 'sent')">Sent</div>
 			</div>
 		</div>
-		<div class="friends_item_container">
-			<div class="friend_item" v-for="friend in 3" :key="friend.id">
+		<div class="friends_item_container" v-if="mode == 'received'">
+			<div class="friend_item" v-for="request in receivedRequests" :key="request.id">
 				<div class="score">
 					187
 					<i class="fas fa-trophy"></i>
@@ -137,14 +207,33 @@ export default defineComponent({
 					<img :src="$store.state.avatar"/>
 				</div>
 				<p class="username">
-					yel-alou
+					<a :href="'/user/' + request.creator.id ">{{ request.creator.displayName }}</a>
 				</p>
 				<div class="flex">
-					<div class="refuse_button">
+					<div class="refuse_button" @click="declineFriendRequest(request.id)">
 						<i class="fas fa-times"></i>
 					</div>
-					<div class="accept_button">
+					<div class="accept_button" @click="acceptFriendRequest(request.id)">
 						<i class="fas fa-check"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="friends_item_container" v-if="mode == 'sent'">
+			<div class="friend_item" v-for="request in sentRequests" :key="request.id">
+				<div class="score">
+					187
+					<i class="fas fa-trophy"></i>
+				</div>
+				<div class="image">
+					<img :src="$store.state.avatar"/>
+				</div>
+				<p class="username">
+					<a :href="'/user/' + request.receiver.id ">{{ request.receiver.displayName }}</a>
+				</p>
+				<div class="flex">
+					<div class="refuse_button" @click="removeFriendRequest(request.id)">
+						<i class="fas fa-times"></i>
 					</div>
 				</div>
 			</div>
@@ -198,6 +287,13 @@ h2
 	color: white;
 }
 
+.friends_item_container
+{
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+}
+
 .friend_item
 {
 	display: flex;
@@ -209,7 +305,6 @@ h2
 	border: solid 1px #39D88F;
 	background: white;
 	margin: 0.25rem 0;
-	overflow-y: hidden;
 }
 
 .friend_item .score

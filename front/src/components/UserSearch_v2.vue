@@ -7,7 +7,6 @@
 
 import { defineComponent } from 'vue'
 import UserService from '../services/user.service'
-import UserStatus from '../components/UserStatus.vue'
 import { PaginationMeta } from '../types/pagination.interface';
 import { UserStatusChangeData, User } from '../types/user.interface';
 
@@ -138,7 +137,7 @@ export default defineComponent({
 					<img :src="$store.state.avatar"/>
 				</div>
 				<p class="username">
-					{{ result.displayName }}
+					<a :href="'/user/' + result.id ">{{ result.displayName }}</a>
 				</p>
 				<div class="add_friend_button" @click="sendFriendRequest(result.id)">
 					Add
@@ -203,7 +202,6 @@ input:placeholder
 	border: solid 1px #39D88F;
 	background: white;
 	margin: 0.25rem 0;
-	overflow-y: hidden;
 }
 
 .friend_item .score

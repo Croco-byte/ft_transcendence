@@ -10,7 +10,6 @@
 import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
-import UserStatus from '../components/UserStatus.vue';
 import { FriendStatusChangeData } from '../types/friends.interface';
 import { User, UserStatusChangeData } from '../types/user.interface';
 import { PaginationMeta} from '../types/pagination.interface';
@@ -24,9 +23,6 @@ interface FriendListComponentData
 
 export default defineComponent({
 	name: 'FriendList',
-	components: {
-		// UserStatus
-	},
 	data(): FriendListComponentData {
 		return {
 			currUserId: 0,
@@ -138,7 +134,7 @@ export default defineComponent({
 					<img :src="$store.state.avatar"/>
 				</div>
 				<p class="username">
-					{{ friend.displayName }}
+					<a :href="'/user/' + friend.id ">{{ friend.displayName }}</a>
 				</p>
 				<p class="watch_button">
 					watch
@@ -177,6 +173,7 @@ h2
 {
 	display: flex;
 	flex-direction: column;
+	overflow-y: auto;
 }
 
 .friend_item
@@ -190,7 +187,6 @@ h2
 	border: solid 1px #39D88F;
 	background: white;
 	margin: 0.25rem 0;
-	overflow-y: hidden;
 }
 
 .friend_item .score

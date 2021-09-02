@@ -6,8 +6,6 @@
 	<div class="friends_search_requests_container">
 		<UserSearch/>
 		<FriendRequests/>
-		<!-- <ReceivedFriendRequests/> -->
-		<!-- <SentFriendRequests/> -->
 	</div>
 </div>
 </template>
@@ -20,8 +18,6 @@ import { defineComponent } from 'vue'
 
 import FriendList from "../components/FriendList_v2.vue"
 import UserSearch from "../components/UserSearch_v2.vue"
-import ReceivedFriendRequests from "../components/ReceivedFriendRequests.vue"
-import SentFriendRequests from "../components/SentFriendRequests.vue"
 import FriendRequests from '../components/FriendRequests.vue'
 
 export default defineComponent({
@@ -30,8 +26,6 @@ export default defineComponent({
 		FriendList,
 		UserSearch,
 		FriendRequests,
-		// ReceivedFriendRequests,
-		// SentFriendRequests
 	}
 })
 </script>
@@ -61,6 +55,7 @@ body
 	display: flex;
 	flex-direction: column;
 	width: 45%;
+	height: 80vh;
 }
 
 </style>
