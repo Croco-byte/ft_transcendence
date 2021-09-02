@@ -6,14 +6,14 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
-import { RoomInterface, BallInterface, PlayerInterface, PaddleInterface, GameInterface } from '../../types/game.interface'
+import { Room, Ball, Player, Paddle, Game } from '../../types/game.interface'
 
 export default defineComponent({
 
 	props: {
 		room: {
 			required: true,
-			type: Object as PropType<RoomInterface>
+			type: Object as PropType<Room>
 		}
 	},
 	
@@ -26,7 +26,7 @@ export default defineComponent({
 			fullGameWindow: null as HTMLElement | null,
 			ctx: null as CanvasRenderingContext2D | null,
 			canvas: null as HTMLCanvasElement | null,
-			game: null as GameInterface | null,
+			game: null as Game | null,
 		}
 	},
 
@@ -41,7 +41,7 @@ export default defineComponent({
 
 		// --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
-		drawPaddle(player1: PlayerInterface, player2: PlayerInterface, paddle: PaddleInterface)
+		drawPaddle(player1: Player, player2: Player, paddle: Paddle)
 		{
 			if (this.ctx && this.canvas) {
 				let nPaddle = {
@@ -67,7 +67,7 @@ export default defineComponent({
 			}
 		},
 	
-		drawBall(ball: BallInterface)
+		drawBall(ball: Ball)
 		{
 			if (this.ctx && this.canvas) {
 				let nBall = {
@@ -108,7 +108,7 @@ export default defineComponent({
 			}
 		},
 
-		drawGame(room: RoomInterface)
+		drawGame(room: Room)
 		{
 			if (this.ctx && this.canvas) {
 					

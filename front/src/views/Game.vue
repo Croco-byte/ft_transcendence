@@ -3,33 +3,37 @@
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
 		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor"></GameJoin>
 		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
+		<GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo"></GameEnd>
 	</div>
 </template>
 
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { SocketDataInterface, SetupInterface } from '../types/game.interface'
+import { Setup } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
 import GameJoin from './game/GameJoin.vue'
+import GameEnd from './game/GameEnd.vue'
 import io from 'socket.io-client'
 import authHeader from '../services/auth-header';
-import { RoomInterface } from '../types/game.interface'
+import { Room, EndGameInfo } from '../types/game.interface'
 
 export default defineComponent({
 	
 	name: 'game',
-	components: { GameOption, GamePlay, GameJoin },
+	components: { GameOption, GamePlay, GameJoin, GameEnd },
 
 	data() {
 		return {
 			socket: null as any,
 			room: null as any,
+			endGameInfo: null as any,
+			RenderGameOption: true as boolean,
 			RenderGameJoin: false as boolean,
 			RenderGamePlay: false as boolean,
+			RenderGameEnd: false as boolean,
 			isStarting: false as boolean,
-			RenderGameOption: true as boolean,
 			backColor: 'orange' as string,
 			gameID: 0 as number,
 		}
@@ -53,7 +57,7 @@ export default defineComponent({
 			this.isStarting = true;
 		},
 
-		actualizeGameScreen(room: RoomInterface) : void
+		actualizeGameScreen(room: Room) : void
 		{
 			this.room = room;
 			if (this.RenderGameJoin) {
@@ -62,21 +66,30 @@ export default defineComponent({
 			}
 		},
 
-		gameEnded(room: RoomInterface) : void
+		gameEnded(endGameInfo: EndGameInfo) : void
 		{
-			this.RenderGamePlay = false;
+			console.log('gameEnded triggered');
+
+			console.log(endGameInfo);
+			console.log(endGameInfo.p1DbInfo.username);
+			console.log(endGameInfo.p2DbInfo.username);
+			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
-			let msg = room.game.p1Score > room.game.p2Score ? 'player 1 has won' : 'player 2 has won';
-			alert(msg);
+			this.RenderGamePlay = false;
+			this.RenderGameEnd = true;
 		},
 
-		opponentLeft(obj: SocketDataInterface) : void
+		opponentLeft(endGameInfo: EndGameInfo) : void
 		{
-			this.RenderGamePlay = false;
+			console.log('opponentLeft triggered');
+
+			console.log(endGameInfo);
+			console.log(endGameInfo.p1DbInfo.username);
+			console.log(endGameInfo.p2DbInfo.username);
+			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
-			let msg = obj.room.player1Id === obj.clientId ? 'player 1 has disconnected. You won !' :
-											'player 2 has disconnected. You won !';
-			alert(msg);
+			this.RenderGamePlay = false;
+			this.RenderGameEnd = true;
 		},
 
 		updateGameId(id: number)
@@ -86,7 +99,7 @@ export default defineComponent({
 
 		// ----------------------------------------
 		// ----------- SOCKET EMETTERS ------------
-		setupChosen(setup: SetupInterface)
+		setupChosen(setup: Setup)
 		{
 			this.socket.emit('setupChosen', setup);
 		},
@@ -111,18 +124,16 @@ export default defineComponent({
 				this.startingGame();
 			});
 
-			this.socket.on('actualizeGameScreen', (room: RoomInterface) => {
+			this.socket.on('actualizeGameScreen', (room: Room) => {
 				this.actualizeGameScreen(room);
 			});
 
-			this.socket.on('gameEnded', (room: RoomInterface) => {
-				console.log('gameEnded listener');
-				this.gameEnded(room);
+			this.socket.on('gameEnded', (endGameInfo: EndGameInfo) => {
+				this.gameEnded(endGameInfo);
 			});
 
-			this.socket.on('opponentLeft', (obj: SocketDataInterface) => {
-				console.log('opponentLeft listener');
-				this.opponentLeft(obj);
+			this.socket.on('opponentLeft', (endGameInfo: EndGameInfo) => {
+				this.opponentLeft(endGameInfo);
 			});
 		}
 	},

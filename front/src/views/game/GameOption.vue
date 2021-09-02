@@ -27,7 +27,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { SetupInterface } from '../../types/game.interface'
+import { Setup } from '../../types/game.interface'
 
 
 export default defineComponent({
@@ -37,7 +37,7 @@ export default defineComponent({
 
 	data() {
 		return {
-			opt: { level: 1, score: 5, paddleColor: 'white' } as SetupInterface,
+			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
 		}
 	},
 
@@ -66,7 +66,7 @@ export default defineComponent({
 		startGame()
 		{
 			console.log('start game');
-			this.$emit('setupChosen', this.opt as SetupInterface);
+			this.$emit('setupChosen', this.opt as Setup);
 		}
 	}
 	

@@ -1,11 +1,5 @@
 /* eslint-disable prettier/prettier */
-export interface SocketDataInterface
-{
-	clientId: string;
-	room: RoomInterface;
-}
-
-export interface RoomInterface
+export interface Room
 {
 	name: string;
 	user1DbId: number;
@@ -13,22 +7,22 @@ export interface RoomInterface
 	player1Id: string;
 	player2Id: string;
 	nbPeopleConnected: number;
-	game: GameInterface;
+	game: Game;
 }
 
-export interface GameInterface
+export interface Game
 {
 	width: number;
 	height: number;
 	p1Score: number;
 	p2Score: number;
-	ball: BallInterface;
-	paddle: PaddleInterface;
-	p1Left: PlayerInterface;
-	p2Right: PlayerInterface;
+	ball: Ball;
+	paddle: Paddle;
+	p1Left: Player;
+	p2Right: Player;
 }
 
-export interface BallInterface 
+export interface Ball 
 {
 	radius: number;
 	dir: number;
@@ -39,23 +33,23 @@ export interface BallInterface
 	velY: number
 }
 
-export interface PlayerInterface 
+export interface Player 
 {
 	x: number;
 	y: number;
 	velX: number;
 	velY: number;
-	setup: SetupInterface;
+	setup: Setup;
 }
 
-export interface PaddleInterface 
+export interface Paddle 
 {
 	height: number;
 	width: number;
 	border: number;
 }
 
-export interface SetupInterface
+export interface Setup
 {
 	// 1, 2 or 3
 	level: number;
@@ -65,4 +59,18 @@ export interface SetupInterface
 
 	// 5 colors ?
 	paddleColor: string;
+}
+
+export interface PlayerDbInfo
+{
+	username: string;
+	avatar: string;
+}
+
+export interface EndGameInfo
+{
+	clientId: string;
+	p1DbInfo: PlayerDbInfo;
+	p2DbInfo: PlayerDbInfo;
+	room: Room;
 }
