@@ -1002,6 +1002,7 @@ export default defineComponent(
 	.chat_view .message p
 	{
 		margin: 0;
+		word-wrap: break-word;
 	}
 
 	.chat_view .message_bar
