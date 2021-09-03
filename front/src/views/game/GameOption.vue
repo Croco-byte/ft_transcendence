@@ -9,7 +9,7 @@
 		<p>SCORE MAX</p>
 		<button @click="setScore(5)">5</button>
 		<button @click="setScore(10)">10</button>
-		<button @click="setScore(15)">15</button>
+		<button @click="setScore(15000)">15000</button>
 	</div>
 	<div class="color">
 		<p>COLOR OF PAD</p>

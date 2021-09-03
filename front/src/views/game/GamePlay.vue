@@ -32,12 +32,22 @@ export default defineComponent({
 
 	methods: {
 
-		rapport(posY: number) : number {
+		rapport(posY: number) : number 
+		{
 			let ret = 0;
 			if (this.canvas) 
 				ret = posY / this.canvas.height * this.room.game.height;
 			return ret;
 		},
+
+		// scaleWidth() : number
+		// {
+		// 	return this.canvas.width * this.room.game.width;
+		// },
+
+		// scaleHeight()
+
+
 
 		// --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
@@ -94,19 +104,19 @@ export default defineComponent({
 			}
 		},
 
-		drawSeparator()
-		{
-			if (this.ctx && this.canvas) {
-				let w = this.canvas.width / 200;
-				let h = this.canvas.height / 58;
-				this.ctx.fillStyle = "white";
+		// drawSeparator()
+		// {
+		// 	if (this.ctx && this.canvas) {
+		// 		let w = this.canvas.width / 200;
+		// 		let h = this.canvas.height / 58;
+		// 		this.ctx.fillStyle = "white";
 
-				for (let i = 0; i < this.canvas.height; i++) {
-					if (!(i % Math.floor(this.canvas.height / 40)))
-						this.ctx.fillRect(this.canvas.width / 2, i, w, h);
-				}
-			}
-		},
+		// 		for (let i = 0; i < this.canvas.height; i++) {
+		// 			if (!(i % Math.floor(this.canvas.height / 40)))
+		// 				this.ctx.fillRect(this.canvas.width / 2, i, w, h);
+		// 		}
+		// 	}
+		// },
 
 		drawGame(room: Room)
 		{
@@ -117,13 +127,22 @@ export default defineComponent({
 				this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
 
 				this.drawPaddle(room.game.p1Left, room.game.p2Right, room.game.paddle);
-				this.drawSeparator();
+				// this.drawSeparator();
 				this.drawBall(room.game.ball);
 				this.drawScore(room.game.p1Score, room.game.p2Score);
 			}
 		},
 
+		gameScale() : number
+		{
+			return this.room.game.width / this.room.game.height;
+		},
 
+		gameScaleReverse() : number
+		{
+			return this.room.game.height / this.room.game.width;
+		},
+		
 		// --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent()
@@ -139,8 +158,23 @@ export default defineComponent({
 
 			window.addEventListener('resize', () => {
 				if (this.canvas && this.fullGameWindow) {
-					this.canvas.width = this.fullGameWindow.clientWidth;
-					this.canvas.height = this.fullGameWindow.clientHeight;
+
+					if (this.fullGameWindow.clientWidth < this.room.game.width || 
+							this.fullGameWindow.clientHeight < this.room.game.height) {
+						this.canvas.width = this.room.game.width;
+						this.canvas.height = this.room.game.height;
+					}
+
+					else if (this.fullGameWindow.clientHeight * this.gameScale() 
+							< this.fullGameWindow.clientWidth) {
+						this.canvas.width = this.fullGameWindow.clientHeight * this.gameScale();
+						this.canvas.height = this.fullGameWindow.clientHeight;
+					}
+
+					else {
+						this.canvas.width = this.fullGameWindow.clientWidth;
+						this.canvas.height = this.fullGameWindow.clientWidth * this.gameScaleReverse();
+					}
 				}
 			}, false );
 		},

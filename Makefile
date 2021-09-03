@@ -6,7 +6,7 @@
 #    By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/08/16 12:30:03 by lucaslefran       #+#    #+#              #
-#    Updated: 2021/08/25 16:04:48 by llefranc         ###   ########.fr        #
+#    Updated: 2021/09/03 15:05:39 by llefranc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,6 +25,21 @@ remove		:
 # Rebuild all the images and run the containers with new volumes / new network.
 reinstall	:	remove install
 
+# Rebuild front image and run the containers with new volumes / new network.
+reinstall_front	:
+				docker-compose -f docker-compose.yml down -v
+				docker image build --no-cache ./front/
+				docker-compose -f docker-compose.yml up --no-start
+				docker-compose -f docker-compose.yml start
+				docker-compose logs -f back front postgres
+
+# Rebuild back image and run the containers with new volumes / new network.
+reinstall_back	:
+				docker-compose -f docker-compose.yml down -v
+				docker image build --no-cache ./back/
+				docker-compose -f docker-compose.yml up --no-start
+				docker-compose -f docker-compose.yml start
+				docker-compose logs -f back front postgres
 				
 # Run all the containers, using previous data stored in volumes and on host machine for 
 # app files. 'make install' need to have been executed before.
@@ -46,5 +61,5 @@ recreate	:
 				docker-compose -f docker-compose.yml up --no-start
 				docker-compose -f docker-compose.yml start
 				docker-compose logs -f back front postgres
-				
+							
 .PHONY		:	run resintall install stop remove
