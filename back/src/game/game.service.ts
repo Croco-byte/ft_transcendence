@@ -244,7 +244,7 @@ export class GameService
 		const p2Right: Player = room.game.p2Right;
 		const paddle: Paddle = room.game.paddle;
 
-		if (ball.x - ball.radius > p2Right.x - paddle.width - paddle.border 
+		if (ball.x + ball.radius > room.game.width - paddle.width - paddle.border 
 				&& ball.y + ball.radius > p2Right.y - paddle.height / 2 
 				&& ball.y - ball.radius < p2Right.y + paddle.height / 2)
 			this.playerTwoIntersectBall(room);
