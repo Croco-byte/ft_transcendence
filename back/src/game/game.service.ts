@@ -266,16 +266,20 @@ export class GameService
 	 */
 	private playerOneIntersectBall(room: Room) : void
 	{
-		const percentIntersect: number = (room.game.ball.y - room.game.p1Left.y)/ (room.game.paddle.height / 2);
+		const ball: Ball = room.game.ball;
+		const paddle: Paddle = room.game.paddle;
+		const percentIntersect: number = (ball.y - room.game.p1Left.y) / (paddle.height / 2);
 		const angleRad: number = percentIntersect < 0 ? -percentIntersect * this.MAX_ANGLE : 
 				percentIntersect * this.MAX_ANGLE;
 				
-		room.game.ball.velX = room.game.ball.speed * Math.cos(angleRad);
-		room.game.ball.velY = percentIntersect < 0 ? room.game.ball.speed * -Math.sin(angleRad) :
-				room.game.ball.speed * Math.sin(angleRad)
+		ball.velX = ball.speed * Math.cos(angleRad);
+		ball.velY = percentIntersect < 0 ? ball.speed * -Math.sin(angleRad) :
+				ball.speed * Math.sin(angleRad)
 
-		if (room.game.ball.speed < this.MAX_BALL_SPEED)
-			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
+		if (ball.x - ball.radius < paddle.border + paddle.width)
+			ball.x = paddle.border + paddle.width + ball.radius;
+		if (ball.speed < this.MAX_BALL_SPEED)
+			ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
 	
 	/**
@@ -286,16 +290,20 @@ export class GameService
 	 */
 	private playerTwoIntersectBall(room: Room) : void
 	{
-		const percentIntersect: number = (room.game.ball.y - room.game.p2Right.y) / (room.game.paddle.height / 2);
+		const ball: Ball = room.game.ball;
+		const paddle: Paddle = room.game.paddle;
+		const percentIntersect: number = (ball.y - room.game.p2Right.y) / (paddle.height / 2);
 		const angleRad: number = percentIntersect < 0 ? -percentIntersect * this.MAX_ANGLE : 
 				percentIntersect * this.MAX_ANGLE;
 
-		room.game.ball.velX = room.game.ball.speed * -Math.cos(angleRad);
-		room.game.ball.velY = percentIntersect < 0 ? room.game.ball.speed * -Math.sin(angleRad) :
-				room.game.ball.speed * Math.sin(angleRad);
+		ball.velX = ball.speed * -Math.cos(angleRad);
+		ball.velY = percentIntersect < 0 ? ball.speed * -Math.sin(angleRad) :
+				ball.speed * Math.sin(angleRad);
 
-		if (room.game.ball.speed < this.MAX_BALL_SPEED)
-			room.game.ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
+		if (ball.x + ball.radius > room.game.width - paddle.border - paddle.width)
+			ball.x = room.game.width - paddle.border - paddle.width - ball.radius;
+		if (ball.speed < this.MAX_BALL_SPEED)
+			ball.speed *= this.INCREASE_SPEED_PERCENTAGE;
 	}
 
 	/**

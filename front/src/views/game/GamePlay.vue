@@ -205,5 +205,6 @@ export default defineComponent({
 .fullWindow {
 	width: 100vw;
 	height: 100vh;
+	background-color: #778899;
 }
 </style>
