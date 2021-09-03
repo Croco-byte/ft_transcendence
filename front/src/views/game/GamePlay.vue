@@ -40,15 +40,6 @@ export default defineComponent({
 			return ret;
 		},
 
-		// scaleWidth() : number
-		// {
-		// 	return this.canvas.width * this.room.game.width;
-		// },
-
-		// scaleHeight()
-
-
-
 		// --------------------------------------------------------------------------------
 		// -------------------------------------------------------- DRAWINGS --------------
 		drawPaddle(player1: Player, player2: Player, paddle: Paddle)
@@ -104,19 +95,19 @@ export default defineComponent({
 			}
 		},
 
-		// drawSeparator()
-		// {
-		// 	if (this.ctx && this.canvas) {
-		// 		let w = this.canvas.width / 200;
-		// 		let h = this.canvas.height / 58;
-		// 		this.ctx.fillStyle = "white";
+		drawSeparator()
+		{
+			if (this.ctx && this.canvas) {
+				let w = this.canvas.width / 200;
+				let h = this.canvas.height / 58;
+				this.ctx.fillStyle = "white";
 
-		// 		for (let i = 0; i < this.canvas.height; i++) {
-		// 			if (!(i % Math.floor(this.canvas.height / 40)))
-		// 				this.ctx.fillRect(this.canvas.width / 2, i, w, h);
-		// 		}
-		// 	}
-		// },
+				for (let i = 0; i < this.canvas.height; i++) {
+					if (!(i % Math.floor(this.canvas.height / 40)))
+						this.ctx.fillRect(this.canvas.width / 2, i, w, h);
+				}
+			}
+		},
 
 		drawGame(room: Room)
 		{
@@ -127,7 +118,7 @@ export default defineComponent({
 				this.ctx.fillRect(0, 0, this.canvas.width , this.canvas.height);
 
 				this.drawPaddle(room.game.p1Left, room.game.p2Right, room.game.paddle);
-				// this.drawSeparator();
+				this.drawSeparator();
 				this.drawBall(room.game.ball);
 				this.drawScore(room.game.p1Score, room.game.p2Score);
 			}
@@ -143,6 +134,33 @@ export default defineComponent({
 			return this.room.game.height / this.room.game.width;
 		},
 		
+		resizeWindow() : void
+		{
+			const header = document.getElementById('header') as HTMLElement;
+
+			if (this.canvas && this.fullGameWindow && header) {
+
+				let heightWithoutHeader: number = this.fullGameWindow.clientHeight - header.offsetHeight;
+
+				if (this.fullGameWindow.clientWidth < this.room.game.width || 
+						heightWithoutHeader < this.room.game.height) {
+					this.canvas.width = this.room.game.width;
+					this.canvas.height = this.room.game.height;
+				}
+
+				else if (heightWithoutHeader * this.gameScale() 
+						< this.fullGameWindow.clientWidth) {
+					this.canvas.width = heightWithoutHeader * this.gameScale();
+					this.canvas.height = heightWithoutHeader;
+				}
+
+				else {
+					this.canvas.width = this.fullGameWindow.clientWidth;
+					this.canvas.height = this.fullGameWindow.clientWidth * this.gameScaleReverse();
+				}
+			}
+		},
+
 		// --------------------------------------------------------------------------------
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent()
@@ -156,27 +174,7 @@ export default defineComponent({
 				});
 			}
 
-			window.addEventListener('resize', () => {
-				if (this.canvas && this.fullGameWindow) {
-
-					if (this.fullGameWindow.clientWidth < this.room.game.width || 
-							this.fullGameWindow.clientHeight < this.room.game.height) {
-						this.canvas.width = this.room.game.width;
-						this.canvas.height = this.room.game.height;
-					}
-
-					else if (this.fullGameWindow.clientHeight * this.gameScale() 
-							< this.fullGameWindow.clientWidth) {
-						this.canvas.width = this.fullGameWindow.clientHeight * this.gameScale();
-						this.canvas.height = this.fullGameWindow.clientHeight;
-					}
-
-					else {
-						this.canvas.width = this.fullGameWindow.clientWidth;
-						this.canvas.height = this.fullGameWindow.clientWidth * this.gameScaleReverse();
-					}
-				}
-			}, false );
+			window.addEventListener('resize', () => this.resizeWindow(), false );
 		},
 
 		refreshScreen(): void
@@ -193,11 +191,9 @@ export default defineComponent({
 	{
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
-	
-		this.canvas.width = this.fullGameWindow.clientWidth;
-		this.canvas.height = this.fullGameWindow.clientHeight;
 		this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
 
+		this.resizeWindow();
 		this.pongEvent();
 		this.refreshScreen();
 	},
