@@ -56,8 +56,8 @@ import UserService from '../services/user.service'
 import authService from '../services/auth.service'
 
 export default {
-  name: 'Home',
-  	data () {
+	name: 'User',
+	data () {
 		return {
 			currUserId: 0,
 			userId: this.$route.params.id,

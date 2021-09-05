@@ -34,3 +34,5 @@ destroyed. Sinon, quand je vais sur la page d'un utilisateur, puis sur Friends, 
 vérifier que deux signaux "setOnline" ne sont pas envoyés.
 En fait, on a probablement un problème de design lors de l'opération de Login. Lorsque je reviens de l'OAuth 42, l'opération de login automatique est probablement déclenchée,
 puisque je recharge la page ; et l'opération de login classique est également déclenchée.
+
+>> Parfois lorsque je me connecte, le statut affiché sur la page "Account" est "offline", pour des questions de timing je suppose ?

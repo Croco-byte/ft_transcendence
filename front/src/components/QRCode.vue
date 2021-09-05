@@ -18,7 +18,7 @@
 import AuthService from '../services/auth.service'
 
 export default {
-  name: 'Account',
+  name: 'QRCode',
   data() {
 	  return {
 		  QRCode: '',
