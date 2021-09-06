@@ -19,7 +19,8 @@ const routes = [
 	{
 		path: '/game',
 		name: 'Game',
-		component: () => import('../views/Game.vue')
+		component: () => import('../views/Game.vue'),
+		beforeEnter: ifAuthenticated
 	},
 	{
 		path: '/login',
@@ -37,12 +38,12 @@ const routes = [
 		component: () => import('../views/Account.vue'),
 		beforeEnter: ifAuthenticated
 	},
-  // {
-	//   path: '/chat',
-	//   name: 'Chat',
-	//   component: () => import('../views/Chat.vue'),
-	//   beforeEnter: ifAuthenticated
-  // },
+	{
+		path: '/chat',
+		name: 'Chat',
+		component: () => import('../components/Chat.vue'),
+		beforeEnter: ifAuthenticated
+	},
 	{
 		path: '/twoFA',
 		name: 'TwoFA',

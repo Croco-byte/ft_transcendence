@@ -1,25 +1,25 @@
 <template>
 		<div id="searchUser">
-		<h2 style="text-align: center;">Search a user</h2>
-		<form id="userSearchForm">
-			<input type="text" name="searchUserInput" placeholder="Search a user" style="margin-right: 20px; margin-left: 20px;">
-			<button type="button" v-on:click="searchUser()">Search</button>
-		</form>
-		<div v-if="searchResults.length > 0">
-		<ul>
-			<li v-for="result in searchResults" :key="result.displayName">
-				<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
-				<br/>
-				<UserStatus :status="result.status"/>
-			</li>
-		</ul>
-		<div id="paginationMenu" v-if="searchResults.length > 0">
-			<p style="display: flex; justify-content: space-around;">
-				<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
-				<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToSearchPage"><input name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ searchMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-				<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
-			</p>
-		</div>
+			<h2 style="text-align: center;">Search a user</h2>
+			<form id="userSearchForm">
+				<input type="text" name="searchUserInput" placeholder="Search a user" style="margin-right: 20px; margin-left: 20px;">
+				<button type="button" v-on:click="searchUser()">Search</button>
+			</form>
+			<div v-if="searchResults.length > 0">
+			<ul>
+				<li v-for="result in searchResults" :key="result.displayName">
+					<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
+					<br/>
+					<UserStatus :status="result.status"/>
+				</li>
+			</ul>
+			<div id="paginationMenu" v-if="searchResults.length > 0">
+				<p style="display: flex; justify-content: space-around;">
+					<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
+					<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToSearchPage"><input name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ searchMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+					<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
+				</p>
+			</div>
 		</div>
 		<div v-else>
 			<p>No search results</p>

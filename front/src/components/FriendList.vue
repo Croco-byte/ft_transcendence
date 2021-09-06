@@ -1,6 +1,6 @@
 <template>
 	<div id="yourFriends">
-		<h2 style="text-align: center;">Your friends</h2>
+		<h2 style="text-align: center;">Your friends : </h2>
 		<div v-if="friends.length > 0">
 			<ul>
 				<li v-for="friend in friends" :key="friend.id">

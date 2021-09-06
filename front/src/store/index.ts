@@ -1,6 +1,6 @@
 import VueX, { StoreOptions } from 'vuex';
 import authHeader from '../services/auth-header';
-import io, { Socket } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import router from '../router/index';
 import store from './index';
 import userService from '../services/user.service';

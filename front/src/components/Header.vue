@@ -1,5 +1,5 @@
 <template>
-	<header>
+	<header id="header">
 		<NavLink url="/" text="Ft_transcendence" class="brand"/>
 		<div class="links_container">
 			<NavLink url="/" text="Home"/>

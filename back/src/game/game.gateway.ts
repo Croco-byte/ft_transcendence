@@ -9,8 +9,8 @@ import { SubscribeMessage,
 	MessageBody} from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io'
-import { RoomInterface, 
-    SetupInterface } from './interfaces/game.interface'
+import { Room, 
+    Setup } from './interfaces/game.interface'
 import { GameService } from './game.service';
 import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
@@ -71,12 +71,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.usersService.updateGameStatus(client.data.userDbId, 'none');
 		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
-		let room: RoomInterface = this.gameService.findRoomByPlayerId(client.id);
+		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 
-		if (room && room.name && room.nbPeopleConnected) {
-			this.wss.to(room.name).emit('opponentLeft', { clientId: client.id, room: room });
-			this.gameService.removeRoom(this.wss, this.intervalId, room, false);
-		}
+		if (room && room.name && room.nbPeopleConnected)
+			this.gameService.removeRoom(this.wss, this.intervalId, room, client.id);
 	}
 
 	/**
@@ -91,9 +89,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * @param setupChosen Setup chosen by the player.
 	 */
 	@SubscribeMessage('setupChosen')
-	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() setupChosen: SetupInterface) : Promise<void>
+	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() setupChosen: Setup) : Promise<void>
 	{
-		let room: RoomInterface = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
+		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
 		client.join(room.name);
 
 		if (room.nbPeopleConnected === 1)
@@ -101,16 +99,17 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		else if (room.nbPeopleConnected === 2) {
 			
+			this.logger.log('starting game');
+
 			this.wss.to(room.name).emit('startingGame');
 
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
 
 			this.intervalId = setInterval(() => {
 				this.wss.to(room.name).emit('actualizeGameScreen', room);
-				
-				if (this.gameService.updateGame(client.id, this.wss, this.intervalId, room))
+
+				if (this.gameService.updateGame(this.wss, this.intervalId, room))
 					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
-					
 					
 			}, this.gameService.FRAMERATE);
 		}

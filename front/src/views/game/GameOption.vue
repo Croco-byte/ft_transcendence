@@ -9,7 +9,7 @@
 		<p>SCORE MAX</p>
 		<button @click="setScore(5)">5</button>
 		<button @click="setScore(10)">10</button>
-		<button @click="setScore(15)">15</button>
+		<button @click="setScore(15000)">15000</button>
 	</div>
 	<div class="color">
 		<p>COLOR OF PAD</p>
@@ -26,9 +26,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue'
-import { SetupInterface, SocketDataInterface } from '../../types/game.interface'
-import OptionButton from '../../components/OptionButton.vue'
+import { defineComponent } from 'vue'
+import { Setup } from '../../types/game.interface'
+
 
 export default defineComponent({
 
@@ -37,7 +37,7 @@ export default defineComponent({
 
 	data() {
 		return {
-			opt: { level: 1, score: 5, paddleColor: 'white' } as SetupInterface,
+			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
 		}
 	},
 
@@ -66,8 +66,21 @@ export default defineComponent({
 		startGame()
 		{
 			console.log('start game');
-			this.$emit('setupChosen', this.opt as SetupInterface);
+			this.$emit('setupChosen', this.opt as Setup);
+		},
+
+		resetOption()
+		{
+			this.opt.level = 1;
+			this.opt.score = 1;
+			this.opt.paddleColor = 'white';
 		}
+	},
+
+	mounted()
+	{
+
+		console.log('option mounted');
 	}
 	
 })

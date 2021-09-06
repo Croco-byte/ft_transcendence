@@ -9,7 +9,7 @@
 
 
 <script lang="ts">
-import { defineComponent, watch, PropType } from 'vue'
+import { defineComponent, watch } from 'vue'
 
 export default defineComponent({
 
