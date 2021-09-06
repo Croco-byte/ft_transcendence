@@ -1,8 +1,0 @@
-- vue mtn en mode typescript
-- update de @nest/socket-io et @nest/websockets en v8 mtn
-- update de @socket.io-client en v4.0
-- peut etre passer à la version v8.0.6 de nest ?
-- update de node en v14 (et donc de npm en v7, plus possible de faire --only="developpment").
-  Pas update en v16 car apparemment ya un bug.
-- pendant l'update en v14, j'ai du aussi recup le package-lock.json en v14. J'ai donc recup le mien
-  car le precedent avait ete cree avec le npm 12 de yassine. C'est ce qui creeait le bug des websockets.
