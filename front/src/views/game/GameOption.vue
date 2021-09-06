@@ -67,7 +67,20 @@ export default defineComponent({
 		{
 			console.log('start game');
 			this.$emit('setupChosen', this.opt as Setup);
+		},
+
+		resetOption()
+		{
+			this.opt.level = 1;
+			this.opt.score = 1;
+			this.opt.paddleColor = 'white';
 		}
+	},
+
+	mounted()
+	{
+
+		console.log('option mounted');
 	}
 	
 })

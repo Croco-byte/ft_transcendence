@@ -1,9 +1,10 @@
 <template>
 	<div class="game">
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
-		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor"></GameJoin>
+		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
 		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
-		<GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo"></GameEnd>
+		<!-- <GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)" @resetIsStarting="resetIsStarting($event)"></GameEnd> -->
+		<GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
 	</div>
 </template>
 
@@ -68,11 +69,6 @@ export default defineComponent({
 
 		gameEnded(endGameInfo: EndGameInfo) : void
 		{
-			console.log('gameEnded triggered');
-
-			console.log(endGameInfo);
-			console.log(endGameInfo.p1DbInfo.username);
-			console.log(endGameInfo.p2DbInfo.username);
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
 			this.RenderGamePlay = false;
@@ -81,14 +77,11 @@ export default defineComponent({
 
 		opponentLeft(endGameInfo: EndGameInfo) : void
 		{
-			console.log('opponentLeft triggered');
-
-			console.log(endGameInfo);
-			console.log(endGameInfo.p1DbInfo.username);
-			console.log(endGameInfo.p2DbInfo.username);
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
 			this.RenderGamePlay = false;
+			this.isStarting = false;
+			this.RenderGameJoin = false;
 			this.RenderGameEnd = true;
 		},
 
@@ -101,13 +94,22 @@ export default defineComponent({
 		// ----------- SOCKET EMETTERS ------------
 		setupChosen(setup: Setup)
 		{
+			console.log(setup);
+
 			this.socket.emit('setupChosen', setup);
 		},
 
 		updatePosition(playerPosY: number)
 		{
 			this.socket.emit('pongEvent', playerPosY);
-		}
+		},
+
+		playAgain() : void
+		{
+			this.RenderGameEnd = false;
+			this.RenderGameOption = true;
+			this.isStarting = false;
+		},
 	},
 
 	created() 

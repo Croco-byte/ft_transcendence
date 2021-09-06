@@ -470,6 +470,8 @@ export class GameService
 	 */
 	private resetSetup(setupChosen: Setup) : Setup
 	{
+		this.logger.log(`level = ${setupChosen.level} score = ${setupChosen.score}`)
+
 		return {
 			level: setupChosen.level,
 			score: setupChosen.score,

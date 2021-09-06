@@ -20,6 +20,9 @@
 		<p v-else>Loser!</p>
 		<p>Score: {{ this.endGameInfo.room.game.p2Score }}</p>
 	</div>
+	<div class="play-again">
+		<button @click="playingAgain()">PLAY AGAIN</button>
+	</div>
 </div>
 </template>
 
@@ -28,12 +31,29 @@ import { defineComponent, PropType } from 'vue'
 import { EndGameInfo } from '../../types/game.interface'
 
 export default defineComponent ({
+	
+	name: 'GameEnd',
+	emits: ["playAgain"],
+	
 	props: {
 		endGameInfo: {
 			required: true,
 			type: Object as PropType<EndGameInfo>
 		},
 	},
+
+	methods: {
+		playingAgain() : void
+		{
+			console.log('playing again');
+			this.$emit('playAgain');
+		}
+	},
+
+	mounted()
+	{
+		// this.$emit('playAgain', true);
+	}
 })
 
 </script>
