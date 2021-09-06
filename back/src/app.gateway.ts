@@ -55,7 +55,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	test(arg)
 	{
-		console.log(this.clients);
+		this.logger.log(this.clients);
 	}
 
 	handleDisconnect(client: Socket)
@@ -76,7 +76,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		catch(e)
 		{
 			client.disconnect();
-			console.log("Unauthorized client trying to connect to the websocket. Bouncing him.");
+			this.logger.log("Unauthorized client trying to connect to the websocket. Bouncing him.");
 			throw new UnauthorizedException();
 		}
 		// Récupérer les channels ou l user est présent et les joins

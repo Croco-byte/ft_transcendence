@@ -19,7 +19,8 @@ const routes = [
 	{
 		path: '/game',
 		name: 'Game',
-		component: () => import('../views/Game.vue')
+		component: () => import('../views/Game.vue'),
+		beforeEnter: ifAuthenticated
 	},
 	{
 		path: '/login',
