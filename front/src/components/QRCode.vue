@@ -9,36 +9,42 @@
 	</div>
 </template>
 
-<script>
+<script lang="ts">
 
 /* This component displays a button that allows to show or hide the QR Code used to register the application
 ** with Google Authenticator, in order to activate 2FA.
 */
 
+import { defineComponent } from 'vue'
 import AuthService from '../services/auth.service'
 
-export default {
-  name: 'QRCode',
-  data() {
-	  return {
-		  QRCode: '',
-	  };
-  },
-  methods:	{
-	  generateQRCode: async function() {
-		  AuthService.generateQRCode().then(
-			  response => {
-				  const urlCreator = window.URL || window.webkitURL;
-				  this.QRCode = urlCreator.createObjectURL(response.data);
-			},
-			error => { return ; })
-	  },
-	  hideQRCode: function() {
-		  this.QRCode = '';
-	  }
-  }
-
+interface QRCodeComponentData
+{
+	QRCode: string;
 }
+
+
+export default defineComponent({
+	name: 'QRCode',
+	data(): QRCodeComponentData {
+		return {
+			QRCode: '',
+		};
+	},
+	methods: {
+		generateQRCode: async function(): Promise<void> {
+			AuthService.generateQRCode().then(
+				response => {
+					const urlCreator = window.URL || window.webkitURL;
+					this.QRCode = urlCreator.createObjectURL(response.data);
+			},
+			() => { return ; })
+		},
+		hideQRCode: function(): void {
+			this.QRCode = '';
+		}
+	}
+})
 </script>
 
 <style scoped>

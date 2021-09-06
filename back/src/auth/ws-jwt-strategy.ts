@@ -4,6 +4,12 @@ import { Socket } from 'socket.io'
 import { AuthService } from './auth.service'
 import { User } from 'src/users/users.entity'
 
+/* This is the AuthGuard for WebSockets.
+** It simply verifies the JWT Token passed with the query, and injects in the data of the message
+** the object "user" that contains, among other, the ID and username.
+** Warning : we CAN'T use this Guard on "handleConnection" functions of websockets. You'Il have to call validateToken manually (see status.gateway.ts)
+*/
+
 @Injectable()
 export class WsJwtGuard implements CanActivate {
 	constructor(private authService: AuthService) {}

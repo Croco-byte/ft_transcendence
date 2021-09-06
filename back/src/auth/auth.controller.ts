@@ -6,6 +6,7 @@ import { AuthService } from "./auth.service";
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
+	/* The authentication endpoint, that simply calls "authenticateUser" and catches errors */
 	@Post()
 	authenticateUser(@Body('code') code: string, @Body('state') state: string) {
 		if (code == '' || state == '') {

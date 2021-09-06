@@ -1,14 +1,15 @@
-<script>
+<script lang="ts">
+import { defineComponent } from '@vue/runtime-core';
 import Header from './components/Header.vue';
 
-export default
-{
+export default defineComponent({
 	name: 'App',
 	components:
 	{
 		Header
 	},
-}
+});
+
 </script>
 
 <template>
@@ -22,7 +23,7 @@ export default
 	body
 	{
 		margin: 0;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
 	*

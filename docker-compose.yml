@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  main:
+  back:
     container_name: back
     build:
       context: ./back
@@ -10,7 +10,7 @@ services:
        - "postgres"
     volumes:
       - ./back:/usr/src/app
-      - /usr/src/app/node_modules
+      - node_modules_back:/usr/src/app/node_modules
     ports:
       - 3000:3000
       - 9229:9229
@@ -23,11 +23,12 @@ services:
       - webnet
     depends_on:
       - postgres
+
   phppgadmin:
     container_name: phppgadmin
-    image: neimheadh/phppgadmin:latest
+    image: neimheadh/phppgadmin:7.13.0
     ports:
-      - "8000:80"
+      - 8000:80
     links:
       - "postgres"
     env_file:
@@ -44,7 +45,6 @@ services:
     
   postgres:
     container_name: postgres
-    image: postgres
     image: postgres:12
     networks:
       - webnet
@@ -59,13 +59,13 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   front:
-    container_name: front-vue
+    container_name: front
     build:
       context: ./front
       target: development
     volumes:
       - ./front:/usr/src/app
-      - /usr/src/app/node_modules
+      - node_modules_front:/usr/src/app/node_modules
     ports:
       - 8080:8080
       - 9228:9228
@@ -75,8 +75,10 @@ services:
     networks:
       - webnet
     depends_on:
-      - main
+      - back
 networks:
   webnet:
 volumes:
   pgdata:
+  node_modules_front:
+  node_modules_back:

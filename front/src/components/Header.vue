@@ -1,5 +1,5 @@
 <template>
-	<header>
+	<header id="header">
 		<NavLink url="/" text="Ft_transcendence" class="brand"/>
 		<div class="links_container">
 			<NavLink url="/" text="Home"/>
@@ -7,24 +7,24 @@
 			<NavLink url="/chat" text="Chat"/>
 			<NavLink url="/game" text="Game"/>
 			<NavLink url="/login" text="Login"/>
-			<router-link to="/account" id="profile_div" v-if="$store.state.auth.status.loggedIn === true">
-				<img width="100" height="100" :src="$store.state.auth.avatar" alt="profile" style="border-radius: 50%; max-width: 100%; max-height: 100%;"/>
+			<router-link to="/account" id="profile_div" v-if="$store.state.status.loggedIn === true">
+				<img width="100" height="100" :src="$store.state.avatar" style="border-radius: 50%; max-width: 100%; max-height: 100%;"/>
 			</router-link>
 		</div>
 	</header>
 </template>
 
-<script>
+<script lang="ts">
 
 /* This component displays the header of the application.
 ** If the user is logged-in, it loads his avatar in a bubble, which is a link leading to his profile page.
 */
 
+import { defineComponent } from 'vue';
 import NavLink from './NavLink.vue';
-import UserService from '../services/user.service'
+import userService from '../services/user.service';
 
-export default
-{
+export default defineComponent({
 	name: 'Header',
 	components:
 	{
@@ -32,43 +32,48 @@ export default
 	},
 
 	mounted() {
-		if (this.$store.state.auth.status.loggedIn === true) {
-			UserService.getCurrUserAvatar().then(
-			  response => {
-				  const urlCreator = window.URL || window.webkitURL;
-				  this.$store.state.auth.avatar = urlCreator.createObjectURL(response.data);
-			  },
-			  error => { console.log("Couldn't get user avatar from backend"); }
-		  )
+		if (this.$store.state.status.loggedIn === true) {
+			userService.getCurrUserAvatar().then(
+				response => {
+					const urlCreator = window.URL || window.webkitURL;
+					this.$store.state.avatar = urlCreator.createObjectURL(response.data);
+				},
+				() => { console.log("Couldn't get user avatar from backend"); }
+			)
 		}
 	}
-}
+});
 </script>
 
 <style>
-	header {
+	header
+	{
 		display: flex;
 		justify-content: space-between;
 		width: 100%;
 		padding: 0.5rem 1rem;
 	}
 
-	header a {
+	header a
+	{
 		padding: 0.5rem 1rem;
 	}
 
-	.links_container {
+	.links_container
+	{
 		display: flex;
 	}
 
-	.links_container a {
+	.links_container a
+	{
 		display: flex;
 		align-items: center;
 		font-size: 1.2rem;
 		padding: 0.5rem 2rem;
 	}
 
-	#profile_div {
+	#profile_div
+	{
 		display: block;
 		width: 3rem;
 		height: 3rem;
