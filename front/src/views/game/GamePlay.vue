@@ -31,7 +31,6 @@ export default defineComponent({
 	},
 
 	methods: {
-
 		rapport(posY: number) : number 
 		{
 			let ret = 0;

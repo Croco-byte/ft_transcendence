@@ -74,7 +74,7 @@ export class GameService
 	{
 		const user: User = await this.usersService.findUserById(userDbId);
 
-		if (user.roomId != 'none' && user.gameStatus === 'spectating') {
+		if (user.roomId != 'none' && user.status === 'spectating') {
 			const roomToSpectate = this.rooms.find(el => el.name === user.roomId);
 			roomToSpectate.nbPeopleConnected++;
 			
@@ -109,9 +109,6 @@ export class GameService
 		
 		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
 		this.usersService.updateRoomId(roomToFill.user2DbId, playerId);
-		this.usersService.updateGameStatus(roomToFill.user1DbId, 'inGame');
-		this.usersService.updateGameStatus(roomToFill.user2DbId, 'inGame');
-			
 		return roomToFill;
 	}
 

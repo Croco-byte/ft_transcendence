@@ -60,10 +60,6 @@ export class User extends BaseEntity
 	@Column({ default: 'none' })
 	roomId: string;
 
-	// values: 'none', 'spectating', 'inGame'
-	@Column({ default: 'none' })
-	gameStatus: string;
-
 	toPublic()
 	{
 		return {

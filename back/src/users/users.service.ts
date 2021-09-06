@@ -441,24 +441,6 @@ export class UsersService {
 	}
 
 	/**
-	 * Update the game status for a specific user.
-	 * 
-	 * @param userDbId Database ID retrieved after authentification.
-	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
-	 * @return Promise with the User object updated in database.
-	 */
-	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
-	{
-		try {
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.gameStatus = newStatus;
-			return this.usersRepository.save(user);
-		} catch(e) {
-			this.logger.log('Could\'t find user required in order to update game status');
-		}
-	}
-
-	/**
 	 * Update the room ID for a specific user.
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
@@ -633,6 +615,24 @@ getFriends(currentUser: User): Observable<User[]> {
 				))
 			})
 		)
+	}
+
+
+	 * Update the game status for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
+	 * @return Promise with the User object updated in database.
+
+	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			user.gameStatus = newStatus;
+			return this.usersRepository.save(user);
+		} catch(e) {
+			this.logger.log('Could\'t find user required in order to update game status');
+		}
 	}
 
 

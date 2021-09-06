@@ -106,6 +106,7 @@ export default defineComponent({
 
 		playAgain() : void
 		{
+			// UPDATE PLAYER STATUS TO ONLINE
 			this.RenderGameEnd = false;
 			this.RenderGameOption = true;
 			this.isStarting = false;
@@ -144,6 +145,7 @@ export default defineComponent({
 	// un message pour etre sur si il leave.
 	beforeRouteLeave (to, from , next)
 	{
+		// UPDATE PLAYER STATUS TO ONLINE
 		this.socket.emit('disconnectClient');
 		next();
 	}
