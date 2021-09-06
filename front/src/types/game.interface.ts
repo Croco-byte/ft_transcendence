@@ -1,9 +1,11 @@
 export interface Room
 {
 	name: string;
+	user1DbId: number;
+	user2DbId: number;
 	player1Id: string;
 	player2Id: string;
-	nbPlayer: number;
+	nbPeopleConnected: number;
 	game: Game;
 }
 
