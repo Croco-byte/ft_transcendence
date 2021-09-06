@@ -1,18 +1,19 @@
 <template>
+<div id = "setup">
+	<p>DIFFICULTY</p>
 	<div class="level">
-		<p>BALL SPEEED</p>
-		<button @click="setLevel(1)">EASY</button>
-		<button @click="setLevel(2)">MEDIUM</button>
-		<button @click="setLevel(3)">HARD</button>
+		<button class="left" @click="setLevel(1)">EASY</button>
+		<button class="middle" @click="setLevel(2)">MEDIUM</button>
+		<button class="right" @click="setLevel(3)">HARD</button>
 	</div>
+	<p>MAX POINT</p>
 	<div class="score">
-		<p>SCORE MAX</p>
 		<button @click="setScore(5)">5</button>
 		<button @click="setScore(10)">10</button>
 		<button @click="setScore(15000)">15000</button>
 	</div>
+	<p>PAD COLOR</p>
 	<div class="color">
-		<p>COLOR OF PAD</p>
 		<button @click="setPadColor('white')">white</button>
 		<button @click="setPadColor('yellow')">yellow</button>
 		<button @click="setPadColor('blue')">blue</button>
@@ -22,6 +23,7 @@
 	<div class="start">
 		<button @click="startGame()">START GAME</button>
 	</div>
+</div>
 
 </template>
 
@@ -88,12 +90,59 @@ export default defineComponent({
 
 <style scoped>
 
- 
-h2 {
-  text-align: center;
-  font-style: Arial, Helvetica, sans-serif;
-  font-size: 30px;
-  color: black;
+#setup {
+	margin-top: 15%;
+	background-color: teal;
 }
+
+
+p {
+	position: relative;
+	text-align: center;
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 2.5vw;
+	color: #FFFFFF;
+}
+
+.level {
+	display: flex;
+	justify-content: center;
+}
+
+.level button {
+	margin-left: 2%;
+	margin-right: 2%;
+	padding: 2%;
+	font-size: 1.5vw;
+}
+
+.class button {
+	margin-left: 2%;
+	margin-right: 2%;
+	padding: 2%;
+	font-size: 1.5vw;
+}
+/* 
+button {
+	padding: 3% 2% 3% 2%;
+	padding-right: 3%;
+	padding-top: 2%;
+	padding-bottom: 2%;
+} */
+
+/* .left {
+	margin-left: 30%;
+}
+
+.middle {
+	margin-left: 5%;
+	margin-right: 5%;
+}
+
+.right {
+	margin-right: 30%;
+} */
 
 </style>
