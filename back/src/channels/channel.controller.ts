@@ -90,6 +90,7 @@ export class ChannelController
 		return await this.channelService.findOne(channelID).then(async c =>
 		{
 			let channel = {...c};
+			console.log(channel);
 			Object.assign(channel.users, await Promise.all(c.users.map(async (user) =>
 			{
 				let ret = user.toPublic();

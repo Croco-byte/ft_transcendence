@@ -1,27 +1,3 @@
-<template>
-	<div id="yourFriends">
-		<h2 style="text-align: center;">Your friends : </h2>
-		<div v-if="friends.length > 0">
-			<ul>
-				<li v-for="friend in friends" :key="friend.id">
-					Friend: <router-link v-bind:to="'/user/' + friend.id">{{ friend.displayName }}</router-link>&nbsp;&nbsp;&nbsp;&nbsp;<button v-on:click="unfriendUser(friend.id)">Unfriend</button>
-					<UserStatus :status="friend.status"/>
-				</li>
-			</ul>
-		<div id="paginationMenu" v-if="friends.length > 0">
-			<p style="display: flex; justify-content: space-around;">
-				<button :disabled="hidePreviousPageButton" v-on:click="getFriends(friendsMeta.currentPage - 1)">Previous</button>
-				<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToFriendsPage"><input name="goToFriendsPageInput" v-model.number="friendsMeta.currentPage" v-on:input="goToFriendsPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ friendsMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-				<button :disabled="hideNextPageButton" v-on:click="getFriends(friendsMeta.currentPage + 1)">Next</button>
-			</p>
-		</div>
-		</div>
-		<div v-else>
-			<p>No friends found</p>
-		</div>
-	</div>
-</template>
-
 <script lang="ts">
 
 /* This component displays the friends of the current User.
@@ -34,7 +10,6 @@
 import { defineComponent } from 'vue'
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
-import UserStatus from '../components/UserStatus.vue';
 import { FriendStatusChangeData } from '../types/friends.interface';
 import { User, UserStatusChangeData } from '../types/user.interface';
 import { PaginationMeta} from '../types/pagination.interface';
@@ -48,9 +23,6 @@ interface FriendListComponentData
 
 export default defineComponent({
 	name: 'FriendList',
-	components: {
-		UserStatus
-	},
 	data(): FriendListComponentData {
 		return {
 			currUserId: 0,
@@ -149,15 +121,145 @@ export default defineComponent({
 })
 </script>
 
-<style scoped>
-	#yourFriends {
-		width: 50%;
-		margin: 0 auto;
-		border: solid;
-	}
+<template>
+	<div id="yourFriends">
+		<h2>Friends</h2>
+		<div class="friends_item_container">
+			<div class="friend_item" v-for="friend in friends" :key="friend.id">
+				<div class="score">
+					187
+					<i class="fas fa-trophy"></i>
+				</div>
+				<div class="image">
+					<img :src="$store.state.avatar"/>
+				</div>
+				<p class="username">
+					<a :href="'/user/' + friend.id ">{{ friend.displayName }}</a>
+				</p>
+				<p class="watch_button">
+					watch
+				</p>
+				<p class="status">
+					online
+				</p>
+			</div>
+		</div>
+	</div>
+</template>
 
-	li a {
-		text-decoration: underline;
-		color: blue;
-	}
+<style scoped>
+
+#yourFriends
+{
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	/* border: solid 1px rgb(50, 50, 50); */
+	padding: 1rem;
+	background-color: white;
+}
+
+h2
+{
+	text-align: left;
+	font-weight: normal;
+	font-size: 1.5rem;
+	padding: 0.5rem 1rem;
+	margin-top: 0;
+}
+
+.friends_item_container
+{
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+}
+
+.friend_item
+{
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	height: 5rem;
+	border: solid 1px #39D88F;
+	background: white;
+	margin: 0.25rem 0;
+}
+
+.friend_item .score
+{
+	display: flex;
+	align-items: center;
+	height: 100%;
+	color: white;
+	padding: 0 1rem;
+	font-size: 1.125rem;
+	align-self: center;
+	background-color: #39D88F;
+}
+
+.friend_item .score i
+{
+	padding: 0 0.25rem;
+}
+
+.friend_item .image
+{
+	overflow: hidden;
+}
+
+.friend_item img
+{
+	width: auto;
+	height: auto;
+	max-width: 4.5rem;
+	max-height: 100%;
+	border-radius: 100%;
+}
+
+.friend_item p,
+.friend_item .image
+{
+	margin: 0 0.5rem;
+}
+
+.friend_item .watch_button
+{
+	background: red;
+    padding: 0.25rem 1rem;
+    border-radius: 5rem;
+    color: white;
+    cursor: pointer;
+}
+
+.friend_item .watch_button svg
+{
+	width: 1rem;
+	height: 1rem;
+	color: blue;
+	margin-right: 0.25rem;
+}
+
+.friend_item .status
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
+
+.friend_item .status:before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #39D88F;
+	border-radius: 100%;
+}
+
 </style>

@@ -23,7 +23,7 @@ export default defineComponent({
 	body
 	{
 		margin: 0;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
 	*
