@@ -70,7 +70,7 @@ class Channel extends BaseEntity
 			users: [],
 			isDirect: this.isDirect
 		}
-	}''
+	}
 };
 
 export {Channel};
