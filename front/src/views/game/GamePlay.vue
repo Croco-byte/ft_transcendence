@@ -188,6 +188,7 @@ export default defineComponent({
 	// ---------------------------------------- LIFECIRCLE HOOKS ----------------------
 	mounted()
 	{
+		// UPDATE PLAYER STATUS TO IN-GAME
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 		this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;

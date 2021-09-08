@@ -44,8 +44,9 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		try {
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "accepted");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			client.emit('friendRequestConfirmation', { type: "accept", message: "Friend request successfully accepted" });
 		} catch(e) {
-			throw new WsException(e.message);
+			client.emit('friendRequestError', { type: "accept", message: "Something wrong happened while accepting request. Please try again later" });
 		}
 	}
 
@@ -55,8 +56,9 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		try {
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "declined");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			client.emit('friendRequestConfirmation', { type: "decline", message: "Friend request successfully declined" });
 		} catch(e) {
-			throw new WsException(e.message);
+			client.emit('friendRequestError', { type: "decline", message: "Something wrong happened while declining request. Please try again later" });
 		}
 	}
 
@@ -66,9 +68,9 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		try {
 			const result = await this.userService.sendFriendRequest(data.receiverId, data.user.id);
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
+			client.emit('friendRequestConfirmation', { type: "send", message: "Friend request successfully sent" });
 		} catch(e) {
-			this.logger.log(e.message);
-			throw e;
+			client.emit('friendRequestError', { type: "send", message: e.message });
 		}
 
 	}
@@ -79,8 +81,21 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		try {
 			const result = await this.userService.unfriendUser(data.user.id, data.friendId);
 			this.wss.emit('friendStatusChanged', result);
+			client.emit('friendRequestConfirmation', { type: "unfriend", message: "User successfully unfriended" });
 		} catch(e) {
-			throw new WsException(e.message);
+			client.emit('friendRequestError', { type: "unfriend", message: "Something wrong happened while unfriending. Please try again later" });
+		}
+	}
+
+	@UseGuards(WsJwtGuard)
+	@SubscribeMessage('cancelFriendRequest')
+	async handleCancelFriendRequest(client: Socket, data: { receiverId: number, user: { id: number, username: string } }): Promise<void> {
+		try {
+			const result = await this.userService.cancelFriendRequest(data.user.id, data.receiverId);
+			this.wss.emit('friendStatusChanged', result);
+			client.emit('friendRequestConfirmation', { type: "cancel", message: "Friend request successfully canceled" });
+		} catch(e) {
+			client.emit('friendRequestError', { type: "cancel", message: "Something wrong happened while canceling friend request. Please try again later" });
 		}
 	}
 }

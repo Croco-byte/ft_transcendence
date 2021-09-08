@@ -30,8 +30,8 @@ export class User extends BaseEntity
     messages: Message[];
 
 	@ManyToMany(() => User)
-	@JoinTable()
-	friends: User[];
+	@JoinTable({ name: "blocked_users" })
+	blocked: User[];
 
 	@ManyToMany(() => Channel, channel => channel.users)
 	channels: Channel[];

@@ -29,7 +29,7 @@ class UserService {
 	}
 
 	getFriends(page = 1) {
-		return axios.get(API_URL + 'user/friend-request/me/friends?limit=2&page=' + page, { headers: authHeader() });
+		return axios.get(API_URL + 'user/friend-request/me/friends?limit=5&page=' + page, { headers: authHeader() });
 	}
 
 	getFriendRequestStatusFromCurrUser(userId) {
