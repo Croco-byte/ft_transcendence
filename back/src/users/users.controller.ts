@@ -90,7 +90,7 @@ export class UserController {
 	
 	/* Paginated display of users (either all users, either filtered by display name) */
 	@Get('users')
-	@UseGuards(JwtTwoFactorGuard)
+	// @UseGuards(JwtTwoFactorGuard)
 	paginatedUsers(
 		@Query('limit') limit: number = 10,
 		@Query('page') page: number = 1,

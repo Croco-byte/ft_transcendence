@@ -20,7 +20,7 @@ export class User extends BaseEntity
 	@Column({ type: "text", nullable: true})
 	stat: string;
 
-	@Column({ type: "integer", nullable: true})
+	@Column({ type: "integer", nullable: false, default: 0})
 	score: number
 
 	@Column({ default: 'offline' })

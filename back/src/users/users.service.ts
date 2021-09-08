@@ -249,7 +249,7 @@ export class UsersService {
 	paginateUsers(options: IPaginationOptions): Observable<Pagination<User>> {
 		return from(paginate(this.usersRepository, options)).pipe(
 			map((usersPageable: Pagination<User>) => {
-				usersPageable.items.forEach(function(v) { delete v.twoFactorAuthenticationSecret; delete v.isTwoFactorAuthenticationEnabled; delete v.avatar});
+				usersPageable.items.forEach(function(v) { delete v.twoFactorAuthenticationSecret; delete v.isTwoFactorAuthenticationEnabled;});
 				return usersPageable;
 			}) 
 		)
@@ -261,7 +261,7 @@ export class UsersService {
 			skip: ((options.page as number) - 1) * (options.limit as number) || 0,
 			take: (options.limit as number )|| 10,
 			order: {displayName: 'ASC'},
-			select: ['id', 'username', 'displayName', 'status'],
+			select: ['id', 'username', 'displayName', 'status', 'avatar'],
 			where: { displayName: Raw(alias =>`LOWER(${alias}) Like ('%${displayName.toLowerCase()}%')`) }
 		})).pipe(
 			map(([users, totalUsers]) => {
@@ -474,6 +474,17 @@ export class UsersService {
 		} catch(e) {
 			this.logger.log('Could\'t find user required in order to update room ID');
 		}
+	}
+
+	async rankUsers(): Promise<User[]>
+	{
+		return await this.usersRepository.find(
+		{
+			order:
+			{
+				"score": "DESC"
+			}
+		})
 	}
 }
 
