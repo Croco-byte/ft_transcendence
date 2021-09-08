@@ -13,13 +13,17 @@ import UserService from '../services/user.service';
 import { FriendRequest, FriendStatusChangeData } from '../types/friends.interface';
 import { PaginationMeta } from '../types/pagination.interface';
 import { UserStatusChangeData } from '../types/user.interface';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 interface FriendsRequestComponentData
 {
 	currUserId: number;
 	sentRequests: FriendRequest[];
+	avatarsSent: string[];
 	sentRequestsMeta: PaginationMeta;
 	receivedRequests: FriendRequest[];
+	avatarsReceived: string[];
 	receivedRequestsMeta: PaginationMeta;
 	mode: string;
 }
@@ -30,8 +34,10 @@ export default defineComponent({
 		return {
 			currUserId: 0,
 			sentRequests: [],
+			avatarsSent: [],
 			sentRequestsMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
 			receivedRequests: [],
+			avatarsReceived: [],
 			receivedRequestsMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
 			mode: 'received',
 		}
@@ -39,14 +45,27 @@ export default defineComponent({
 
 	computed: {
 		/* These computed properties disable the "Previous" button if there is no previous page (we are at page 1, or the page number is invalid). Same for the "Next" button */
-		hidePreviousPageButton: function(): boolean {
+		hideSentPreviousPageButton: function(): boolean {
 			if(typeof(this.sentRequestsMeta.currentPage) !== 'number' || this.sentRequestsMeta.currentPage <= 1 || this.sentRequestsMeta.currentPage > this.sentRequestsMeta.totalPages) {
 				return true;
 			}
 			return false;
 		},
-		hideNextPageButton: function(): boolean {
+		hideSentNextPageButton: function(): boolean {
 			if(typeof(this.sentRequestsMeta.currentPage) !== 'number' || this.sentRequestsMeta.currentPage >= this.sentRequestsMeta.totalPages || this.sentRequestsMeta.currentPage < 1) {
+				return true;
+			}
+			return false;
+		},
+
+		hideReceivedPreviousPageButton: function(): boolean {
+			if(typeof(this.receivedRequestsMeta.currentPage) !== 'number' || this.receivedRequestsMeta.currentPage <= 1 || this.receivedRequestsMeta.currentPage > this.receivedRequestsMeta.totalPages) {
+				return true;
+			}
+			return false;
+		},
+		hideReceivedNextPageButton: function(): boolean {
+			if(typeof(this.receivedRequestsMeta.currentPage) !== 'number' || this.receivedRequestsMeta.currentPage >= this.receivedRequestsMeta.totalPages || this.receivedRequestsMeta.currentPage < 1) {
 				return true;
 			}
 			return false;
@@ -66,6 +85,14 @@ export default defineComponent({
 				response => {
 					ref.sentRequests = response.data.items;
 					ref.sentRequestsMeta = response.data.meta;
+					for (let i = 0; i < ref.sentRequests.length; i++) {
+						UserService.getUserAvatar(ref.sentRequests[i].receiver.avatar).then(
+							response => {
+								const urlCreator = window.URL || window.webkitURL;
+								ref.avatarsSent[i] = urlCreator.createObjectURL(response.data);
+							},
+							() => { ref.avatarsSent[i] = "x"; console.log("Couldn't load user's avatar") })
+						}
 					if (ref.sentRequestsMeta.itemCount < 1 && ref.sentRequestsMeta.currentPage > 1) ref.getFriendRequestsToRecipients(ref.sentRequestsMeta.currentPage - 1);
 				},
 				() => { console.log("Couldn't retrieve sent friend requests from backend")})
@@ -118,6 +145,14 @@ export default defineComponent({
 				response => {
 					ref.receivedRequests = response.data.items;
 					ref.receivedRequestsMeta = response.data.meta;
+					for (let i = 0; i < ref.receivedRequests.length; i++) {
+						UserService.getUserAvatar(ref.receivedRequests[i].creator.avatar).then(
+							response => {
+								const urlCreator = window.URL || window.webkitURL;
+								ref.avatarsReceived[i] = urlCreator.createObjectURL(response.data);
+							},
+							() => { ref.avatarsReceived[i] = "x"; console.log("Couldn't load user's avatar") })
+						}
 					if (ref.receivedRequestsMeta.itemCount < 1 && ref.receivedRequestsMeta.currentPage > 1) ref.getFriendRequestsFromRecipients(ref.receivedRequestsMeta.currentPage - 1);
 				},
 				() => { console.log("Couldn't retrieve received friend requests from backend")})
@@ -149,8 +184,8 @@ export default defineComponent({
 		/**
 		 * Remove a friend request
 		 */
-		removeFriendRequest: function(friendRequestId: number): void {
-			this.$store.state.websockets.friendRequestsSocket.emit('declineFriendRequest', { friendRequestId });
+		cancelFriendRequest: function(currUserId: number, receiverId: number): void {
+			this.$store.state.websockets.friendRequestsSocket.emit('cancelFriendRequest', { currUserId, receiverId });
 		},
 
 		/**
@@ -163,6 +198,34 @@ export default defineComponent({
 				elem.classList.remove('selected');
 			event.currentTarget.classList.add('selected');
 			this.mode = mode;
+		},
+
+		confirmFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "accept" || data.type === "decline" || data.type === "cancel") {
+				createToast({
+					title: 'Success',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				})
+			}
+		},
+
+		errorFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "accept" || data.type === "decline" || data.type === "cancel") {
+				createToast({
+					title: 'Error',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			}
 		}
 	},
 
@@ -178,12 +241,18 @@ export default defineComponent({
 		/* Starting listeners to automatically update users' status and friendrequests */
 		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
 		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestError', this.errorFriendRequest);
 	},
 
 	beforeUnmount(): void {
 		/* Stopping listeners to avoid catching signals after leaving this component */
 		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
 		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestError', this.errorFriendRequest);
 	}
 })
 </script>
@@ -198,13 +267,13 @@ export default defineComponent({
 			</div>
 		</div>
 		<div class="friends_item_container" v-if="mode == 'received'">
-			<div class="friend_item" v-for="request in receivedRequests" :key="request.id">
+			<div class="friend_item" v-for="(request, index) in receivedRequests" :key="request.id">
 				<div class="score">
 					187
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
-					<img :src="$store.state.avatar"/>
+					<img :src="avatarsReceived[index]"/>
 				</div>
 				<p class="username">
 					<a :href="'/user/' + request.creator.id ">{{ request.creator.displayName }}</a>
@@ -218,24 +287,48 @@ export default defineComponent({
 					</div>
 				</div>
 			</div>
+			<div id="paginationMenu" v-if="receivedRequests.length > 0">
+				<p class="pagination">
+					<button class="paginationButtonPrev" :disabled="hideReceivedPreviousPageButton" v-on:click="getFriendRequestsFromRecipients(receivedRequestsMeta.currentPage - 1)">Previous</button>
+					<span class="paginationSpan">
+						<form id="goToReceivedRequestsPage">
+							<input class="goToRequestsPageInput" name="goToReceivedRequestsPageInput" v-model.number="receivedRequestsMeta.currentPage" v-on:input="goToReceivedRequestsPage">
+						</form>
+					</span>
+					<span class="paginationSpan"> /{{ receivedRequestsMeta.totalPages }}</span>
+					<button class="paginationButtonNext" :disabled="hideReceivedNextPageButton" v-on:click="getFriendRequestsFromRecipients(receivedRequestsMeta.currentPage + 1)">Next</button>
+				</p>
+			</div>
 		</div>
 		<div class="friends_item_container" v-if="mode == 'sent'">
-			<div class="friend_item" v-for="request in sentRequests" :key="request.id">
+			<div class="friend_item" v-for="(request, index) in sentRequests" :key="request.id">
 				<div class="score">
 					187
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
-					<img :src="$store.state.avatar"/>
+					<img :src="avatarsSent[index]"/>
 				</div>
 				<p class="username">
 					<a :href="'/user/' + request.receiver.id ">{{ request.receiver.displayName }}</a>
 				</p>
 				<div class="flex">
-					<div class="refuse_button" @click="removeFriendRequest(request.id)">
+					<div class="refuse_button" @click="cancelFriendRequest(request.creator.id, request.receiver.id)">
 						<i class="fas fa-times"></i>
 					</div>
 				</div>
+			</div>
+			<div id="paginationMenu" v-if="sentRequests.length > 0">
+				<p class="pagination">
+					<button class="paginationButtonPrev" :disabled="hideSentPreviousPageButton" v-on:click="getFriendRequestsToRecipients(sentRequestsMeta.currentPage - 1)">Previous</button>
+					<span class="paginationSpan">
+						<form id="goToSentRequestsPage">
+							<input class="goToRequestsPageInput" name="goToSentRequestsPageInput" v-model.number="sentRequestsMeta.currentPage" v-on:input="goToSentRequestsPage">
+						</form>
+					</span>
+					<span class="paginationSpan"> /{{ sentRequestsMeta.totalPages }}</span>
+					<button class="paginationButtonNext" :disabled="hideSentNextPageButton" v-on:click="getFriendRequestsToRecipients(sentRequestsMeta.currentPage + 1)">Next</button>
+				</p>
 			</div>
 		</div>
 	</div>
@@ -262,6 +355,42 @@ h2
 	font-size: 1.5rem;
 	padding: 0.5rem 1rem;
 	margin: 0;
+}
+
+.paginationMenu
+{
+	width: 50%;
+	margin: 0 auto;
+}
+
+.pagination
+{
+	display: inline-block;
+	height: 3rem;
+	width: 100%;
+	text-align: center;
+}
+
+.paginationButtonPrev
+{
+	float: left;
+	line-height: 1.5rem;
+}
+
+.paginationButtonNext
+{
+	float: right;
+	line-height: 1.5rem;
+}
+
+.paginationSpan
+{
+	display: inline-block;
+}
+
+.goToRequestsPageInput
+{
+	width: 30px;
 }
 
 .buttons_container
@@ -334,8 +463,8 @@ h2
 
 .friend_item img
 {
-	width: auto;
-	height: auto;
+	width: 4rem;
+	height: 4rem;
 	max-width: 4.5rem;
 	max-height: 100%;
 	border-radius: 100%;

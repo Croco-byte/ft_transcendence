@@ -5,26 +5,27 @@
 ** The search is case-insensitive. Typing "a" returns all usernames with a "a" in it. "au" all usernames with "au" in it. Etc...
 */
 
-import { defineComponent } from 'vue'
-import UserService from '../services/user.service'
+import { defineComponent } from 'vue';
+import UserService from '../services/user.service';
 import { PaginationMeta } from '../types/pagination.interface';
-import { UserStatusChangeData, User } from '../types/user.interface';
+import { User } from '../types/user.interface';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 interface UserSearchComponentData
 {
 	searchResults: User[];
+	avatars: string[];
 	searchMeta: PaginationMeta;
 	searchDisplayName: string | null;
 }
 
 export default defineComponent({
 	name: "UserSearch",
-	components: {
-		// UserStatus
-	},
 	data(): UserSearchComponentData {
 		return {
 			searchResults: [],
+			avatars: [],
 			searchMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
 			searchDisplayName: ''
 		}
@@ -48,8 +49,8 @@ export default defineComponent({
   },
 
 	methods: {
-		/* This function uses the UserService to return the corresponding displayName when the user clicks on "Search". */
-		searchUser: function(username): void
+		/* This function uses the UserService to return the corresponding displayName. */
+		searchUser: function(username: string): void
 		{
 			var ref = this;
 			this.searchDisplayName = username;
@@ -64,6 +65,14 @@ export default defineComponent({
 				{
 					ref.searchResults = response.data.items;
 					ref.searchMeta = response.data.meta;
+					for (let i = 0; i < ref.searchResults.length; i++) {
+						UserService.getUserAvatar(ref.searchResults[i].avatar).then(
+							response => {
+								const urlCreator = window.URL || window.webkitURL;
+								ref.avatars[i] = urlCreator.createObjectURL(response.data);
+							},
+							() => { ref.avatars[i] = "x"; console.log("Couldn't load user's avatar") })
+					}
 				},
 				() => { ref.searchDisplayName = ''; console.log("Couldn't get search results from backend") }
 			)
@@ -88,25 +97,51 @@ export default defineComponent({
 			if (username === null) username = '';
 			UserService.searchUser(username, page).then(
 				response => {
+					ref.avatars = [];
 					ref.searchResults = response.data.items;
 					ref.searchMeta.currentPage = response.data.meta.currentPage;
+					for (let i = 0; i < ref.searchResults.length; i++) {
+						UserService.getUserAvatar(ref.searchResults[i].avatar).then(
+							response => {
+								const urlCreator = window.URL || window.webkitURL;
+								ref.avatars[i] = urlCreator.createObjectURL(response.data);
+							},
+							() => { ref.avatars[i] = "x"; console.log("Couldn't load user's avatar") })
+					}
 				},
 				() => { console.log("Failed to change search result page") }
 			)
 		},
 
-		/* This functon is fired upon reception of a "statusChange" signal, which means that a user of our app changed his status.
-		** If the user ID of this user corresponds to a user that we are currently displaying, we update the user's status accordingly.
-		*/
-		changeUserStatus: function(data: UserStatusChangeData): void {
-			for(var i=0; i < this.searchResults.length; i++) {
-				if (this.searchResults[i].id == data.userId) {
-					this.searchResults[i].status = data.status;
-				}
+		confirmFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "send") {
+					createToast({
+					title: 'Success',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				})
 			}
 		},
 
-		sendFriendRequest: function(userId): void
+		errorFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "send") {
+				createToast({
+					title: 'Error',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			}
+		},
+	
+		sendFriendRequest: function(userId: number): void
 		{
 			this.$store.state.websockets.friendRequestsSocket.emit('sendFriendRequest', { receiverId: userId, user: null });
 		},
@@ -114,11 +149,13 @@ export default defineComponent({
 
 	/* Starting then stopping the listeners that handle the status change of displayed users */
 	mounted(): void {
-		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestError', this.errorFriendRequest);
 	},
 
 	beforeUnmount(): void {
-		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestError', this.errorFriendRequest);
 	}
 })
 </script>
@@ -126,15 +163,15 @@ export default defineComponent({
 <template>
 	<div id="searchUser">
 		<h2>Search</h2>
-		<input type="text" placeholder="Search for a user..." @input="searchUser($event.target.value)"/>
+		<input class="searchInput" type="text" placeholder="Search for a user..." @input="searchUser($event.target.value)"/>
 		<div class="friends_item_container">
-			<div class="friend_item" v-for="result in searchResults" :key="result.displayName">
+			<div class="friend_item" v-for="(result, index) in searchResults" :key="result.displayName">
 				<div class="score">
 					187
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
-					<img :src="$store.state.avatar"/>
+					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
 					<a :href="'/user/' + result.id ">{{ result.displayName }}</a>
@@ -142,6 +179,18 @@ export default defineComponent({
 				<div class="add_friend_button" @click="sendFriendRequest(result.id)">
 					Add
 				</div>
+			</div>
+			<div class="paginationMenu" v-if="searchResults.length > 0">
+				<p class="pagination">
+					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
+					<span class="paginationSpan">
+						<form id="goToSearchPage">
+							<input class="goToSearchPageInput" name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage">
+						</form>
+					</span>
+					<span class="paginationSpan"> /{{ searchMeta.totalPages }}</span>
+					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
+				</p>
 			</div>
 		</div>
 	</div>
@@ -170,7 +219,43 @@ h2
 	margin: 0;
 }
 
-input
+.paginationMenu
+{
+	width: 50%;
+	margin: 0 auto;
+}
+
+.pagination
+{
+	display: inline-block;
+	height: 3rem;
+	width: 100%;
+	text-align: center;
+}
+
+.paginationButtonPrev
+{
+	float: left;
+	line-height: 1.5rem;
+}
+
+.paginationButtonNext
+{
+	float: right;
+	line-height: 1.5rem;
+}
+
+.paginationSpan
+{
+	display: inline-block;
+}
+
+.goToSearchPageInput
+{
+	width: 30px;
+}
+
+.searchInput
 {
 	padding: 0.5rem 1rem;
     border-radius: 1rem;
@@ -204,6 +289,11 @@ input:placeholder
 	margin: 0.25rem 0;
 }
 
+.friend_item .username
+{
+	width: 50px;
+}
+
 .friend_item .score
 {
 	display: flex;
@@ -231,8 +321,8 @@ input:placeholder
 
 .friend_item img
 {
-	width: auto;
-	height: auto;
+	width: 4rem;
+	height: 4rem;
 	max-width: 4.5rem;
 	max-height: 100%;
 	border-radius: 100%;

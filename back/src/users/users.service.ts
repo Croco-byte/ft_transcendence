@@ -2,7 +2,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { from, Observable, map } from 'rxjs';
-import { Like, Raw, Repository } from 'typeorm';
+import { Like, Raw, Repository, getConnection } from 'typeorm';
 import { FriendRequest, FriendRequestStatus, FriendRequest_Status } from './friend-request.interface';
 import { FriendRequestEntity } from './friends-request.entity';
 import { User } from './users.entity';
@@ -124,6 +124,64 @@ export class UsersService {
 		}
 	}
 
+	/*
+	** ==== Functions to block and unblock a user ====
+	*/
+
+	async isUserAlreadyBlocked(currUser: User, blockedUser: User): Promise<string> {
+		for (const user of currUser.blocked) {
+			if (user.id === blockedUser.id) return "blocked-by-me"; 
+		}
+		for (const user of blockedUser.blocked) {
+			if (user.id === currUser.id) return "blocked-by-other-user";
+		}
+		return "not-blocked";
+	}
+
+	async blockUser(currUserId: number, blockedUserId: number) {
+		if (currUserId === blockedUserId) throw new ForbiddenException("You can't block yourself !");
+		const currUser: User = await this.usersRepository.findOne({
+			relations: ['blocked'],
+			where: { id: currUserId }
+		});
+		const blockedUser: User = await this.usersRepository.findOne({
+			relations: ['blocked'],
+			where: { id: blockedUserId }
+		});
+		let userAlreadyBlocked = await this.isUserAlreadyBlocked(currUser, blockedUser);
+		if (userAlreadyBlocked === "not-blocked") {
+			return await getConnection()
+					.createQueryBuilder()
+					.relation(User, "blocked")
+					.of(currUser)
+					.add(blockedUser);
+		} else {
+			throw new ForbiddenException("You already blocked this user, or this user already blocked you");
+		}
+	}
+
+	async unBlockUser(currUserId: number, blockedUserId: number) {
+		if (currUserId === blockedUserId) throw new ForbiddenException("You can't unblock yourself !");
+		const currUser: User = await this.usersRepository.findOne({
+			relations: ['blocked'],
+			where: { id: currUserId }
+		});
+		const blockedUser: User = await this.usersRepository.findOne({
+			relations: ['blocked'],
+			where: { id: blockedUserId }
+		});
+		let userAlreadyBlocked = await this.isUserAlreadyBlocked(currUser, blockedUser);
+		if (userAlreadyBlocked === "blocked-by-me") {
+			return await getConnection()
+					.createQueryBuilder()
+					.relation(User, "blocked")
+					.of(currUser)
+					.remove(blockedUser);
+		} else {
+			throw new ForbiddenException("This user isn't blocked, or he is the one that blocked you");
+		}
+	}
+
 
 	/*
 	** ==== Functions allowing to interact with friend requests ====
@@ -234,8 +292,25 @@ export class UsersService {
 				relations: ['creator', 'receiver']
 			});
 			this.friendRequestRepository.delete(friendRequest.id);
-			return { creatorId: friendRequest.creator.id, receiverId: friendRequest.receiver.id }
+			return { creatorId: friendRequest.creator.id, receiverId: friendRequest.receiver.id };
 		} catch {
+			throw new NotFoundException();
+		}
+	}
+
+	async cancelFriendRequest(currUserId: number, receiverId: number): Promise<{ creatorId: number, receiverId: number}> {
+		try {
+			let currUser = await this.findUserById(currUserId);
+			let receiver = await this.findUserById(receiverId);
+			let friendRequest = await this.friendRequestRepository.findOne({
+				where: [
+					{ creator: currUser, receiver: receiver, status: 'pending' }
+				],
+			});
+			this.friendRequestRepository.delete(friendRequest.id);
+			return { creatorId: currUserId, receiverId: receiverId };
+		} catch (e) {
+			console.log(e.message);
 			throw new NotFoundException();
 		}
 	}
@@ -304,12 +379,10 @@ export class UsersService {
 					if (element.creator.id != currentUser.id) {
 						delete element.creator.twoFactorAuthenticationSecret;
 						delete element.creator.isTwoFactorAuthenticationEnabled;
-						delete element.creator.avatar;
 						items.push(element.creator);
 					} else {
 						delete element.receiver.twoFactorAuthenticationSecret;
 						delete element.receiver.isTwoFactorAuthenticationEnabled;
-						delete element.receiver.avatar;
 						items.push(element.receiver);
 					}
 				});
@@ -335,8 +408,6 @@ export class UsersService {
 					delete element.receiver.twoFactorAuthenticationSecret;
 					delete element.creator.isTwoFactorAuthenticationEnabled;
 					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
 				});
 				return friendRequestPageable;
 			}) 
@@ -355,8 +426,6 @@ export class UsersService {
 					delete element.receiver.twoFactorAuthenticationSecret;
 					delete element.creator.isTwoFactorAuthenticationEnabled;
 					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
 				});
 				return friendRequests;
 			})
@@ -437,24 +506,6 @@ export class UsersService {
 		} 
 		catch (e) {
 			this.logger.log('Couldn\'t find user required in order to increment loses');
-		}
-	}
-
-	/**
-	 * Update the game status for a specific user.
-	 * 
-	 * @param userDbId Database ID retrieved after authentification.
-	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
-	 * @return Promise with the User object updated in database.
-	 */
-	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
-	{
-		try {
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.gameStatus = newStatus;
-			return this.usersRepository.save(user);
-		} catch(e) {
-			this.logger.log('Could\'t find user required in order to update game status');
 		}
 	}
 
@@ -644,6 +695,24 @@ getFriends(currentUser: User): Observable<User[]> {
 				))
 			})
 		)
+	}
+
+
+	 * Update the game status for a specific user.
+	 * 
+	 * @param userDbId Database ID retrieved after authentification.
+	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
+	 * @return Promise with the User object updated in database.
+
+	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
+	{
+		try {
+			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			user.gameStatus = newStatus;
+			return this.usersRepository.save(user);
+		} catch(e) {
+			this.logger.log('Could\'t find user required in order to update game status');
+		}
 	}
 
 

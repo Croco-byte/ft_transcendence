@@ -44,7 +44,12 @@ export class UserController {
 	@UseGuards(JwtTwoFactorGuard)
 	async getCurrUserInfo(@Req() req) {
 		try {
-			return await this.userService.findUserById(req.user.id);
+			const user = await User.findOne({ where: { id: req.user.id } });
+			if (!user) {
+				throw new NotFoundException();
+			}
+			delete user.twoFactorAuthenticationSecret;
+			return user;
 		} catch (e) {
 			throw e;
 		}
@@ -153,6 +158,27 @@ export class UserController {
 		}
 	}
 
+	/* ==== Endpoints allowing to block or unblock a user from current user ====*/
+	@Post('/block')
+	@UseGuards(JwtTwoFactorGuard)
+	blockUser(@Body() blockedUserId: { id: number }, @Req() req) {
+		try {
+			return this.userService.blockUser(req.user.id, blockedUserId.id);
+		} catch (e) {
+			throw new ForbiddenException(e.message);
+		}
+	}
+
+	@Post('/unblock')
+	@UseGuards(JwtTwoFactorGuard)
+	unBlockUser(@Body() blockedUserId: { id: number }, @Req() req) {
+		try {
+			return this.userService.unBlockUser(req.user.id, blockedUserId.id);
+		} catch (e) {
+			throw new ForbiddenException(e.message);
+		}
+	}
+
 
 	/* ==== Endpoints allowing to retrieve the friends and friend requests of current user ====*/
 
@@ -213,6 +239,7 @@ export class UserController {
 	@UseGuards(JwtTwoFactorGuard)
 	respondToFriendRequest(@Param('friendRequestId') friendRequestStringId: string, @Body() responseStatus: FriendRequestStatus): Promise<FriendRequestStatus> {
 		const friendRequestId = parseInt(friendRequestStringId);
+		if (!friendRequestId) throw new BadRequestException();
 		return this.userService.respondToFriendRequest(friendRequestId, responseStatus.status);
 	}
 }

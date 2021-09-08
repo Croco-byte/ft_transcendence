@@ -7,10 +7,12 @@
 		<img :src="avatar" fluid alt="User avatar" width="200" height="200"/>
 		<p>Display name chosen by user : {{ displayName }}</p>
 		
-		<span v-if="status === 'online'" class="green-dot"></span>
-		<span v-if="status === 'offline'" class="red-dot"></span>
-		<span v-if="status === 'in-game'" class="orange-dot"></span>
-		({{status}})
+		<div v-if="friendRequestStatus === 'accepted'">
+			<UserStatus :status="status"/>
+		</div>
+		<div v-else>
+			<p>[Debug] Can't see user status, because he isn't your friend </p>
+		</div>
 
 		<div v-if="friendRequestStatus">
 			<div v-if="friendRequestStatus === 'not-sent'">
@@ -52,11 +54,14 @@
 ** This page allows to see the status of the user, send him friend requests, or unfriend the user.
 */
 
-import { defineComponent } from 'vue'
-import UserService from '../services/user.service'
-import authService from '../services/auth.service'
+import { defineComponent } from 'vue';
+import UserService from '../services/user.service';
+import authService from '../services/auth.service';
+import UserStatus from '../components/UserStatus.vue';
 import { UserStatusChangeData } from '../types/user.interface';
 import { FriendStatusChangeData } from '../types/friends.interface';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 interface UserViewData
 {
@@ -71,6 +76,9 @@ interface UserViewData
 
 export default defineComponent({
 	name: 'User',
+	components: {
+		UserStatus
+	},
 	data(): UserViewData {
 		return {
 			currUserId: -1,
@@ -116,6 +124,30 @@ export default defineComponent({
 			if ((this.userId == data.creatorId && this.currUserId == data.receiverId) || (this.userId == data.receiverId && this.currUserId == data.creatorId)) {
 				this.getFriendRequestStatusFromCurrUser();
 			}
+		},
+
+		confirmFriendRequest: function(data: { message: string }): void {
+			createToast({
+				title: 'Success',
+				description: data.message
+			},
+			{
+				position: 'top-right',
+				type: 'success',
+				transition: 'slide'
+			})
+		},
+
+		errorFriendRequest: function(data: { message: string }): void {
+			createToast({
+				title: 'Error',
+				description: data.message
+			},
+			{
+				position: 'top-right',
+				type: 'danger',
+				transition: 'slide'
+			})
 		}
 
 	},
@@ -147,12 +179,18 @@ export default defineComponent({
 		// ----- Listener to update the target user connection status and the friend request status -----
 		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestError', this.errorFriendRequest);
 	},
 
 	beforeUnmount(): void {
 		// ----- Stopping the listeners to update the target user connection status and the friend request status -----
 		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestError', this.errorFriendRequest);
 	}
 
 })

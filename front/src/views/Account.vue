@@ -108,10 +108,10 @@ export default defineComponent({
 	mounted(): void {
 		UserService.getCurrUserInfo().then(
 			response => {
-			this.name = response.data.username;
-			this.displayName = this.displayNameInput = response.data.displayName;
-			this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
-			this.id = response.data.id;
+				this.name = response.data.username;
+				this.displayName = this.displayNameInput = response.data.displayName;
+				this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
+				this.id = response.data.id;
 		},
 		() => { console.log("Error in retrieving the informations for the current user"); })
 

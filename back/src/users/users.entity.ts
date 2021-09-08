@@ -30,8 +30,8 @@ export class User extends BaseEntity
     messages: Message[];
 
 	@ManyToMany(() => User)
-	@JoinTable()
-	friends: User[];
+	@JoinTable({ name: "blocked_users" })
+	blocked: User[];
 
 	@ManyToMany(() => Channel, channel => channel.users)
 	channels: Channel[];
@@ -59,10 +59,6 @@ export class User extends BaseEntity
 	
 	@Column({ default: 'none' })
 	roomId: string;
-
-	// values: 'none', 'spectating', 'inGame'
-	@Column({ default: 'none' })
-	gameStatus: string;
 
 	toPublic()
 	{
