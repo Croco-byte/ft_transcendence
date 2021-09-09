@@ -807,6 +807,7 @@ export default defineComponent(
 	.channel_info_container
 	{
 		position: absolute;
+		overflow-y: auto;
 		width: 20rem;
 		height: 100%;
 		right: 0;

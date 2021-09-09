@@ -20,10 +20,11 @@ import { AuthModule } from 'src/auth/auth.module';
 import UserRepository from 'src/users/user.repository';
 import { User } from 'src/users/users.entity';
 import { FriendRequestEntity } from 'src/users/friends-request.entity';
+import { Channel } from './channel.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChannelRepository, MessageRepository, ChannelMutedUserRepository, ChannelBannedUserRepository, User, FriendRequestEntity]),
+    TypeOrmModule.forFeature([Channel, MessageRepository, ChannelMutedUserRepository, ChannelBannedUserRepository, User, FriendRequestEntity]),
     MessageModule,
     ChannelMutedUserModule,
     ChannelBannedUserModule,

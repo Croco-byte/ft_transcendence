@@ -10,7 +10,7 @@ import { User } from 'src/users/users.entity';
 import MessageService from 'src/messages/message.service';
 
 @Controller('channels')
-@UseGuards(JwtTwoFactorGuard)
+// @UseGuards(JwtTwoFactorGuard)
 export class ChannelController
 {
 	private readonly logger = new Logger(ChannelController.name);
@@ -21,6 +21,13 @@ export class ChannelController
 				private readonly websocketGateway: AppGateway)
 	{
 
+	}
+
+	@Get("/test")
+	async test(@Request() req)
+	{
+		let user = await this.userService.findByUsername("yel-alou");
+		return await this.userService.getBiDirectionalBlockedUsers(user);
 	}
 
 	@Post()
@@ -42,7 +49,9 @@ export class ChannelController
 		channel.users = [user];
 		channel.administrators = [];
 
-		this.channelService.insert(channel);
+		channel = await this.channelService.insert(channel);
+
+		this.websocketGateway.joinChannel(channel, user);
 
 		this.logger.log("Create new channel named '" + body.name + "'");
 		return {message: "Channel " + body.name + " successfully created"};
@@ -64,8 +73,7 @@ export class ChannelController
 					id: channels[i].id,
 					name: channels[i].name,
 					lastMessage: channels[i].lastMessage,
-					modifiedDate: StringUtils.timestamptzToDate(channels[i].modifiedDate),
-					//members: channels[i].users.map((user) => user.toPublic())
+					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', '')
 				}
 			);
 		}
@@ -85,8 +93,6 @@ export class ChannelController
 	@Get(":channelID/info")
 	async getInfo(@Param('channelID') channelID: string, @Request() req)
 	{
-		
-
 		return await this.channelService.findOne(channelID).then(async c =>
 		{
 			let channel = {...c};
@@ -196,7 +202,6 @@ export class ChannelController
 	@Post(":channelID/members/:username/ban")
 	async banUser(@Param('channelID') channelID: string, @Param('username') username: string, @Request() req)
 	{
-		
 		await this.userService.findByUsername(username).then(async user => 
 		{
 			await this.channelService.findOne(channelID).then(async channel =>
@@ -241,13 +246,14 @@ export class ChannelController
 		
 		if (await this.channelService.isMuted(channel, user) || await this.channelService.isBanned(channel, user))
 		{
-			console.log("User cannot send messgae in this channel !");
+			throw new UnauthorizedException("User cannot send message in this channel");
 		}
 		else
 		{
 			await this.messageService.add(channel, user, data.content).then(async (message) =>
 			{
-				this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.username, content: message.content});
+				await this.channelService.updateModifiedDate(channel);
+				this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.username, content: message.content}, user);
 			});
 		}
 	}

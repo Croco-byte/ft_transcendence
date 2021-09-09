@@ -29,7 +29,7 @@ export class User extends BaseEntity
 	@OneToMany(() => Message, msg => msg.user)
     messages: Message[];
 
-	@ManyToMany(() => User)
+	@ManyToMany(() => User, (user: User) => user.blocked)
 	@JoinTable({ name: "blocked_users" })
 	blocked: User[];
 

@@ -15,7 +15,7 @@ import ChannelRepository from "./channel.repository";
 export default class ChannelService
 {
 	constructor (
-				@InjectRepository(ChannelRepository) private repository,
+				@InjectRepository(Channel) private repository: Repository<Channel>,
 				private readonly channelMutedUserService: ChannelMutedUserService,
 				private readonly channelBannedUserService: ChannelBannedUserService,
 				private readonly messageService: MessageService)
@@ -23,9 +23,9 @@ export default class ChannelService
 
 	}
 
-	async insert(channel: Channel)
+	async insert(channel: Channel): Promise<Channel>
 	{
-		return this.repository.save(channel);
+		return await this.repository.save(channel);
 	}
 
 	async findAll(): Promise<Channel[]>
@@ -117,5 +117,11 @@ export default class ChannelService
 	async isBanned(channel: Channel, user: User)
 	{
 		return (await this.channelBannedUserService.isBanned(channel, user));
+	}
+
+	async updateModifiedDate(channel: Channel)
+	{
+		channel.modifiedDate = new Date();
+		this.repository.save(channel);
 	}
 }

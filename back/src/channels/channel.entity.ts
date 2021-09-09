@@ -25,7 +25,7 @@ class Channel extends BaseEntity
 	@Column({nullable: true})
 	lastMessage: string;
 
-	@Column({type: 'timestamptz', nullable: true})
+	@Column({default: "2021-09-08 18:08:11"})
 	modifiedDate: Date
 
 	@OneToOne(() => User)

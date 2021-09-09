@@ -14,8 +14,7 @@ import { Logger } from '@nestjs/common'
 @Injectable()
 export class UsersService {
 	constructor(
-		@InjectRepository(User) 
-		private usersRepository: Repository<User>, 
+		@InjectRepository(User) private usersRepository: Repository<User>, 
 		@InjectRepository(FriendRequestEntity) 
 		private friendRequestRepository: Repository<FriendRequestEntity>) {}
 
@@ -452,7 +451,7 @@ export class UsersService {
 
 	async findByUsername(name: string): Promise<User>
 	{
-		return this.usersRepository.findOne({relations: ["channels"], where: [{username: name}]});
+		return this.usersRepository.findOne({relations: ["channels", "blocked"], where: [{username: name}]});
 	}
 
 	async findById(id: string): Promise<User>
@@ -536,6 +535,21 @@ export class UsersService {
 				"score": "DESC"
 			}
 		})
+	}
+
+	async getBiDirectionalBlockedUsers(user: User): Promise<User[]>
+	{
+		let res = user.blocked;
+		let users = await this.usersRepository.find(
+		{
+			relations: ["blocked"]
+		});
+		for (let tmp_user of users)
+		{
+			if (tmp_user.blocked.findIndex((tmp) => tmp.id == user.id) != -1)
+				res.push(tmp_user);
+		}
+		return res;
 	}
 }
 

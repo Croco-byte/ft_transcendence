@@ -26,14 +26,14 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	@WebSocketServer() server: Server;
 
 	private logger: Logger = new Logger('AppGateway');
-	private clients: any[];
+	private clients: any[] = new Array();
 
 	constructor(private readonly channelService: ChannelService,
 				private readonly authService: AuthService,
 				private readonly userService: UsersService,
 				private readonly messageService: MessageService)
 	{
-		this.clients = new Array();
+
 	}
 
 	@SubscribeMessage('message')
@@ -43,19 +43,25 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		this.logger.log("Receive : " + JSON.stringify(data));
 	}
 
-	async sendNewMessage(room: string, msg: Object)
+	async sendNewMessage(room: string, msg: Object, user: User)
 	{
+		let blockedUsers = await this.userService.getBiDirectionalBlockedUsers(user);
+		for (let blocked of blockedUsers)
+		{
+			let socket = this.getSocketByUser(blocked);
+			socket.leave(room);
+		}
 		this.server.to(room).emit('message', msg);
+		for (let blocked of blockedUsers)
+		{
+			let socket = this.getSocketByUser(blocked);
+			socket.join(room);
+		}
 	}
 
 	afterInit(server: Server)
 	{
 		this.logger.log('Init');
-	}
-
-	test(arg)
-	{
-		this.logger.log(this.clients);
 	}
 
 	handleDisconnect(client: Socket)
@@ -81,7 +87,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		}
 		// Récupérer les channels ou l user est présent et les joins
 		let user = await this.userService.findById(client.data.userId);
-		this.clients[client.id] = user;
+		this.clients[client.id] = [user, client];
 		for (let i = 0; i < user.channels.length; i++)
 		{
 			let channel = user.channels[i];
@@ -94,28 +100,46 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	async leaveChannel(channel: Channel, user: User)
 	{
 		let sockID = null;
+		let socket : Socket = null;
 		for (let key in this.clients)
 		{
-			if (this.clients[key].username == user.username)
+			if (this.clients[key][0].username == user.username)
 			{
 				sockID = key;
+				socket = this.clients[key][1];
 				break ;
 			}
 		}
-		delete this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID];
+		socket.leave("channel_" + channel.id);
+		//delete this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID];
 	}
 
 	async joinChannel(channel: Channel, user: User)
 	{
 		let sockID = null;
+		let socket: Socket = null;
 		for (let key in this.clients)
 		{
-			if (this.clients[key].username == user.username)
+			if (this.clients[key][0].username == user.username)
 			{
 				sockID = key;
+				socket = this.clients[key][1];
 				break ;
 			}
 		}
-		this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
+		socket.join("channel_" + channel.id);
+		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
+	}
+
+	getSocketByUser(search: User): Socket
+	{
+		for (let arr of this.clients.entries())
+		{
+			let val = arr[1];
+			let user = val[0];
+			if (user.id == search.id)
+				return val[1];
+		}
+		return null;
 	}
 }
