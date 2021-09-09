@@ -1,5 +1,6 @@
 <template>
 <div id = "setup">
+	<!-- v-bind class ne marche pas -->
 	<p>DIFFICULTY</p>
 	<div class="level posbuttons hoverAnim">
 		<button :class="{ levelSelected : diffActive }" @click="setLevel(1)">EASY</button>
