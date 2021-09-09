@@ -1,26 +1,26 @@
 <template>
 <div id = "setup">
 	<p>DIFFICULTY</p>
-	<div class="level">
-		<button class="left" @click="setLevel(1)">EASY</button>
-		<button class="middle" @click="setLevel(2)">MEDIUM</button>
-		<button class="right" @click="setLevel(3)">HARD</button>
+	<div class="level posbuttons hoverAnim">
+		<button :class="{ levelSelected : diffActive }" @click="setLevel(1)">EASY</button>
+		<button :class="{ levelSelected : diffActive }" @click="setLevel(2)">MEDIUM</button>
+		<button :class="{ levelSelected : diffActive }" @click="setLevel(3)">HARD</button>
 	</div>
 	<p>MAX POINT</p>
-	<div class="score">
-		<button @click="setScore(5)">5</button>
-		<button @click="setScore(10)">10</button>
-		<button @click="setScore(15000)">15000</button>
+	<div class="score posbuttons hoverAnim">
+		<button :class="{ scoreSelected : scoreActive }" @click="setScore(5)">5</button>
+		<button :class="{ scoreSelected : scoreActive }" @click="setScore(10)">10</button>
+		<button :class="{ scoreSelected : scoreActive }" @click="setScore(15)">15</button>
 	</div>
 	<p>PAD COLOR</p>
-	<div class="color">
-		<button @click="setPadColor('white')">white</button>
-		<button @click="setPadColor('yellow')">yellow</button>
-		<button @click="setPadColor('blue')">blue</button>
-		<button @click="setPadColor('red')">red</button>
-		<button @click="setPadColor('green')">green</button>
+	<div class="color posbuttons">
+		<button class="white" @click="setPadColor('white')"></button>
+		<button class="yellow" @click="setPadColor('yellow')"></button>
+		<button class="blue" @click="setPadColor('blue')"></button>
+		<button class="red" @click="setPadColor('red')"></button>
+		<button class="green" @click="setPadColor('green')"></button>
 	</div>
-	<div class="start">
+	<div class="start posbuttons hoverAnim">
 		<button @click="startGame()">START GAME</button>
 	</div>
 </div>
@@ -39,49 +39,48 @@ export default defineComponent({
 
 	data() {
 		return {
+			scoreActive: false as boolean,
+			diffActive: false as boolean,
 			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
 		}
 	},
 
 	methods: {
-		setLevel(value: number)
-		{
-			if (value != undefined)
+		setLevel(value: number) {
+			if (value != undefined) {
 				this.opt.level = value;
+				this.diffActive = true;
+			}
 			console.log(`level: ${this.opt.level}`);
 		},
 
-		setScore(value: number)
-		{
-			if (value != undefined)
+		setScore(value: number) {
+			if (value != undefined) {
 				this.opt.score = value;
+				this.scoreActive = true;
+			}
 			console.log(`score: ${this.opt.score}`);
 		},
 
-		setPadColor(value: string)
-		{
+		setPadColor(value: string) {
 			if (value != undefined)
 				this.opt.paddleColor = value;
 			console.log(`color ${this.opt.paddleColor}`);
 		},
 
-		startGame()
-		{
+		startGame() {
 			console.log('start game');
 			this.$emit('setupChosen', this.opt as Setup);
 		},
 
-		resetOption()
-		{
+		resetOption() {
 			this.opt.level = 1;
 			this.opt.score = 1;
 			this.opt.paddleColor = 'white';
 		}
 	},
 
-	mounted()
-	{
-
+	mounted() {
 		console.log('option mounted');
 	}
 	
@@ -90,12 +89,6 @@ export default defineComponent({
 
 <style scoped>
 
-#setup {
-	margin-top: 15%;
-	background-color: teal;
-}
-
-
 p {
 	position: relative;
 	text-align: center;
@@ -103,46 +96,67 @@ p {
 	font-style: normal;
 	font-weight: normal;
 	font-size: 2.5vw;
-	color: #FFFFFF;
+	color: black;
 }
 
-.level {
+button {
+	border-radius: 4px;
+	border: none;
+}
+
+.posbuttons {
 	display: flex;
 	justify-content: center;
 }
 
-.level button {
+.hoverAnim button {
+	transition-duration: 0.4s;
+}
+
+.hoverAnim button:hover {
+	background-color: lightblue;
+}
+
+button.diffActive, button.scoreActive {
+	background-color: lightblue;
+}
+
+.level button, .score button {
 	margin-left: 2%;
 	margin-right: 2%;
-	padding: 2%;
+	padding: 1%;
 	font-size: 1.5vw;
 }
 
-.class button {
-	margin-left: 2%;
-	margin-right: 2%;
-	padding: 2%;
-	font-size: 1.5vw;
-}
-/* 
-button {
-	padding: 3% 2% 3% 2%;
-	padding-right: 3%;
-	padding-top: 2%;
-	padding-bottom: 2%;
-} */
-
-/* .left {
-	margin-left: 30%;
+.color button {
+	padding: 1em;
+	margin-left: 1%;
+	margin-right: 1%;
 }
 
-.middle {
-	margin-left: 5%;
-	margin-right: 5%;
+.color button:hover {
+	transform: scale(1.05) perspective(1px)
 }
 
-.right {
-	margin-right: 30%;
-} */
+.color button.yellow {
+	background-color: yellow;
+}
+
+.color button.blue {
+	background-color: blue;
+}
+
+.color button.red {
+	background-color: red;
+}
+
+.color button.green {
+	background-color: green;
+}
+
+.start {
+	position: relative;
+	top: 15px;
+}
 
 </style>
