@@ -14,6 +14,7 @@ import ChannelRepository from "./channel.repository";
 @Injectable()
 export default class ChannelService
 {
+	private relations : Array<string> = ["users", "administrators", "owner"];
 	constructor (
 				@InjectRepository(Channel) private repository: Repository<Channel>,
 				private readonly channelMutedUserService: ChannelMutedUserService,
@@ -43,7 +44,7 @@ export default class ChannelService
 	
 	async findOne(id: string): Promise<Channel>
 	{
-		return await this.repository.findOne({relations: ["users", "administrators"], where: [{id: id}]});
+		return await this.repository.findOne({relations: this.relations, where: [{id: id}]});
 	}
 	
 	async delete(id: string): Promise<void>
@@ -123,5 +124,37 @@ export default class ChannelService
 	{
 		channel.modifiedDate = new Date();
 		this.repository.save(channel);
+	}
+
+	async isAdmin(channel: Channel, user: User): Promise<boolean>
+	{
+		if (channel.owner && channel.owner.id == user.id)
+			return true;
+		if (!channel.administrators)
+			return false;
+		for (let admin of channel.administrators)
+		{
+			if (admin.id == user.id)
+				return true;
+		}
+		return false;
+	}
+
+	async removeUser(channel: Channel, user: User)
+	{
+		if (channel.owner && channel.owner.id == user.id)
+		{
+			channel.owner = null;
+		}
+		if (await this.isAdmin(channel, user))
+		{
+			let index = channel.administrators.findIndex((admin) => admin.id == user.id);
+			if (index != -1)
+				channel.administrators.splice(index, 1);
+		}
+		let index = channel.users.findIndex((u) => u.id == user.id);
+		if (index != -1)
+			channel.users.splice(index, 1);
+		await this.repository.save(channel);
 	}
 }

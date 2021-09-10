@@ -36,6 +36,9 @@ export class User extends BaseEntity
 	@ManyToMany(() => Channel, channel => channel.users)
 	channels: Channel[];
 
+	@OneToMany(() => Channel, channel => channel.owner)
+	own_channels: Channel[];
+
 	@Column({ default: false })
 	isTwoFactorAuthenticationEnabled?: boolean
 

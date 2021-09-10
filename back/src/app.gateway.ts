@@ -49,13 +49,15 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		for (let blocked of blockedUsers)
 		{
 			let socket = this.getSocketByUser(blocked);
-			socket.leave(room);
+			if (socket)
+				socket.leave(room);
 		}
 		this.server.to(room).emit('message', msg);
 		for (let blocked of blockedUsers)
 		{
 			let socket = this.getSocketByUser(blocked);
-			socket.join(room);
+			if (socket)
+				socket.join(room);
 		}
 	}
 

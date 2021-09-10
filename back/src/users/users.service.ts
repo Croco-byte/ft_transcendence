@@ -539,7 +539,7 @@ export class UsersService {
 
 	async getBiDirectionalBlockedUsers(user: User): Promise<User[]>
 	{
-		let res = user.blocked;
+		let res = user.blocked ? user.blocked : [];
 		let users = await this.usersRepository.find(
 		{
 			relations: ["blocked"]

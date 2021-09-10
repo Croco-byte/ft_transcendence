@@ -255,6 +255,20 @@ export default defineComponent(
 			})
 			.catch(err => console.log(err));
 		},
+
+		getUserLink(user_id: number)
+		{
+			return "/user/" + user_id;
+		},
+
+		async leaveChannel()
+		{
+			alert("Leave channel " + this.channel.id)
+			axios.delete(this.serverURL + "/channels/" + this.channel.id + "/members", {headers: authHeader()}).then((res) =>
+			{
+				alert("User removed");
+			});
+		}
 	},
 
 	created(): void
@@ -318,7 +332,7 @@ export default defineComponent(
 					</div>
 					<div class="view">
 						<div v-for="message in channel.messages" v-bind:key="message" class="message">
-							<p class="username">{{ message.user }}</p>
+							<a class="username" :href="getUserLink(message.user_id)">{{ message.user }}</a>
 							<p class="content">{{ message.content }}</p>
 						</div>
 					</div>
@@ -402,6 +416,9 @@ export default defineComponent(
 						<button class="save_channel_config_button" v-on:click="updateChannelPassword" v-if="channel.requirePassword">Save</button>
 					</div>
 				</section>
+				<div class="leave_button" @click="leaveChannel">
+					Leave {{ channel.name }}
+				</div>
 			</div>
 			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
 				<input type="text" placeholder="Member's username" id="add_member_input"/>
@@ -910,6 +927,23 @@ export default defineComponent(
 	.channel_info_container .action_button.unban_button
 	{
 		color: red;
+	}
+
+	.leave_button
+	{
+		width: 100%;
+		background-color: red;
+		color: white;
+		padding: 0.5rem 1rem;
+		text-align: center;
+		cursor: pointer;
+	}
+
+	.leave_button:hover
+	{
+		background-color: transparent;
+		color: red;
+		border: solid 1px red;
 	}
 
 	@keyframes show_info_div

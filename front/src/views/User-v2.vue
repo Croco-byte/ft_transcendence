@@ -119,10 +119,10 @@ export default defineComponent({
 		<div>
 			<div class="head">
 				<div class="image_container">
-					<img :src="this.$store.state.avatar"/>
+					<img :src="avatar"/>
 				</div>
-				<p>yel-alou</p>
-				<p class="status online">online</p>
+				<p>{{ displayName }}</p>
+				<p class="status" :class="status">{{ status }}</p>
 			</div>
 			<div class="stat">
 				<h2>Stats :</h2>
@@ -160,8 +160,9 @@ export default defineComponent({
 
 .head .image_container
 {
-	width: 5rem;
+	width: 7rem;
 	margin: 0 1rem;
+	border-radius: 100%;
 }
 
 .head img
