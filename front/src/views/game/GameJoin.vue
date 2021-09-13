@@ -30,6 +30,7 @@ export default defineComponent({
 	},
 
 	mounted() {
+		this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
 
 		if (this.isStarting) 
 			this.updateHtmlText('msg', 'Player found! Game will start soon.');

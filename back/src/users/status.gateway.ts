@@ -27,11 +27,10 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	}
 
 	async handleDisconnect(client: any) {
-		this.logger.log(`Client disconnected from Status Gateway ${client.id}`);
 		for (var i = 0; i < this.CLIENTS.length; i++) {
-			if (this.CLIENTS[i] === client.data.userId) this.CLIENTS.splice(i, 1);
+			if (this.CLIENTS[i] === client.data.userId) this.CLIENTS.splice(i, 1); break;
 		}
-		console.log("All clients connected : " + this.CLIENTS);
+		console.log("A client disconnected. All clients connected : " + this.CLIENTS);
 		if (!this.CLIENTS.includes(client.data.userId)) {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
@@ -43,8 +42,12 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			client.data = { userId: user.id, username: user.username };
 			this.CLIENTS.push(user.id);
-			this.logger.log(`Client connected to Status Gateway ${client.id}`);
-			console.log("All clients connected : " + this.CLIENTS);
+			if (user.status === "offline") {
+				await this.userService.changeUserStatus(client.data.userId, 'online');
+				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
+			}
+			
+			console.log("A client connected. All clients connected : " + this.CLIENTS);
 		} catch(e) {
 			this.logger.log("Unauthorized client trying to connect");
 			client.disconnect();
@@ -55,12 +58,8 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		try {
-//			if (data.user.status === "online") {
-//				this.wss.emit('multipleConnectionsOnSameUser', { userId: client.data.userId });
-//			} else {
-				await this.userService.changeUserStatus(client.data.userId, 'online');
-				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
-//			}
+			await this.userService.changeUserStatus(client.data.userId, 'online');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -83,9 +82,20 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getInGame')
 	async handleInGame(client: Socket, data: any): Promise<void> {
 		try {
-			console.log("Putting user with ID " + client.data.userId + " in game");
 			await this.userService.changeUserStatus(client.data.userId, 'in-game');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-game' });
+		} catch (e) {
+			this.logger.log(e.message);
+			throw new WsException(e.message);
+		}
+	}
+
+	@UseGuards(WsJwtGuard)
+	@SubscribeMessage('getInQueue')
+	async handleInQueue(client: Socket, data: any): Promise<void> {
+		try {
+			await this.userService.changeUserStatus(client.data.userId, 'in-queue');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-queue' });
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);

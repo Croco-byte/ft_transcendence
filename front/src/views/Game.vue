@@ -146,7 +146,7 @@ export default defineComponent({
 	// un message pour etre sur si il leave.
 	beforeRouteLeave (to, from , next)
 	{
-		// UPDATE PLAYER STATUS TO ONLINE
+		this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 		this.socket.emit('disconnectClient');
 		next();
 	}

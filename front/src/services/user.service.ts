@@ -16,6 +16,10 @@ class UserService {
 		return axios.get(API_URL + 'user/info/me', { headers: authHeader() });
 	}
 
+	getCurrUserStatus() {
+		return axios.get(API_URL + 'user/status/me', { headers: authHeader() });
+	}
+
 	getUserAvatar(path) {
 		return axios.post(API_URL + 'user/avatar', { path: path }, { headers: authHeader(), responseType: 'blob' });
 	}
