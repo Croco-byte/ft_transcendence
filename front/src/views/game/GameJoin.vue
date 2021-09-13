@@ -44,9 +44,9 @@ export default defineComponent({
 
 <style>
 
-html, body {
+/* html, body {
 	height:100vh;
-}
+} */
 
 .text {
 	margin-top: 30%;

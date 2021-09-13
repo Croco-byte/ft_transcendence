@@ -4,11 +4,13 @@
 	</div>
 </template>
 
+
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
 import { Room, Ball, Player, Paddle, Game } from '../../types/game.interface'
 
 export default defineComponent({
+  // checker ball qui sort du bord de l'ecran
 
 	props: {
 		room: {

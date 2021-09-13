@@ -1,5 +1,5 @@
 <template>
-	<div class="game">
+	<div id="game">
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
 		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
 		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
@@ -151,3 +151,11 @@ export default defineComponent({
 	}
 })
 </script>
+
+<style>
+
+body {
+	background-color: #4F4F4F;
+}
+
+</style>
