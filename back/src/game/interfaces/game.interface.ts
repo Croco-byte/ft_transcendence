@@ -1,3 +1,5 @@
+import { User } from "src/users/users.entity";
+
 /* eslint-disable prettier/prettier */
 export interface Room
 {
@@ -73,4 +75,14 @@ export interface EndGameInfo
 	p1DbInfo: PlayerDbInfo;
 	p2DbInfo: PlayerDbInfo;
 	room: Room;
+}
+
+export interface matchHistory
+{
+	id?: number;
+	winner?: User;
+	looser?: User;
+	winnerScore?: number;
+	looserScore?: number;
+	gameOptions?: string;
 }

@@ -177,7 +177,7 @@ export default defineComponent({
 		<div class="friends_item_container">
 			<div class="friend_item" v-for="(friend, index) in friends" :key="friend.id">
 				<div class="score">
-					187
+					{{ friend.score }}
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">

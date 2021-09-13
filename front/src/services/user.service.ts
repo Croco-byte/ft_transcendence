@@ -48,6 +48,10 @@ class UserService {
 		return axios.get(API_URL + "user/friend-request/me/sent-requests?limit=2&page=" + page, { headers: authHeader() });
 	}
 
+	getHistory(page = 1) {
+		return axios.get(API_URL + "user/history/me?limit=3&page=" + page, { headers: authHeader() });
+	}
+
 	acceptFriendRequest(friendRequestId) {
 		return axios.put(API_URL + "user/friend-request/response/" + friendRequestId, { status: 'accepted' }, { headers: authHeader() });
 	}
@@ -66,6 +70,10 @@ class UserService {
 
 	changeDisplayName(newDisplayName) {
 		return axios.post(API_URL + 'user/displayName', { displayName: newDisplayName }, { headers: authHeader() });
+	}
+
+	getLeaderboardUsers(page = 1) {
+		return axios.get(API_URL + "user/users/leaderboard?limit=7&page=" + page);
 	}
 }
 

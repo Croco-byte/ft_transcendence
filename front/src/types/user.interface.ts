@@ -5,6 +5,13 @@ export interface User
 	status: string;
 	displayName: string;
 	avatar?: string;
+	score?: number;
+}
+
+export interface LeaderboardUser
+{
+	user: User;
+	rank: number;
 }
 
 export interface LocalStorageUserInterface

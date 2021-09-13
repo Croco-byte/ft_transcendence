@@ -2,7 +2,10 @@
 	<p>
 		<span v-if="status === 'online'" class="online">online</span>
 		<span v-if="status === 'offline'" class="offline">offline</span>
-		<span v-if="status === 'in-game'" class="in-game">in game</span>
+		<span v-if="status === 'in-game'">
+			<span class="in-game">in game</span>
+			<button>watch</button>
+		</span>
 	</p>
 </template>
 
@@ -77,5 +80,13 @@ export default defineComponent({
 	border-radius: 100%;
 }
 
+button
+{
+	background: red;
+    padding: 0.25rem 1rem;
+    border-radius: 5rem;
+    color: white;
+    cursor: pointer;
+}
 
 </style>

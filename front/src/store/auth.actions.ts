@@ -15,9 +15,9 @@ export const actions: ActionTree<RootState, RootState> = {
 		}
 	},
 
-	async twoFALogin(twoFACode) {
+	async twoFALogin({ commit }, payload: { code: string }): Promise<User | string> {
 		try {
-			const user = await AuthService.twoFALogin(twoFACode);
+			const user = await AuthService.twoFALogin(payload.code);
 			return Promise.resolve(user);
 		} catch(error) {
 			return Promise.reject(error);

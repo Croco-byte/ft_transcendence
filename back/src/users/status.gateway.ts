@@ -48,8 +48,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		try {
-			this.logger.log("Status of the user trying to connect : " + data.user.status + " | " + typeof(data.user.status));
-			if (data.user.status !== "offline") {
+			if (data.user.status === "online") {
 				this.wss.emit('multipleConnectionsOnSameUser', { userId: client.data.userId });
 			} else {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
@@ -65,10 +64,22 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOffline')
 	async handleOffline(client: Socket, data: any): Promise<void> {
 		try {
-			this.logger.log("Emitting status change offline signal");
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		} catch(e) {
+			this.logger.log(e.message);
+			throw new WsException(e.message);
+		}
+	}
+
+	@UseGuards(WsJwtGuard)
+	@SubscribeMessage('getInGame')
+	async handleInGame(client: Socket, data: any): Promise<void> {
+		try {
+			console.log("Putting user with ID " + client.data.userId + " in game");
+			await this.userService.changeUserStatus(client.data.userId, 'in-game');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-game' });
+		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
 		}

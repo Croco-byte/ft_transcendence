@@ -167,7 +167,7 @@ export default defineComponent({
 		<div class="friends_item_container">
 			<div class="friend_item" v-for="(result, index) in searchResults" :key="result.displayName">
 				<div class="score">
-					187
+					{{ result.score }}
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
@@ -258,8 +258,8 @@ h2
 .searchInput
 {
 	padding: 0.5rem 1rem;
-    border-radius: 1rem;
-    border: solid 1px #959595;
+	border-radius: 1rem;
+	border: solid 1px #959595;
 	outline: none;
 	margin: 1rem 0;
 }

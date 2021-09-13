@@ -2,10 +2,11 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { from, Observable, map } from 'rxjs';
-import { Like, Raw, Repository, getConnection } from 'typeorm';
+import { Like, Raw, Repository, getConnection, MoreThan } from 'typeorm';
 import { FriendRequest, FriendRequestStatus, FriendRequest_Status } from './friend-request.interface';
 import { FriendRequestEntity } from './friends-request.entity';
 import { User } from './users.entity';
+import { UserWithRank } from './user.interface';
 import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { UserStatus, User_Status } from './status.interface';
 import { unlink } from 'fs';
@@ -15,9 +16,10 @@ import { Logger } from '@nestjs/common'
 export class UsersService {
 	constructor(
 		@InjectRepository(User) 
-		private usersRepository: Repository<User>, 
+		private usersRepository: Repository<User>,
 		@InjectRepository(FriendRequestEntity) 
-		private friendRequestRepository: Repository<FriendRequestEntity>) {}
+		private friendRequestRepository: Repository<FriendRequestEntity>,
+		) {}
 
 		private logger: Logger = new Logger('UsersService');
 
@@ -54,6 +56,15 @@ export class UsersService {
 		delete user.isTwoFactorAuthenticationEnabled;
 		delete user.twoFactorAuthenticationSecret;
 		return user;
+	}
+
+	async getUserRank(id: number): Promise<number> {
+		const user = await this.usersRepository.findOne({ where: { id: id } });
+		const allBetterScores = await this.usersRepository.createQueryBuilder()
+														.select('DISTINCT score')
+														.where("score > :userScore", { userScore: user.score })
+														.execute()
+		return (allBetterScores.length + 1);
 	}
 
 	/* Explicit */
@@ -209,7 +220,7 @@ export class UsersService {
 		const receiver: User = await this.findUserById(receiverId);
 		const creator: User = await this.findUserById(creatorId);
 		const hasFriendRequestBeenSentOrReceived: string = await this.hasFriendRequestBeenSentOrReceived(creator, receiver);
-		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("A friend request already exists from or to this user");
+		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("A friend request already exists from / to this user, or you're already friends");
 		if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
 
 		let friendRequest: FriendRequest = {
@@ -324,19 +335,41 @@ export class UsersService {
 	paginateUsers(options: IPaginationOptions): Observable<Pagination<User>> {
 		return from(paginate(this.usersRepository, options)).pipe(
 			map((usersPageable: Pagination<User>) => {
-				usersPageable.items.forEach(function(v) { delete v.twoFactorAuthenticationSecret; delete v.isTwoFactorAuthenticationEnabled; delete v.avatar});
+				usersPageable.items.forEach(function(v) { delete v.twoFactorAuthenticationSecret; delete v.isTwoFactorAuthenticationEnabled;});
 				return usersPageable;
 			}) 
 		)
+	}
+
+	async paginateUsersOrderByScore(options: IPaginationOptions): Promise<Pagination<UserWithRank>> {
+		let ref = this;
+		const queryBuilder = this.usersRepository.createQueryBuilder('c');
+		queryBuilder.select(["c.id", "c.displayName", "c.avatar", "c.score", "c.wins", "c.loses"]);
+		queryBuilder.orderBy('c.score', 'DESC');
+		const result = await paginate(queryBuilder, options);
+
+		let items = [];
+		for (const element of result.items) {
+			var rank = await ref.getUserRank(element.id);
+			var userWithRank: UserWithRank = { user: element, rank: rank };
+			items.push(userWithRank);
+		};
+		
+		let usersWithRankPageable: Pagination<UserWithRank> = {
+			items: items,
+			links: result.links,
+			meta: result.meta
+		}
+		return usersWithRankPageable;
 	}
 
 	/* Displays user matching a filter in their displayname, paginated */
 	paginateUsersFilterByDisplayName(options: IPaginationOptions, displayName: string): Observable<Pagination<User>> {
 		return from(this.usersRepository.findAndCount({
 			skip: ((options.page as number) - 1) * (options.limit as number) || 0,
-			take: (options.limit as number )|| 10,
+			take: (options.limit as number ) || 10,
 			order: {displayName: 'ASC'},
-			select: ['id', 'username', 'displayName', 'status', 'avatar'],
+			select: ['id', 'username', 'displayName', 'status', 'avatar', 'score'],
 			where: { displayName: Raw(alias =>`LOWER(${alias}) Like ('%${displayName.toLowerCase()}%')`) }
 		})).pipe(
 			map(([users, totalUsers]) => {
@@ -484,6 +517,7 @@ export class UsersService {
 		try {
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } })
 			user.wins++;
+			user.score += 50;
 			return this.usersRepository.save(user);
 		} 
 		catch (e) {
@@ -502,6 +536,8 @@ export class UsersService {
 		try {
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.loses++;
+			if (user.score > 30) user.score -= 30;
+			else user.score = 0;
 			return this.usersRepository.save(user);
 		} 
 		catch (e) {
@@ -704,6 +740,33 @@ getFriends(currentUser: User): Observable<User[]> {
 		}
 	}
 
+
+	getCurrUserPaginatedHistory(currentUser: User, options: IPaginationOptions): Observable<Pagination<MatchHistoryEntity>> {
+		return from(paginate(this.matchHistoryRepository, options, {
+			where: [{ winner: currentUser }, { looser: currentUser }],
+			relations: ['winner', 'looser'],
+			order: {time: 'ASC'},
+			select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time']
+		})).pipe(
+			map((matchHistoryPageable: Pagination<MatchHistoryEntity>) => {
+				var items = [];
+				matchHistoryPageable.items.forEach(function(element) { 
+					delete element.winner.twoFactorAuthenticationSecret;
+					delete element.winner.isTwoFactorAuthenticationEnabled;
+					delete element.looser.twoFactorAuthenticationSecret;
+					delete element.looser.isTwoFactorAuthenticationEnabled;
+					items.push(element.looser);
+					items.push(element.winner);
+				});
+				var historyPageable: Pagination<MatchHistoryEntity> = {
+					items: items,
+					links: matchHistoryPageable.links,
+					meta: matchHistoryPageable.meta
+				};
+				return historyPageable;
+			})
+		)
+	}
 
 
 */
