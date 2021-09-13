@@ -1,14 +1,13 @@
 <template>
 	<div>
-		<h1>2FA ENABLED</h1>
-		<p>Two factor authentication is enabled for this account. Please enter your 2FA code below</p>
-		<p v-if='error !=""' style="color:#FF0000;"><b> {{ error }} </b></p>
+		<h1><i class="fas fa-exclamation-triangle"></i>Two Factor Authentification enabled</h1>
+		<p>Two factor authentication is enabled for this account. Please enter your 2FA code below :</p>
+		<div class="TwoFA">
 			<form id="TwoFAForm">
 				<input type="password" name="TwoFACode" placeholder="Enter 2FA code here">
 				<button type="button" v-on:click="authTwoFA()">Send</button>
 			</form>
-			<br/>
-			<p>Reminder : if you want to register the app, display the QR Code by clicking on this button : </p>
+		</div>
 			<QRCode/>
 	</div>
 </template>
@@ -22,32 +21,89 @@
 
 import { defineComponent } from 'vue'
 import QRCode from '../components/QRCode.vue'
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
-interface TwoFaViewData
-{
-	error: string;
-}
 
 export default defineComponent({
 	name: "TwoFA",
 	components: {
 		QRCode
 	},
-	data(): TwoFaViewData {
-		return {
-			error: ''
-		}
-	},
+
 	methods: {
 		authTwoFA: async function(): Promise<void> {
 			try {
 				let twoFACode: FormData = new FormData(document.getElementById("TwoFAForm") as HTMLFormElement);
-				await this.$store.dispatch('twoFALogin', twoFACode.get('TwoFACode')).then(
+				await this.$store.dispatch('twoFALogin', { code: twoFACode.get('TwoFACode') }).then(
 					result => { this.$store.commit('loginSuccess', result); })
 			} catch {
-				this.error = "Wrong 2FA authentication code";
+				this.errorNotification("Wrong 2FA authentication code, please try again");
 			}
-		}
+		},
+
+		errorNotification(message: string)
+		{
+			createToast({
+				title: 'Error',
+				description: message
+			},
+			{
+				position: 'top-right',
+				type: 'danger',
+				transition: 'slide'
+			})
+		},
 	}
 })
 </script>
+
+<style scoped>
+
+h1
+{
+	text-align: center;
+}
+
+p
+{
+	padding-top: 50px;
+	text-align: center;
+}
+
+.TwoFA
+{
+	display: flex;
+	justify-content: center;
+}
+
+input
+{
+	padding: 0.5rem 1rem;
+	border-radius: 1rem;
+	border: solid 1px #959595;
+	outline: none;
+	margin: 1rem 0;
+	margin-right: 20px;
+}
+
+button
+{
+	padding: 0.25rem 1rem;
+	background-color: #39d88f;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px #39d88f;
+	transition: all 0.25s;
+}
+
+button:hover
+{
+	border-color: #39d88f;
+	color: #39d88f;
+	background-color: white;
+}
+
+</style>

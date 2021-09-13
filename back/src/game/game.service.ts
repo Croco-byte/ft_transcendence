@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/users.entity';
 import { UsersService } from 'src/users/users.service';
 import { ConfigService } from '@nestjs/config'
@@ -14,12 +15,17 @@ import {
   Game,
   EndGameInfo,
   PlayerDbInfo,
+  matchHistory,
 } from './interfaces/game.interface';
+import { MatchHistoryEntity } from '../users/match-history.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
 {
 	constructor(
+		@InjectRepository(MatchHistoryEntity)
+		private matchHistoryRepository: Repository<MatchHistoryEntity>,
 		private usersService: UsersService,
 		private configService: ConfigService,
 	) {}
@@ -49,7 +55,6 @@ export class GameService
 
 	public readonly FRAMERATE: number = 1000 / this.configService.get<number>('framerate');
 	public readonly TIME_MATCH_START: number = this.configService.get<number>('time_match_start');
-
 
 	/**
 	 * Finds which room the player belongs.
@@ -202,7 +207,9 @@ export class GameService
 
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score) {
+			clearInterval(intervalId);
 			this.removeRoom(wss, intervalId, room);
+			this.addToMatchHistory(room);
 			return this.updateScores(room);
 		}
 		
@@ -220,12 +227,46 @@ export class GameService
 	updateScores(room: Room): boolean
 	{
 		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
-				this.usersService.incUserLoses(room.user1DbId);
-		
+															this.usersService.incUserLoses(room.user1DbId);
+
 		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
-				this.usersService.incUserLoses(room.user2DbId);
+															this.usersService.incUserLoses(room.user2DbId);
 
 		return true;
+	}
+
+	async addToMatchHistory(room: Room): Promise<void>
+	{
+		if (room.game.p1Score >= room.game.p1Left.setup.score)
+		{
+			const winner: User = await this.usersService.findUserById(room.user1DbId);
+			const looser: User = await this.usersService.findUserById(room.user2DbId);
+			const winnerScore = room.game.p1Score;
+			const looserScore = room.game.p2Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
+			const record: matchHistory= {
+				winner,
+				looser,
+				winnerScore,
+				looserScore,
+				gameOptions
+			}
+			this.matchHistoryRepository.save(record);
+		}
+		else
+		{
+			const winner: User = await this.usersService.findUserById(room.user2DbId);
+			const looser: User = await this.usersService.findUserById(room.user1DbId);
+			const winnerScore = room.game.p2Score;
+			const looserScore = room.game.p1Score;
+			const record: matchHistory= {
+				winner,
+				looser,
+				winnerScore,
+				looserScore
+			}
+			this.matchHistoryRepository.save(record);
+		}
 	}
 
 	/**
