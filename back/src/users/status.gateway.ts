@@ -27,27 +27,43 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	}
 
 	async handleDisconnect(client: any) {
+		var userWasInGame = false;
 		for (var i = 0; i < this.CLIENTS.length; i++) {
-			if (this.CLIENTS[i] === client.data.userId) this.CLIENTS.splice(i, 1); break;
+			if (this.CLIENTS[i].clientId === client.id) {
+				if (this.CLIENTS[i].status === "in-game" || this.CLIENTS[i].status === "in-queue") userWasInGame = true;
+				this.CLIENTS.splice(i, 1);
+				break;
+			}
 		}
-		console.log("A client disconnected. All clients connected : " + this.CLIENTS);
-		if (!this.CLIENTS.includes(client.data.userId)) {
+		console.log("A client disconnected. All clients connected : ");
+		for (var i = 0; i < this.CLIENTS.length; i++) {
+			console.log(this.CLIENTS[i].clientId + " | " + this.CLIENTS[i].userId + " | " + this.CLIENTS[i].status);
+		}
+		if (!this.CLIENTS.find(object => object["userId"] === client.data.userId)) {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
+		}
+		else if (userWasInGame) {
+			await this.userService.changeUserStatus(client.data.userId, 'online');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
+
 		}
 	}
 
 	async handleConnection(client: Socket, args: any[]) {
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userId: user.id, username: user.username };
-			this.CLIENTS.push(user.id);
+			client.data = { clientId: client.id, userId: user.id, username: user.username };
+			this.CLIENTS.push({ "clientId": client.id, "userId": user.id, "status": "online" });
 			if (user.status === "offline") {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
 				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
 			}
 			
-			console.log("A client connected. All clients connected : " + this.CLIENTS);
+			console.log("A client connected. All clients connected : " );
+			for (var i = 0; i < this.CLIENTS.length; i++) {
+			console.log(this.CLIENTS[i].clientId + " | " + this.CLIENTS[i].userId + " | " + this.CLIENTS[i].status);
+		}
 		} catch(e) {
 			this.logger.log("Unauthorized client trying to connect");
 			client.disconnect();
@@ -58,6 +74,9 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		try {
+			for (var i = 0; i < this.CLIENTS.length; i++) {
+				if (this.CLIENTS[i].userId === client.data.clientId) { this.CLIENTS[i].status = "online"; break; }
+			}
 			await this.userService.changeUserStatus(client.data.userId, 'online');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
 		} catch(e) {
@@ -70,6 +89,9 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOffline')
 	async handleOffline(client: Socket, data: any): Promise<void> {
 		try {
+			for (var i = 0; i < this.CLIENTS.length; i++) {
+				if (this.CLIENTS[i].clientId === client.data.clientId) { this.CLIENTS[i].status = "offline"; break; }
+			}
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		} catch(e) {
@@ -82,6 +104,9 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getInGame')
 	async handleInGame(client: Socket, data: any): Promise<void> {
 		try {
+			for (var i = 0; i < this.CLIENTS.length; i++) {
+				if (this.CLIENTS[i].clientId === client.data.clientId) { this.CLIENTS[i].status = "in-game"; break; }
+			}
 			await this.userService.changeUserStatus(client.data.userId, 'in-game');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-game' });
 		} catch (e) {
@@ -94,6 +119,9 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getInQueue')
 	async handleInQueue(client: Socket, data: any): Promise<void> {
 		try {
+			for (var i = 0; i < this.CLIENTS.length; i++) {
+				if (this.CLIENTS[i].clientId === client.data.clientId) { this.CLIENTS[i].status = "in-queue"; break; }
+			}
 			await this.userService.changeUserStatus(client.data.userId, 'in-queue');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-queue' });
 		} catch (e) {
