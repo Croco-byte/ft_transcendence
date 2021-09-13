@@ -26,7 +26,7 @@ if (user) {
 	const statusSocket: Socket =  io('http://localhost:3000/connectionStatus', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 	const friendSocket: Socket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 
-	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
+/*	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
 		const result = await userService.getCurrUserId();
 		if (data.userId == result.data.id) {
 			localStorage.removeItem('user');
@@ -37,7 +37,7 @@ if (user) {
 			if (store.state.websockets.friendRequestsSocket) store.state.websockets.friendRequestsSocket.disconnect();
 			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 		}
-	})
+	}) */
 	statusSocket.emit('getOnline', {});
 	initialState = { status: { loggedIn: true }, user: user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
 

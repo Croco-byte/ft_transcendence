@@ -13,7 +13,7 @@ export const mutations: MutationTree<RootState> = {
 		state.user = user;
 	
 		state.websockets.connectionStatusSocket = io('http://localhost:3000/connectionStatus', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
-		state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
+/*		state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
 			const result = await userService.getCurrUserId();
 			if (data.userId == result.data.id) {
 				localStorage.removeItem('user');
@@ -24,7 +24,7 @@ export const mutations: MutationTree<RootState> = {
 				if (state.websockets.friendRequestsSocket) state.websockets.friendRequestsSocket.disconnect();
 				router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 			}
-		})
+		}) */
 		state.websockets.connectionStatusSocket.emit('getOnline', {});
 		state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 		router.push('/account');

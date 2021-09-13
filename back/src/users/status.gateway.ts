@@ -17,6 +17,7 @@ import { UsersService } from './users.service';
 export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
 	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
+	private CLIENTS=[];
 
 	@WebSocketServer() wss: Server;
 	private logger: Logger = new Logger('StatusGateway');
@@ -26,8 +27,12 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	}
 
 	async handleDisconnect(client: any) {
-		this.logger.log(`Client disconnected from Status Gateway ${client.id}`)
-		if (client.data && client.data.userId) {
+		this.logger.log(`Client disconnected from Status Gateway ${client.id}`);
+		for (var i = 0; i < this.CLIENTS.length; i++) {
+			if (this.CLIENTS[i] === client.data.userId) this.CLIENTS.splice(i, 1);
+		}
+		console.log("All clients connected : " + this.CLIENTS);
+		if (!this.CLIENTS.includes(client.data.userId)) {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		}
@@ -37,7 +42,9 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			client.data = { userId: user.id, username: user.username };
+			this.CLIENTS.push(user.id);
 			this.logger.log(`Client connected to Status Gateway ${client.id}`);
+			console.log("All clients connected : " + this.CLIENTS);
 		} catch(e) {
 			this.logger.log("Unauthorized client trying to connect");
 			client.disconnect();
@@ -48,12 +55,12 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		try {
-			if (data.user.status === "online") {
-				this.wss.emit('multipleConnectionsOnSameUser', { userId: client.data.userId });
-			} else {
+//			if (data.user.status === "online") {
+//				this.wss.emit('multipleConnectionsOnSameUser', { userId: client.data.userId });
+//			} else {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
 				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
-			}
+//			}
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
