@@ -43,19 +43,23 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		this.logger.log("Receive : " + JSON.stringify(data));
 	}
 
-	async sendNewMessage(room: string, msg: Object, user: User)
+	async sendNewMessage(room: string, msg: Object, user: User, channel: Channel)
 	{
+		let unauthaurizedUsers : User[] = [];
 		let blockedUsers = await this.userService.getBiDirectionalBlockedUsers(user);
-		for (let blocked of blockedUsers)
+		unauthaurizedUsers.concat(blockedUsers);
+		unauthaurizedUsers.concat(channel.pending_users);
+
+		for (let unauthorized of unauthaurizedUsers)
 		{
-			let socket = this.getSocketByUser(blocked);
+			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
 				socket.leave(room);
 		}
 		this.server.to(room).emit('message', msg);
-		for (let blocked of blockedUsers)
+		for (let unauthorized of unauthaurizedUsers)
 		{
-			let socket = this.getSocketByUser(blocked);
+			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
 				socket.join(room);
 		}

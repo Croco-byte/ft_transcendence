@@ -63,6 +63,9 @@ export class User extends BaseEntity
 	@Column({ default: 'none' })
 	roomId: string;
 
+	@ManyToMany(()=> Channel, channel => channel.pending_users)
+	pending_channels: Channel[];
+
 	toPublic()
 	{
 		return {

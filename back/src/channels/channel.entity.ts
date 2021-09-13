@@ -56,6 +56,10 @@ class Channel extends BaseEntity
 	@OneToMany(() => Channel_muted_user, muted => muted.channel)
 	mutedUsers: Channel_muted_user[];
 
+	@ManyToMany(()=> User, user => user.pending_channels)
+	@JoinTable({name: "pending_channels_users"})
+	pending_users: User[];
+
 	toJSON()
 	{
 		return {

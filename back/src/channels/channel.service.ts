@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { tmpdir } from "os";
 import ChannelBannedUserService from "src/channel_banned_users/channel_banned_user.service";
 import ChannelMutedUserRepository from "src/channel_muted_users/channel_muted_user.repository";
 import ChannelMutedUserService from "src/channel_muted_users/channel_muted_user.service";
@@ -14,7 +15,7 @@ import ChannelRepository from "./channel.repository";
 @Injectable()
 export default class ChannelService
 {
-	private relations : Array<string> = ["users", "administrators", "owner"];
+	private relations : Array<string> = ["users", "administrators", "owner", "pending_users"];
 	constructor (
 				@InjectRepository(Channel) private repository: Repository<Channel>,
 				private readonly channelMutedUserService: ChannelMutedUserService,
@@ -62,7 +63,23 @@ export default class ChannelService
 		if (channel.users == null)
 			channel.users = new Array();
 		channel.users.push(user);
-		user.channels.push(channel)
+		user.channels.push(channel);
+		if (channel.requirePassword)
+			channel.pending_users.push(user);
+		this.repository.save(channel);
+	}
+
+	async addPassword(channel: Channel, password: string)
+	{
+		channel.requirePassword = true;
+		channel.password = password;
+		this.repository.save(channel);
+	}
+
+	async removePassword(channel: Channel)
+	{
+		channel.requirePassword = false;
+		channel.pending_users = [];
 		this.repository.save(channel);
 	}
 
@@ -156,5 +173,29 @@ export default class ChannelService
 		if (index != -1)
 			channel.users.splice(index, 1);
 		await this.repository.save(channel);
+	}
+
+	isPendingUser(channel: Channel, user: User): boolean
+	{
+		if (channel.pending_users.findIndex(tmp_user => tmp_user.id == user.id) == -1)
+			return false;
+		return true;
+	}
+
+	async removePendingUser(channel: Channel, user: User): Promise<void>
+	{
+		let index = channel.pending_users.findIndex((tmp_user) => tmp_user.id == user.id);
+		channel.pending_users.splice(index, 1);
+		this.save(channel);
+	}
+
+	getUserRole(channel: Channel, user: User)
+	{
+		if (this.isAdmin(channel, user))
+			return 'ADMIN';
+		if (channel.owner && channel.owner.id == user.id)
+			return 'OWNER';
+		else
+			return 'MEMBER';
 	}
 }

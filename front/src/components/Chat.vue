@@ -9,6 +9,7 @@ import MessageInterface from '../interface/message.interface';
 import DOMEventInterface from '../interface/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
+import authService from '../services/auth.service';
 
 export default defineComponent(
 {
@@ -27,10 +28,12 @@ export default defineComponent(
 				has_new_message: false,
 				members: [],
 				administrators: [],
+				userRole: 'MEMBER'
 			} as ChannelInterface,
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
+			user_id: -1
 		}
 	},
 
@@ -59,21 +62,20 @@ export default defineComponent(
 			this.channel = this.channels[id];
 			this.channels[id].has_new_message = false;
 
-			axios.get(this.serverURL + "/channels/" + this.channels[id].id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
+			this.loadMessages();
+		},
+
+		loadMessages(): void
+		{
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
 			{
 				this.channel.messages = res.data;
 			})
-			.catch(error =>
+			.catch((error) =>
 			{
-				alert(error);
+				if (error.response.data.authentify_in_channel)
+					this.changeMode("authentify_user_in_channel");
 			});
-
-			// this.channel.id = this.channels[id].id;
-			// this.channel.name = this.channels[id].name;
-			// this.channel.has_new_message = false;
-			// this.channel.members = this.channels[id].members;
-			// this.channel.messages = [];
-			//$('.view').scrollTop(document.getElementsByClassName('.view').scrollHeight);
 		},
 		
 		createChannel(): void
@@ -263,11 +265,48 @@ export default defineComponent(
 
 		async leaveChannel()
 		{
-			alert("Leave channel " + this.channel.id)
-			axios.delete(this.serverURL + "/channels/" + this.channel.id + "/members", {headers: authHeader()}).then((res) =>
+			let leave_id = this.channel.id
+			axios.delete(this.serverURL + "/channels/" + leave_id + "/members", {headers: authHeader()}).then((res) =>
 			{
-				alert("User removed");
+				this.loadChannelsList();
+				this.channel = {
+					id: -1,
+					name: '',
+					requirePassword: false,
+					password: '',
+					messages: [],
+					has_new_message: false,
+					members: [],
+					administrators: [],
+					userRole: 'MEMBER'
+				}
+				let index = this.channels.findIndex(c => c.id == leave_id);
+				if (index != -1)
+					this.channels.splice(index, 1);
 			});
+		},
+
+		async authentifyUser()
+		{
+			let password = $('#channel_password').val() as string;
+			axios.post(this.serverURL + "/channels/" + this.channel.id + "/check_password", {password: password}, {headers: authHeader()}).then(res =>
+			{
+				this.changeMode("normal");
+				this.loadMessages();
+			})
+			.catch(error =>
+			{
+				if (error.response.status == 401)
+				{
+					alert("Authentification failure, retry please");
+					$('#channel_password').val('');
+				}
+			});
+		},
+
+		isMe(message: MessageInterface)
+		{
+			return message.user_id == this.user_id;
 		}
 	},
 
@@ -276,6 +315,7 @@ export default defineComponent(
 		this.mode = 'normal';
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});
 		this.loadChannelsList();
+		this.user_id = Number(authService.parseJwt().id);
 	},
 
 	mounted(): void
@@ -294,7 +334,9 @@ export default defineComponent(
 				}
 			}
 			else
+			{
 				this.channel.messages.push(data);
+			}
 		})
 	},
 });
@@ -304,7 +346,7 @@ export default defineComponent(
 <template>
 	<div id="chat">
 		<div class="chat_container">
-			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin'" v-on:click="changeMode('normal')"></div>
+			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list">
 				<div class="list">
 					<div @click="switchChat" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
@@ -331,7 +373,7 @@ export default defineComponent(
 						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')"></p>
 					</div>
 					<div class="view">
-						<div v-for="message in channel.messages" v-bind:key="message" class="message">
+						<div v-for="message in channel.messages" :key="message" class="message" :class="{ me: isMe(message)}">
 							<a class="username" :href="getUserLink(message.user_id)">{{ message.user }}</a>
 							<p class="content">{{ message.content }}</p>
 						</div>
@@ -358,8 +400,13 @@ export default defineComponent(
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<input type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
-						<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
+						<div v-if="channel.userRole != 'MEMBER'">
+							<input readonly="true" type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
+							<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
+						</div>
+						<div v-else>
+							<p>channel.name</p>
+						</div>
 					</div>
 				</section>
 				<section>
@@ -396,13 +443,16 @@ export default defineComponent(
 								{{ admin.username }}
 							</p>
 						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_admin')">
+						<div v-if="channel.administrators && channel.administrators.length == 0">
+							No administrators in this channel
+						</div>
+						<p id="add_member_button" v-on:click="changeMode('add_admin')" v-if="channel.userRole == 'OWNER'">
 							<i class="fas fa-plus-square"></i>
 							Add an administrator
 						</p>
 					</div>
 				</section>
-				<section>
+				<section v-if="channel.userRole == 'OWNER'">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
 						<i class="arrow fas fa-chevron-left"></i>
@@ -429,6 +479,12 @@ export default defineComponent(
 			<div class="input_popup" id="add_admin_popup" v-if="mode == 'add_admin'">
 				<input type="text" placeholder="New admin's username" id="add_admin_input"/>
 				<button id="add_admin" @click="addAdmin">
+					<i class="fas fa-arrow-right"></i>
+				</button>
+			</div>
+			<div class="input_popup" id="authentify_user" v-if="mode == 'authentify_user_in_channel'">
+				<input type="password" placeholder="Channel's password" id="channel_password" @keypress.enter="authentifyUser"/>
+				<button id="authentify_user" @click="authentifyUser">
 					<i class="fas fa-arrow-right"></i>
 				</button>
 			</div>
@@ -681,6 +737,7 @@ export default defineComponent(
 
 	.chat_view .message .username
 	{
+		color: white;
 		padding-bottom: 0.25rem;
 		font-size: 1.1rem;
 	}
