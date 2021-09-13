@@ -28,66 +28,6 @@
 
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import { Setup } from '../../types/game.interface'
-
-
-export default defineComponent({
-
-	name: 'OptionGame',
-	emits: ["setupChosen"],
-
-	data() {
-		return {
-			scoreActive: false as boolean,
-			diffActive: false as boolean,
-			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
-		}
-	},
-
-	methods: {
-		setLevel(value: number) {
-			if (value != undefined) {
-				this.opt.level = value;
-				this.diffActive = true;
-			}
-			console.log(`level: ${this.opt.level}`);
-		},
-
-		setScore(value: number) {
-			if (value != undefined) {
-				this.opt.score = value;
-				this.scoreActive = true;
-			}
-			console.log(`score: ${this.opt.score}`);
-		},
-
-		setPadColor(value: string) {
-			if (value != undefined)
-				this.opt.paddleColor = value;
-			console.log(`color ${this.opt.paddleColor}`);
-		},
-
-		startGame() {
-			console.log('start game');
-			this.$emit('setupChosen', this.opt as Setup);
-		},
-
-		resetOption() {
-			this.opt.level = 1;
-			this.opt.score = 1;
-			this.opt.paddleColor = 'white';
-		}
-	},
-
-	mounted() {
-		console.log('option mounted');
-	}
-	
-})
-</script>
-
 <style scoped>
 
 p {
@@ -161,3 +101,64 @@ button.diffActive, button.scoreActive {
 }
 
 </style>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { Setup } from '../../types/game.interface'
+
+
+export default defineComponent({
+
+	name: 'OptionGame',
+	emits: ["setupChosen"],
+
+	data() {
+		return {
+			scoreActive: false as boolean,
+			diffActive: false as boolean,
+			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
+		}
+	},
+
+	methods: {
+		setLevel(value: number) {
+			if (value != undefined) {
+				this.opt.level = value;
+				this.diffActive = true;
+			}
+			console.log(`level: ${this.opt.level}`);
+		},
+
+		setScore(value: number) {
+			if (value != undefined) {
+				this.opt.score = value;
+				this.scoreActive = true;
+			}
+			console.log(`score: ${this.opt.score}`);
+		},
+
+		setPadColor(value: string) {
+			if (value != undefined)
+				this.opt.paddleColor = value;
+			console.log(`color ${this.opt.paddleColor}`);
+		},
+
+		startGame() {
+			console.log('start game');
+			this.$emit('setupChosen', this.opt as Setup);
+		},
+
+		resetOption() {
+			this.opt.level = 1;
+			this.opt.score = 1;
+			this.opt.paddleColor = 'white';
+		}
+	},
+
+	mounted() {
+		console.log('option mounted');
+	}
+	
+})
+</script>
+
