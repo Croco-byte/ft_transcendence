@@ -33,7 +33,8 @@ export default defineComponent(
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
-			user_id: -1
+			user_id: -1,
+			show_channels_list: false
 		}
 	},
 
@@ -307,7 +308,7 @@ export default defineComponent(
 		isMe(message: MessageInterface)
 		{
 			return message.user_id == this.user_id;
-		}
+		},
 	},
 
 	created(): void
@@ -346,8 +347,8 @@ export default defineComponent(
 <template>
 	<div id="chat">
 		<div class="chat_container">
-			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel'" v-on:click="changeMode('normal')"></div>
-			<div class="chat_list">
+			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel' || mode == 'channel_list'" v-on:click="changeMode('normal')"></div>
+			<div class="chat_list" :class="{active: mode == 'channel_list'}">
 				<div class="list">
 					<div @click="switchChat" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
 						<div class="flex j-sb">
@@ -369,6 +370,11 @@ export default defineComponent(
 				</div>
 				<div v-if="channel.id">
 					<div class="chat_view_header">
+						<p class="toggle_chat_list_button" @click="changeMode('channel_list')">
+							<span></span>
+							<span></span>
+							<span></span>
+						</p>
 						<p id="chat_title">{{ channel.name }}</p>
 						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')"></p>
 					</div>
@@ -1003,6 +1009,11 @@ export default defineComponent(
 		border: solid 1px red;
 	}
 
+	.toggle_chat_list_button
+	{
+		display: none;
+	}
+
 	@keyframes show_info_div
 	{
 		from
@@ -1012,6 +1023,58 @@ export default defineComponent(
 		to
 		{
 			transform: translateX(0);
+		}
+	}
+
+	@media all and (max-width: 500px)
+	{
+		.chat_list
+		{
+			position: absolute;
+			top: 0;
+			left: 0;
+			transform: translateX(-100%);
+			transition: all 0.25s ease-out;
+		}
+
+		.chat_view
+		{
+			width: 100%;
+		}
+
+		.toggle_chat_list_button
+		{
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			cursor: pointer;
+		}
+
+		.toggle_chat_list_button span
+		{
+			width: 2rem;
+			height: 0.125rem;
+			background-color: black;
+			margin: 0.2rem
+		}
+
+		.chat_list.active
+		{
+			z-index: 99;
+			transform: translateX(0);
+			width: 80%;
+		}
+
+		.chat_container .blur
+		{
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+
+		.input_popup input
+		{
+			width: 100%;
 		}
 	}
 

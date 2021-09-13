@@ -33,7 +33,8 @@ export default defineComponent({
 				<tr v-for="(user, index) in users" :key="user.id" class="online">
 					<td>{{ index }}</td>
 					<td>
-						<img :src="user.avatar"/>
+						{{ $store.avatar }}
+						<img :src="$store.avatar"/>
 					</td>
 					<td>{{ user.username }}</td>
 					<td>
