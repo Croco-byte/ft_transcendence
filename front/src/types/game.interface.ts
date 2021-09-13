@@ -1,9 +1,13 @@
+import { User } from "./user.interface";
+
 export interface Room
 {
 	name: string;
+	user1DbId: number;
+	user2DbId: number;
 	player1Id: string;
 	player2Id: string;
-	nbPlayer: number;
+	nbPeopleConnected: number;
 	game: Game;
 }
 
@@ -70,4 +74,25 @@ export interface EndGameInfo
 	p1DbInfo: PlayerDbInfo;
 	p2DbInfo: PlayerDbInfo;
 	room: Room;
+}
+
+export interface MatchHistory
+{
+	id: number;
+	winner: User;
+	looser: User;
+	winnerScore: number;
+	looserScore: number;
+	time: string;
+	gameOptions: string;
+}
+
+export interface MatchDisplay
+{
+	id?: number;
+	date?: string;
+	time?: string;
+	winOrLoose?: string;
+	opponentName?: string;
+	gameScore?: string;
 }

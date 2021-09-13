@@ -1,9 +1,11 @@
 <template>
 	<p>
-		<span v-if="status === 'online'" class="green-dot"></span>
-		<span v-if="status === 'offline'" class="red-dot"></span>
-		<span v-if="status === 'in-game'" class="orange-dot"></span>
-		({{ status }})
+		<span v-if="status === 'online'" class="online">online</span>
+		<span v-if="status === 'offline'" class="offline">offline</span>
+		<span v-if="status === 'in-game'">
+			<span class="in-game">in game</span>
+			<button>watch</button>
+		</span>
 	</p>
 </template>
 
@@ -21,30 +23,70 @@ export default defineComponent({
 </script>
 
 <style scoped>
-	.green-dot {
-		height: 25px;
-		width: 25px;
-		background-color: green;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+.online
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
 
-	.red-dot {
-		height: 25px;
-		width: 25px;
-		background-color: red;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+.offline
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
 
-	.orange-dot {
-		height: 25px;
-		width: 25px;
-		background-color: orange;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+.in-game
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
+
+.online::before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #00a100;
+	border-radius: 100%;
+}
+
+.offline::before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #d41717;
+	border-radius: 100%;
+}
+
+.in-game::before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #fc8600;
+	border-radius: 100%;
+}
+
+button
+{
+	background: red;
+    padding: 0.25rem 1rem;
+    border-radius: 5rem;
+    color: white;
+    cursor: pointer;
+}
+
 </style>

@@ -29,7 +29,7 @@ class UserService {
 	}
 
 	getFriends(page = 1) {
-		return axios.get(API_URL + 'user/friend-request/me/friends?limit=2&page=' + page, { headers: authHeader() });
+		return axios.get(API_URL + 'user/friend-request/me/friends?limit=5&page=' + page, { headers: authHeader() });
 	}
 
 	getFriendRequestStatusFromCurrUser(userId) {
@@ -46,6 +46,10 @@ class UserService {
 
 	getFriendRequestsToRecipients(page = 1) {
 		return axios.get(API_URL + "user/friend-request/me/sent-requests?limit=2&page=" + page, { headers: authHeader() });
+	}
+
+	getHistory(page = 1) {
+		return axios.get(API_URL + "user/history/me?limit=3&page=" + page, { headers: authHeader() });
 	}
 
 	acceptFriendRequest(friendRequestId) {
@@ -66,6 +70,10 @@ class UserService {
 
 	changeDisplayName(newDisplayName) {
 		return axios.post(API_URL + 'user/displayName', { displayName: newDisplayName }, { headers: authHeader() });
+	}
+
+	getLeaderboardUsers(page = 1) {
+		return axios.get(API_URL + "user/users/leaderboard?limit=7&page=" + page);
 	}
 }
 

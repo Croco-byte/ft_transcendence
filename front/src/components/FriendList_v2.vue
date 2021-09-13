@@ -7,26 +7,34 @@
 ** The displayed users are links leading to their profile pages
 */
 
-import { defineComponent } from 'vue'
+import { defineComponent } from 'vue';
 import authService from '../services/auth.service';
 import UserService from '../services/user.service';
+import UserStatus from '../components/UserStatus.vue';
 import { FriendStatusChangeData } from '../types/friends.interface';
 import { User, UserStatusChangeData } from '../types/user.interface';
 import { PaginationMeta} from '../types/pagination.interface';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 interface FriendListComponentData
 {
 	currUserId: number;
 	friends: User[];
+	avatars: string[];
 	friendsMeta: PaginationMeta;
 }
 
 export default defineComponent({
 	name: 'FriendList',
+	components: {
+		UserStatus
+	},
 	data(): FriendListComponentData {
 		return {
 			currUserId: 0,
 			friends: [],
+			avatars: [],
 			friendsMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
 		}
 	},
@@ -60,6 +68,14 @@ export default defineComponent({
 				response => {
 					ref.friends = response.data.items;
 					ref.friendsMeta = response.data.meta;
+					for (let i = 0; i < ref.friends.length; i++) {
+						UserService.getUserAvatar(ref.friends[i].avatar).then(
+							response => {
+								const urlCreator = window.URL || window.webkitURL;
+								ref.avatars[i] = urlCreator.createObjectURL(response.data);
+							},
+							() => { ref.avatars[i] = "x"; console.log("Couldn't load user's avatar") })
+					}
 					if (ref.friendsMeta.itemCount < 1 && ref.friendsMeta.currentPage > 1) ref.getFriends(ref.friendsMeta.currentPage - 1);
 				},
 				(error) => { console.log("Couldn't retrieve friends from backend: " + error.message); })
@@ -98,6 +114,34 @@ export default defineComponent({
 			if (data.creatorId == this.currUserId || data.receiverId == this.currUserId) {
 				this.getFriends(this.friendsMeta.currentPage);
 			}
+		},
+
+		confirmFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "unfriend") {
+				createToast({
+					title: 'Success',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				})
+			}
+		},
+
+		errorFriendRequest: function(data: { type: string, message: string }): void {
+			if (data.type === "unfriend") {
+				createToast({
+					title: 'Error',
+					description: data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			}
 		}
 	},
 
@@ -111,12 +155,18 @@ export default defineComponent({
 		/* Starting listeners to automatically update the friendlist (status of users and changes in friendship) */
 		this.$store.state.websockets.friendRequestsSocket.on('friendStatusChanged', this.changeFriendRequestStatus);
 		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.on('friendRequestError', this.errorFriendRequest);
 	},
 
 	beforeUnmount(): void {
 		/* Stopping listeners to avoid catching signals after leaving this component */
 		this.$store.state.websockets.friendRequestsSocket.off('friendStatusChanged', this.changeFriendRequestStatus);
 		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
+
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestConfirmation', this.confirmFriendRequest);
+		this.$store.state.websockets.friendRequestsSocket.off('friendRequestError', this.errorFriendRequest);
 	}
 })
 </script>
@@ -125,24 +175,35 @@ export default defineComponent({
 	<div id="yourFriends">
 		<h2>Friends</h2>
 		<div class="friends_item_container">
-			<div class="friend_item" v-for="friend in friends" :key="friend.id">
+			<div class="friend_item" v-for="(friend, index) in friends" :key="friend.id">
 				<div class="score">
-					187
+					{{ friend.score }}
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
-					<img :src="$store.state.avatar"/>
+					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
 					<a :href="'/user/' + friend.id ">{{ friend.displayName }}</a>
 				</p>
-				<p class="watch_button">
+<!--			<p class="watch_button">		This "watch" button should only be displayed when the user has status "in-game"
 					watch
-				</p>
-				<p class="status">
-					online
-				</p>
+				</p> -->
+				<UserStatus :status="friend.status"/>
+				<button class="unfriend_button" v-on:click="unfriendUser(friend.id)">Unfriend</button>
 			</div>
+			<div class="paginationMenu" v-if="friends.length > 0">
+				<p class="pagination">
+					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="getFriends(friendsMeta.currentPage - 1)">Previous</button>
+					<span class="paginationSpan">
+						<form id="goToFriendsPage">
+							<input class="goToFriendsPageInput" name="goToFriendsPageInput" v-model.number="friendsMeta.currentPage" v-on:input="goToFriendsPage">
+						</form>
+					</span>
+					<span class="paginationSpan"> /{{ friendsMeta.totalPages }}</span>
+					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="getFriends(friendsMeta.currentPage + 1)">Next</button>
+				</p>
+		</div>
 		</div>
 	</div>
 </template>
@@ -169,6 +230,42 @@ h2
 	margin-top: 0;
 }
 
+.paginationMenu
+{
+	width: 50%;
+	margin: 0 auto;
+}
+
+.pagination
+{
+	display: inline-block;
+	height: 3rem;
+	width: 100%;
+	text-align: center;
+}
+
+.paginationButtonPrev
+{
+	float: left;
+	line-height: 1.5rem;
+}
+
+.paginationButtonNext
+{
+	float: right;
+	line-height: 1.5rem;
+}
+
+.paginationSpan
+{
+	display: inline-block;
+}
+
+.goToFriendsPageInput
+{
+	width: 30px;
+}
+
 .friends_item_container
 {
 	display: flex;
@@ -187,6 +284,11 @@ h2
 	border: solid 1px #39D88F;
 	background: white;
 	margin: 0.25rem 0;
+}
+
+.friend_item .username
+{
+	width: 50px;
 }
 
 .friend_item .score
@@ -213,8 +315,8 @@ h2
 
 .friend_item img
 {
-	width: auto;
-	height: auto;
+	width: 4rem;
+	height: 4rem;
 	max-width: 4.5rem;
 	max-height: 100%;
 	border-radius: 100%;
@@ -243,23 +345,23 @@ h2
 	margin-right: 0.25rem;
 }
 
-.friend_item .status
+.unfriend_button
 {
-	position: relative;
-	padding-left: 1.25rem;
+	padding: 0.25rem 1rem;
+	background-color: #c40707;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px #c40707;
+	transition: all 0.25s;
 }
 
-.friend_item .status:before
+.unfriend_button:hover
 {
-	content: ' ';
-	position: absolute;
-	top: 50%;
-	left: 0;
-	transform: translateY(-50%);
-	width: 1rem;
-	height: 1rem;
-	background-color: #39D88F;
-	border-radius: 100%;
+	border-color: #c40707;
+	color: #c40707;
+	background-color: white;
 }
 
 </style>

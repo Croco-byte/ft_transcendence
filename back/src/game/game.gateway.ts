@@ -47,7 +47,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		try {
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userDbId: user.id, gameStatus: user.gameStatus };
+			client.data = { userDbId: user.id, userStatus: user.status };
 			this.logger.log(`Client connected (client id: ${client.id})`);
 		} 
 		catch(e) {
@@ -55,7 +55,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.disconnect();
 		}
 
-		if (client.data.gameStatus === 'spectating')
+		if (client.data.userStatus === 'spectating')
 			this.gameService.attributeRoom(client.data.userDbId, client.id);
 	}
 
@@ -68,7 +68,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	handleDisconnect(@ConnectedSocket() client: Socket): void
 	{
 		this.logger.log(`Client disconnected: client id: ${client.id})`);
-		this.usersService.updateGameStatus(client.data.userDbId, 'none');
 		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
@@ -99,8 +98,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		else if (room.nbPeopleConnected === 2) {
 			
-			this.logger.log('starting game');
-
 			this.wss.to(room.name).emit('startingGame');
 
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));

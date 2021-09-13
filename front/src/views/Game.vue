@@ -69,6 +69,7 @@ export default defineComponent({
 
 		gameEnded(endGameInfo: EndGameInfo) : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
 			this.RenderGamePlay = false;
@@ -77,6 +78,7 @@ export default defineComponent({
 
 		opponentLeft(endGameInfo: EndGameInfo) : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
 			this.RenderGamePlay = false;
@@ -144,6 +146,7 @@ export default defineComponent({
 	// un message pour etre sur si il leave.
 	beforeRouteLeave (to, from , next)
 	{
+		// UPDATE PLAYER STATUS TO ONLINE
 		this.socket.emit('disconnectClient');
 		next();
 	}

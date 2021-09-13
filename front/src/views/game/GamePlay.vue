@@ -33,7 +33,6 @@ export default defineComponent({
 	},
 
 	methods: {
-
 		rapport(posY: number) : number 
 		{
 			let ret = 0;
@@ -191,6 +190,7 @@ export default defineComponent({
 	// ---------------------------------------- LIFECIRCLE HOOKS ----------------------
 	mounted()
 	{
+		this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 		this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;

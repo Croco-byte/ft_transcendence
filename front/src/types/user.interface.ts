@@ -4,6 +4,14 @@ export interface User
 	username: string;
 	status: string;
 	displayName: string;
+	avatar?: string;
+	score?: number;
+}
+
+export interface LeaderboardUser
+{
+	user: User;
+	rank: number;
 }
 
 export interface LocalStorageUserInterface

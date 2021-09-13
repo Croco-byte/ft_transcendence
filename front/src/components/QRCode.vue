@@ -1,10 +1,10 @@
 <template>
-	<div id="QRCode" style="text-align: center;">
-		<button type="button" v-if="!QRCode" v-on:click="generateQRCode()">Show QR Code</button>
-		<button type="button" v-if="QRCode" v-on:click="hideQRCode()">Hide QR Code</button>
+	<div id="QRCode">
+		<p> You can use this personal QR code to register the app with Google Authenticator (<b>do not share</b>).</p>
+		<button type="button" class="showButton" v-if="!QRCode" v-on:click="generateQRCode()">Show QR Code</button>
+		<button type="button" class="hideButton" v-if="QRCode" v-on:click="hideQRCode()">Hide QR Code</button>
 	</div>
 	<div v-if="QRCode" style="text-align: center;">
-		<h3 style="text-align: center;">QR code to register the app</h3>
 		<img :src="QRCode" fluid alt="QR code"/>
 	</div>
 </template>
@@ -51,6 +51,41 @@ export default defineComponent({
 
 	#QRCode {
 		padding-top: 5px;
+		text-align: center;
 	}
+
+.showButton {
+	padding: 0.25rem 1rem;
+	background-color: #39d88f;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px #39d88f;
+	transition: all 0.25s;
+}
+
+.showButton:hover {
+	border-color: #39d88f;
+	color: #39d88f;
+	background-color: white;
+}
+
+.hideButton {
+	padding: 0.25rem 1rem;
+	background-color: red;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px red;
+	transition: all 0.25s;
+}
+
+.hideButton:hover {
+	border-color: red;
+	color: red;
+	background-color: white;
+}
 
 </style>
