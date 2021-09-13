@@ -6,7 +6,8 @@
 			<img :src="this.avatarPlayer1" width="200" height="200" alt="Player1Avatar">
 		</div>
 		<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Has disconnected from the game.</p>
-		<p v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score">Winner!</p>
+		<p v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
+			|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Winner!</p>
 		<p v-else>Loser!</p>
 		<p>Score: {{ this.endGameInfo.room.game.p1Score }}</p>
 	</div>
@@ -16,7 +17,8 @@
 			<img :src="avatarPlayer2" width="200" height="200" alt="Player2Avatar">
 		</div>
 		<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Has disconnected from the game.</p>
-		<p v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score">Winner!</p>
+		<p v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
+			|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Winner!</p>
 		<p v-else>Loser!</p>
 		<p>Score: {{ this.endGameInfo.room.game.p2Score }}</p>
 	</div>

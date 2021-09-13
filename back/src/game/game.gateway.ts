@@ -98,8 +98,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		else if (room.nbPeopleConnected === 2) {
 			
-			this.logger.log('starting game');
-
 			this.wss.to(room.name).emit('startingGame');
 
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
