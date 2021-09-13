@@ -1,6 +1,8 @@
 import VueX, { StoreOptions } from 'vuex';
 import authHeader from '../services/auth-header';
 import UserService from '../services/user.service';
+import router from '../router/index';
+import store from './index';
 import { io, Socket } from 'socket.io-client';
 import { RootState } from '../types/store.interface';
 import { LocalStorageUserInterface } from '../types/user.interface';
@@ -23,6 +25,18 @@ let initialState: RootState;
 if (user) {
 	const statusSocket: Socket =  io('http://localhost:3000/connectionStatus', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 	const friendSocket: Socket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
+	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
+		const result = await UserService.getCurrUserId();
+		if (data.userId == result.data.id) {
+			localStorage.removeItem('user');
+			store.state.status.loggedIn = false;
+			store.state.user = null;
+			store.state.avatar = '';
+			if (store.state.websockets.connectionStatusSocket) store.state.websockets.connectionStatusSocket.disconnect();
+			if (store.state.websockets.friendRequestsSocket) store.state.websockets.friendRequestsSocket.disconnect();
+			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+		}
+	})
 	initialState = { status: { loggedIn: true }, user: user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
 
 } else {
