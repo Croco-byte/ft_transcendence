@@ -538,10 +538,15 @@ export class UsersService {
 		try {
 			this.logger.log(`inc loses for userDbId ${userDbId}`);
 
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.loses++;
 			if (user.score > 30) user.score -= 30;
 			else user.score = 0;
+			user = await this.usersRepository.save(user);
+
+			user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`nb of loses is: ${user.loses}`);
+
 			return this.usersRepository.save(user);
 		} 
 		catch (e) {
@@ -563,7 +568,7 @@ export class UsersService {
 			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.roomId = roomId;
 			user = await this.usersRepository.save(user);
-			
+			this.logger.log(`updated roomID for userDbId ${userDbId} is: ${user.roomId}`);
 
 			return user;
 		}

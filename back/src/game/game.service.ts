@@ -99,7 +99,7 @@ export class GameService
 
 	/**
 	 * Updates a room with only player 1 information, with player 2 informations.
-	 * Updates gameStatus to 'inGame' and roomId in database for both players.
+	 * Updates roomId in database for both players.
 	 * 
 	 * @param roomToFill A Room object with information for only one player.
 	 * @param setupChosen Setup chosen by player.
@@ -193,7 +193,7 @@ export class GameService
 	 * @param intervalId Clear the interval if existing.
 	 * @param room Object with game information. Will be updated with new ball / players position.
 	 */
-	updateGame(wss: Socket, intervalId: NodeJS.Timer, room: Room) : boolean
+	async updateGame(wss: Socket, intervalId: NodeJS.Timer, room: Room) : Promise<boolean>
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
@@ -214,9 +214,9 @@ export class GameService
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score) {
 			clearInterval(intervalId);
-			this.removeRoom(wss, intervalId, room);
+			await this.removeRoom(wss, intervalId, room);
 			this.addToMatchHistory(room);
-			return this.updateScores(room);
+			return await this.updateScores(room);
 		}
 		
 		return false;
@@ -230,13 +230,13 @@ export class GameService
 	 * @param playerId Client socket ID.
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	updateScores(room: Room): boolean
+	async updateScores(room: Room): Promise<boolean>
 	{
-		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
-															this.usersService.incUserLoses(room.user1DbId);
+		room.game.p1Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user1DbId) :
+															await this.usersService.incUserLoses(room.user1DbId);
 
-		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
-															this.usersService.incUserLoses(room.user2DbId);
+		room.game.p2Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user2DbId) :
+															await this.usersService.incUserLoses(room.user2DbId);
 
 		return true;
 	}
