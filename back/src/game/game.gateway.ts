@@ -34,12 +34,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	/**
-	 * Connects the user to a room, and when a room is fulfilled with two players, launches the game.
-	 * Game will be proceed as following:
-	 * 		- Allows players to choose game options for x seconds.
-	 * 		- Displays options choosed during x seconds.
-	 * 		- Runs the game.
-	 * 		- Displays end screen when a player won the game or one disconnect.
+	 * Add database id to client object. If the user is has status set to 'spectating', makes him
+	 * join the correct room.
 	 * 
 	 * @param client Will be updated with database id for this user (client.data.userDbId).
 	 */
@@ -55,12 +51,14 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.disconnect();
 		}
 
-		if (client.data.userStatus === 'spectating')
-			this.gameService.attributeRoom(client.data.userDbId, client.id);
+		if (client.data.userStatus === 'spectating') {
+			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
+			client.join(room.name);
+		}
 	}
 
 	/**
-	 * When an user disconnect, updates the database with new status. If it was a player,
+	 * When an user disconnect, updates the database with new roomId. If it was a player,
 	 * emits to everybody from its room to indicate that game is over and removes the room.
 	 * 
 	 * @param client Need to contain user db id (client.data.userDbId).
@@ -71,13 +69,13 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
-
+		
 		if (room && room.name && room.nbPeopleConnected)
 			this.gameService.removeRoom(this.wss, this.intervalId, room, client.id);
 	}
 
 	/**
-	 * Connects the player to a room after it has chosn its game setup option, and when
+	 * Connects the player to a room after it has chosen its game setup option, and when
 	 * a room is fulfilled with two players, launches the game.
 	 * Game will be proceed as following:
 	 * 		- Displays a waiting screen until another player is matched.
@@ -93,10 +91,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
 		client.join(room.name);
 
-		if (room.nbPeopleConnected === 1)
+		if (room.player2Id === '')
 			client.emit('waitingForPlayer');
 		
-		else if (room.nbPeopleConnected === 2) {
+		else if (room.player2Id != '') {
 			
 			this.wss.to(room.name).emit('startingGame');
 

@@ -22,7 +22,7 @@ export const mutations: MutationTree<RootState> = {
 				state.avatar = '';
 				if (state.websockets.connectionStatusSocket) state.websockets.connectionStatusSocket.disconnect();
 				if (state.websockets.friendRequestsSocket) state.websockets.friendRequestsSocket.disconnect();
-				router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+				router.push(({name: 'Home', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 			}
 		})
 		state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });

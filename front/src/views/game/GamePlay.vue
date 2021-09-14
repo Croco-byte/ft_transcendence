@@ -13,6 +13,10 @@ export default defineComponent({
   // checker ball qui sort du bord de l'ecran
 
 	props: {
+		isSpectating: {
+			required: true,
+			type: Boolean,
+		},
 		room: {
 			required: true,
 			type: Object as PropType<Room>
@@ -166,7 +170,7 @@ export default defineComponent({
 		// ---------------------------------------------------- EVENT HANDLER -------------
 		pongEvent()
 		{
-			if (this.canvas){
+			if (this.canvas && !this.isSpectating){
 				this.canvas.addEventListener('mousemove', (event)=> {
 					if (this.canvas){
 						let rect = this.canvas.getBoundingClientRect() as DOMRect;
@@ -190,7 +194,6 @@ export default defineComponent({
 	// ---------------------------------------- LIFECIRCLE HOOKS ----------------------
 	mounted()
 	{
-		this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 		this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;

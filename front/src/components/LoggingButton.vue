@@ -1,40 +1,46 @@
 <template>
-	<p v-if='unauthRedirectMessage !=""' style="color:#FF0000;"><b> {{ unauthRedirectMessage }} </b></p>
-	<div class="buttonLogin" v-if="$store.state.status.loggedIn === false">
-		<button class="cybr-btn" type="button" v-on:click="redirectTo42LoginPage()">
-		Login<span aria-hidden>_</span>
-		<span aria-hidden class="cybr-btn__glitch">Login_</span>
-		<span aria-hidden class="cybr-btn__tag">42</span>
-		</button>
+<div>
+	<p v-if='message !=""' style="color:#FF0000;"><b> {{ message }} </b></p>
+	<div class="buttonLogin">
+		<div v-if="$store.state.status.loggedIn === false">
+			<button class="cybr-btn" type="button" v-on:click="redirectTo42LoginPage()">
+				Login<span aria-hidden>_</span>
+				<span aria-hidden class="cybr-btn__glitch">Login_</span>
+				<span aria-hidden class="cybr-btn__tag">42</span>
+			</button>
+		</div>
+		<div v-else>
+			<button class="cybr-btn" type="button" v-on:click="logout()">
+				Logout<span aria-hidden>_</span>
+				<span aria-hidden class="cybr-btn__glitch">Logout_</span>
+				<span aria-hidden class="cybr-btn__tag">42</span>
+			</button>
+		</div>
 	</div>
-	<div v-else>
-		<p> You're already logged in <b> {{ $store.state.username }} </b></p>
-	</div>
+</div>
 </template>
 
 
 
 <script lang="ts">
 
-/* This is the view of the login page. The only purpose it to allow the user to reach the
+/* This is the login component. The only purpose it to allow the user to reach the
 ** OAuth page on the 42 API for our application.
 */
 
-import { defineComponent } from 'vue'
+import { defineComponent, watch } from 'vue'
 
-interface LoginViewData
-{
-	unauthRedirectMessage: string;
-}
 
 export default defineComponent({
 	name: 'Login',
-	components: {
+
+	props: {
+		message: {
+			type: String,
+		},
 	},
-	data(): LoginViewData {
-		return {
-			unauthRedirectMessage: this.$route.params.message as string || '',
-		}
+
+	components: {
 	},
 
 	methods: {
@@ -42,12 +48,12 @@ export default defineComponent({
 			const user = localStorage.getItem('user');
 			if (!user) { window.location.href = 'https://api.intra.42.fr/oauth/authorize?client_id=0b89162db303f29dcbedf6e2d4261b99f32afcac2930e8f7f4bcd2ac3af9bd6d&redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Fauth%2Foauth_callback&response_type=code&scope=public&state=T35KLszNwBy2ta5gZieh' }
 			else { this.$router.go(0); }
+		},
+
+		logout() : void {
+			this.$store.dispatch('logout');
 		}
 	},
-	
-	updated(): void {
-		this.unauthRedirectMessage = this.$route.params.message as string;
-	}
 })
 </script>
 

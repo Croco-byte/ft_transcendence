@@ -515,6 +515,8 @@ export class UsersService {
 	async incUserWins(userDbId: number): Promise<User>
 	{
 		try {
+			this.logger.log(`inc wins for userDbId ${userDbId}`);
+
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } })
 			user.wins++;
 			user.score += 50;
@@ -534,10 +536,17 @@ export class UsersService {
 	async incUserLoses(userDbId: number): Promise<User>
 	{
 		try {
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`inc loses for userDbId ${userDbId}`);
+
+			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.loses++;
 			if (user.score > 30) user.score -= 30;
 			else user.score = 0;
+			user = await this.usersRepository.save(user);
+
+			user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`nb of loses is: ${user.loses}`);
+
 			return this.usersRepository.save(user);
 		} 
 		catch (e) {
@@ -549,16 +558,21 @@ export class UsersService {
 	 * Update the room ID for a specific user.
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
-	 * @param newStatus Should be a room ID or 'none' in case of a reset.
+	 * @param roomId Should be a room ID or 'none' in case of a reset.
 	 * @return Promise with the User object updated in database.
 	 */
 	async updateRoomId(userDbId: number, roomId: string): Promise<User>
 	{
 		try {
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`updating roomID for userDbId ${userDbId} with: ${roomId}`);
+			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.roomId = roomId;
-			return this.usersRepository.save(user);
-		} catch(e) {
+			user = await this.usersRepository.save(user);
+			this.logger.log(`updated roomID for userDbId ${userDbId} is: ${user.roomId}`);
+
+			return user;
+		}
+		catch(e) {
 			this.logger.log('Could\'t find user required in order to update room ID');
 		}
 	}

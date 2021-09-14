@@ -89,6 +89,8 @@ export class GameService
 		const roomToFill: Room = this.rooms.find(el => el.nbPeopleConnected === 1 && 
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
+		this.logger.log(`roomToFIll = ${roomToFill}`);
+
 		if (roomToFill) 
 			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
@@ -97,7 +99,7 @@ export class GameService
 
 	/**
 	 * Updates a room with only player 1 information, with player 2 informations.
-	 * Updates gameStatus to 'inGame' and roomId in database for both players.
+	 * Updates roomId in database for both players.
 	 * 
 	 * @param roomToFill A Room object with information for only one player.
 	 * @param setupChosen Setup chosen by player.
@@ -107,13 +109,17 @@ export class GameService
 	 */
 	playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Room
 	{
+		this.logger.log(`in playerjoin func`);
+
 		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
 		
+		this.logger.log(`Updating room id for both players`);
+
 		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
-		this.usersService.updateRoomId(roomToFill.user2DbId, playerId);
+		this.usersService.updateRoomId(roomToFill.user2DbId, roomToFill.name);
 		return roomToFill;
 	}
 
@@ -187,7 +193,7 @@ export class GameService
 	 * @param intervalId Clear the interval if existing.
 	 * @param room Object with game information. Will be updated with new ball / players position.
 	 */
-	updateGame(wss: Socket, intervalId: NodeJS.Timer, room: Room) : boolean
+	async updateGame(wss: Socket, intervalId: NodeJS.Timer, room: Room) : Promise<boolean>
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
@@ -208,9 +214,9 @@ export class GameService
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score) {
 			clearInterval(intervalId);
-			this.removeRoom(wss, intervalId, room);
+			await this.removeRoom(wss, intervalId, room);
 			this.addToMatchHistory(room);
-			return this.updateScores(room);
+			return await this.updateScores(room);
 		}
 		
 		return false;
@@ -224,13 +230,13 @@ export class GameService
 	 * @param playerId Client socket ID.
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	updateScores(room: Room): boolean
+	async updateScores(room: Room): Promise<boolean>
 	{
-		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
-															this.usersService.incUserLoses(room.user1DbId);
+		room.game.p1Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user1DbId) :
+															await this.usersService.incUserLoses(room.user1DbId);
 
-		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
-															this.usersService.incUserLoses(room.user2DbId);
+		room.game.p2Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user2DbId) :
+															await this.usersService.incUserLoses(room.user2DbId);
 
 		return true;
 	}
@@ -411,11 +417,26 @@ export class GameService
 	 */
 	private async resetEndGameInfo(_room: Room, _clientId?: string) : Promise<EndGameInfo>
 	{
-		return {
-			clientId: _clientId,
-			p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
-			p2DbInfo: await this.resetPlayerDbInfo(_room.user2DbId),
-			room: _room,
+		if (_room.player2Id != '')
+		{
+			this.logger.log(`reseting database room for 2 players`);
+			return {
+				clientId: _clientId,
+				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
+				p2DbInfo: await this.resetPlayerDbInfo(_room.user2DbId),
+				room: _room,
+			}
+		}
+		
+		else
+		{
+			this.logger.log(`reseting database room for 1 players`);
+			return {
+				clientId: _clientId,
+				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
+				p2DbInfo: { username: '', avatar: '' },
+				room: _room,
+			}
 		}
 	}
 
@@ -425,7 +446,8 @@ export class GameService
 	private async resetPlayerDbInfo(userDbId: number) : Promise<PlayerDbInfo>
 	{
 		try {
-			const user = await this.usersService.findUserById(userDbId);
+			this.logger.log(`in resetPlayerDBInfo: userDBId = ${userDbId}`)
+			const user = await this.usersService.updateRoomId(userDbId, 'none');
 			return {
 				username: user.username,
 				avatar: user.avatar,
@@ -509,8 +531,6 @@ export class GameService
 	 */
 	private resetSetup(setupChosen: Setup) : Setup
 	{
-		this.logger.log(`level = ${setupChosen.level} score = ${setupChosen.score}`)
-
 		return {
 			level: setupChosen.level,
 			score: setupChosen.score,

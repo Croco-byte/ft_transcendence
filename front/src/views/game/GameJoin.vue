@@ -15,8 +15,8 @@ export default defineComponent({
 
 	props: {
 		isStarting: {
-		required: true,
-		type: Boolean,
+			required: true,
+			type: Boolean,
 		}
 	},
 
@@ -29,9 +29,8 @@ export default defineComponent({
 		}
 	},
 
-	mounted() {
-		this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
-
+	mounted()
+	{
 		if (this.isStarting) 
 			this.updateHtmlText('msg', 'Player found! Game will start soon.');
 
