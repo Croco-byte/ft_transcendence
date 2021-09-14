@@ -517,10 +517,16 @@ export class UsersService {
 		try {
 			this.logger.log(`inc wins for userDbId ${userDbId}`);
 
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } })
+			let user = await this.usersRepository.findOne({ where: { id: userDbId } })
 			user.wins++;
 			user.score += 50;
-			return this.usersRepository.save(user);
+
+			user = await this.usersRepository.save(user);
+			this.logger.log(`users wins after save = ${user.wins}`)
+			let user2 = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`users wins after save and searching by id = ${user2.wins}`)
+			
+			return user;
 		} 
 		catch (e) {
 			this.logger.log('Couldn\'t find user required in order to increment wins');
@@ -542,12 +548,13 @@ export class UsersService {
 			user.loses++;
 			if (user.score > 30) user.score -= 30;
 			else user.score = 0;
+
 			user = await this.usersRepository.save(user);
-
-			user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			this.logger.log(`nb of loses is: ${user.loses}`);
-
-			return this.usersRepository.save(user);
+			this.logger.log(`users loses after save = ${user.loses}`)
+			let user2 = await this.usersRepository.findOne({ where: { id: userDbId } });
+			this.logger.log(`users loses after save and searching by id = ${user2.loses}`)
+			
+			return user;
 		} 
 		catch (e) {
 			this.logger.log('Couldn\'t find user required in order to increment loses');
@@ -567,10 +574,7 @@ export class UsersService {
 			this.logger.log(`updating roomID for userDbId ${userDbId} with: ${roomId}`);
 			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.roomId = roomId;
-			user = await this.usersRepository.save(user);
-			this.logger.log(`updated roomID for userDbId ${userDbId} is: ${user.roomId}`);
-
-			return user;
+			return await this.usersRepository.save(user);
 		}
 		catch(e) {
 			this.logger.log('Could\'t find user required in order to update room ID');

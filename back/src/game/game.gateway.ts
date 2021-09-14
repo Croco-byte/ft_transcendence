@@ -58,20 +58,33 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	/**
-	 * When an user disconnect, updates the database with new roomId. If it was a player,
+	 * When an user disconnect, reset in database his roomId. If it was a player,
 	 * emits to everybody from its room to indicate that game is over and removes the room.
 	 * 
 	 * @param client Need to contain user db id (client.data.userDbId).
 	 */
-	handleDisconnect(@ConnectedSocket() client: Socket): void
+	async handleDisconnect(@ConnectedSocket() client: Socket): Promise<void>
 	{
 		this.logger.log(`Client disconnected: client id: ${client.id})`);
-		this.usersService.updateRoomId(client.data.userDbId, 'none');
-		
+
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
+		const user = await this.usersService.findUserById(client.data.userDbId)
 		
-		if (room && room.name && room.nbPeopleConnected)
-			this.gameService.removeRoom(this.wss, this.intervalId, room, client.id);
+		if (room && user.status === 'in-game') {
+			clearInterval(this.intervalId);
+			await this.gameService.updateScores(this.wss, room, client.id);
+		}
+		
+		else if (room && room.player2Id != '') {
+			this.wss.to(room.name).emit('resetMatchmaking');
+			this.gameService.removeRoom(this.wss, room);
+		}
+		
+		else if (room)
+			this.gameService.removeRoom(this.wss, room);
+
+		else
+			await this.usersService.updateRoomId(client.data.userDbId, 'none');
 	}
 
 	/**
@@ -95,18 +108,31 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.emit('waitingForPlayer');
 		
 		else if (room.player2Id != '') {
-			
-			this.wss.to(room.name).emit('startingGame');
 
+			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
+			this.wss.to(room.name).emit('startingGame', true);
 
-			this.intervalId = setInterval(() => {
-				this.wss.to(room.name).emit('actualizeGameScreen', room);
+			// To prevent to launch the game if one player left during starting game screen
+			if (this.gameService.findRoomByPlayerId(client.id))
+			{
+				await this.gameService.launchGame(this.wss, room, this.intervalId);
+				await this.gameService.updateScores(this.wss, room);
+			}
 
-				if (this.gameService.updateGame(this.wss, this.intervalId, room))
-					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
-					
-			}, this.gameService.FRAMERATE);
+			
+			// 	this.intervalId = setInterval(async () => {
+
+			// 		this.logger.log('LAUCHING GAME BITCH');
+
+			// 		this.wss.to(room.name).emit('actualizeGameScreen', room);
+
+			// 		if (this.gameService.updateGame(this.intervalId, room)) {
+			// 			clearInterval(this.intervalId);
+			// 			await this.gameService.updateScores(this.wss, room);
+			// 		}
+			// 	}, this.gameService.FRAMERATE);
+			// }
 		}
 	}
 

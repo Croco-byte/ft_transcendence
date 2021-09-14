@@ -62,12 +62,16 @@ export default defineComponent({
 			this.RenderGameJoin = true;
 		},
 		
-		startingGame() : void
+		startingGame(inGame: boolean) : void
 		{
-			this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
-			this.RenderGameOption = false;
-			this.RenderGameJoin = true;
-			this.isStarting = true;
+			if (!inGame) {
+				this.RenderGameOption = false;
+				this.RenderGameJoin = true;
+				this.isStarting = true;
+			}
+			
+			else
+				this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
 		},
 
 		actualizeGameScreen(room: Room) : void
@@ -136,8 +140,8 @@ export default defineComponent({
 				this.waitingForPlayer();
 			});
 
-			this.socket.on('startingGame', () => {
-				this.startingGame();
+			this.socket.on('startingGame', (inGame: boolean) => {
+				this.startingGame(inGame);
 			});
 
 			this.socket.on('actualizeGameScreen', (room: Room) => {
