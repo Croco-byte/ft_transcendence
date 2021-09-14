@@ -9,14 +9,21 @@
 	<div v-else>
 		<p>You're not logged in yet :(</p>
 	</div>
+	<div class="leaderboard">
+		<Leaderboard/>
+	</div>
 </template>
 
 <script lang="ts">
 
 import { defineComponent } from 'vue';
+import Leaderboard from '../components/Leaderboard.vue';
 
 export default defineComponent ({
 	name: 'Home',
+	components: {
+		Leaderboard
+	},
 	methods: {
 		logout: function() {
 			this.$store.dispatch('logout').then(() => {
@@ -25,3 +32,13 @@ export default defineComponent ({
 	}
 })
 </script>
+
+<style scoped>
+
+.leaderboard
+{
+	width: 50%;
+	height: 50%;
+}
+
+</style>

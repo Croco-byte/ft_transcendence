@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { Channel } from 'src/channels/channel.entity';
-import { Channel_muted_user } from 'src/channel_muted_users/channel_muted_user.entity';
 import { Message } from 'src/messages/message.entity';
 import { FriendRequestEntity } from './friends-request.entity';
 import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, BaseEntity, OneToMany } from 'typeorm';
+import { MatchHistoryEntity } from 'src/users/match-history.entity';
 
 @Entity()
 export class User extends BaseEntity
@@ -17,10 +17,7 @@ export class User extends BaseEntity
 	@Column({ default: "default" })
 	avatar: string;
 
-	@Column({ type: "text", nullable: true})
-	stat: string;
-
-	@Column({ type: "integer", nullable: false, default: 0})
+	@Column({ type: "integer", nullable: true, default: 500})
 	score: number
 
 	@Column({ default: 'offline' })
@@ -53,6 +50,12 @@ export class User extends BaseEntity
 
 	@OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.receiver)
 	receivedFriendRequests?: FriendRequestEntity[];
+
+	@OneToMany(() => MatchHistoryEntity, (matchHistoryEntity) => matchHistoryEntity.winner)
+	matchesWon?: MatchHistoryEntity[];
+
+	@OneToMany(() => MatchHistoryEntity, (matchHistoryEntity) => matchHistoryEntity.looser)
+	matchesLost?: MatchHistoryEntity[];
 
 	@Column({ default: 0 })
 	wins: number;

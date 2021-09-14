@@ -2,7 +2,11 @@
 	<p>
 		<span v-if="status === 'online'" class="online">online</span>
 		<span v-if="status === 'offline'" class="offline">offline</span>
-		<span v-if="status === 'in-game'" class="in-game">in game</span>
+		<span v-if="status === 'in-queue'" class="in-queue">in queue</span>
+		<span v-if="status === 'in-game'">
+			<span class="in-game">in game</span>
+			<button>watch</button>
+		</span>
 	</p>
 </template>
 
@@ -27,6 +31,12 @@ export default defineComponent({
 }
 
 .offline
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
+
+.in-queue
 {
 	position: relative;
 	padding-left: 1.25rem;
@@ -77,5 +87,26 @@ export default defineComponent({
 	border-radius: 100%;
 }
 
+.in-queue::before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #00b4cc;
+	border-radius: 100%;
+}
+
+button
+{
+	background: red;
+    padding: 0.25rem 1rem;
+    border-radius: 5rem;
+    color: white;
+    cursor: pointer;
+}
 
 </style>

@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundException, Query, BadRequestException, UseInterceptors, UploadedFile, ForbiddenException } from "@nestjs/common";
-import { Pagination } from "nestjs-typeorm-paginate";
-import { Observable } from "rxjs";
+import { paginate, Pagination } from "nestjs-typeorm-paginate";
+import { from, map, Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
 import { FriendRequest, FriendRequestStatus } from "./friend-request.interface";
 import { UserStatus, User_Status } from "./status.interface";
@@ -9,11 +9,16 @@ import { User } from "./users.entity";
 import { UsersService } from "./users.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
+import { UserWithRank } from "./user.interface";
+import { MatchHistoryEntity } from "src/users/match-history.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
 
 @Controller('/user')
 export class UserController {
-	constructor(private readonly userService: UsersService) {}
+	constructor(private readonly userService: UsersService, @InjectRepository(MatchHistoryEntity)
+	private matchHistoryRepository: Repository<MatchHistoryEntity>,) {}
 
 	/* ==== Endpoints related to the current user ==== */
 
@@ -55,6 +60,39 @@ export class UserController {
 		}
 	}
 
+	/* This shouldn't be implemented here, but idk why I can't inject the MatchHistoryEntity repository in the UsersService */
+	@Get('history/me')
+	@UseGuards(JwtTwoFactorGuard)
+	getCurrUserHistory(
+		@Query('limit') limit: number = 10,
+		@Query('page') page: number = 1,
+		@Query('username') username: string,
+		@Req() req): Observable<Pagination<MatchHistoryEntity>> {
+			return from(paginate(this.matchHistoryRepository, { page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/history/me' }, {
+				where: [{ winner: req.user }, { looser: req.user }],
+				relations: ['winner', 'looser'],
+				order: {time: 'DESC'},
+				select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time', 'gameOptions']
+			})).pipe(
+				map((matchHistoryPageable: Pagination<MatchHistoryEntity>) => {
+					var items = [];
+					matchHistoryPageable.items.forEach(function(element) { 
+						delete element.winner.twoFactorAuthenticationSecret;
+						delete element.winner.isTwoFactorAuthenticationEnabled;
+						delete element.looser.twoFactorAuthenticationSecret;
+						delete element.looser.isTwoFactorAuthenticationEnabled;
+						items.push(element);
+					});
+					var historyPageable: Pagination<MatchHistoryEntity> = {
+						items: items,
+						links: matchHistoryPageable.links,
+						meta: matchHistoryPageable.meta
+					};
+					return historyPageable;
+				})
+			)
+	}
+// 
 	/* Allows to change the current user display name */
 	@Post('displayName')
 	@UseGuards(JwtTwoFactorGuard)
@@ -109,6 +147,16 @@ export class UserController {
 		}
 	}
 
+	/* Paginated display of all users, ordered by score */
+	@Get('users/leaderboard')
+	paginateUsersOrderByScore(
+		@Query('limit') limit: number = 10,
+		@Query('page') page: number = 1,
+	): Promise<Pagination<UserWithRank>> {
+		limit = limit > 100 ? 100 : limit;
+		return this.userService.paginateUsersOrderByScore({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users/leaderboard' });
+	}
+
 	/* Get public informations about a particular user (whose ID is in the URL) */
 	@Get(':userId')
 	@UseGuards(JwtTwoFactorGuard)
@@ -124,9 +172,9 @@ export class UserController {
 
 	/* Get the avatar located at a specified path (context : we got the informations about a particular user
 	** with "findUserById", including the path of his avatar. We now request the avatar from this path)
+	** No JWT Guard on this route
 	*/
 	@Post('/avatar')
-	@UseGuards(JwtTwoFactorGuard)
 	getUserAvatarFromPath(@Body() pathInfo: { path: string }, @Res() res) {
 		try {
 			res.sendFile(pathInfo.path, { root: 'images' })

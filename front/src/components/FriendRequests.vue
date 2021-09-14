@@ -269,7 +269,7 @@ export default defineComponent({
 		<div class="friends_item_container" v-if="mode == 'received'">
 			<div class="friend_item" v-for="(request, index) in receivedRequests" :key="request.id">
 				<div class="score">
-					187
+					{{ request.creator.score }}
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
@@ -303,7 +303,7 @@ export default defineComponent({
 		<div class="friends_item_container" v-if="mode == 'sent'">
 			<div class="friend_item" v-for="(request, index) in sentRequests" :key="request.id">
 				<div class="score">
-					187
+					{{ request.receiver.score }}
 					<i class="fas fa-trophy"></i>
 				</div>
 				<div class="image">
@@ -434,6 +434,11 @@ h2
 	border: solid 1px #39D88F;
 	background: white;
 	margin: 0.25rem 0;
+}
+
+.friend_item .username
+{
+	width: 50px;
 }
 
 .friend_item .score
