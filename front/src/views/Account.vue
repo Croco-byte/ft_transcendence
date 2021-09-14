@@ -184,6 +184,7 @@ export default defineComponent({
 				this.score = response.data.score;
 				this.wins = response.data.wins;
 				this.loses = response.data.loses;
+				this.status = response.data.status;
 		},
 		() => { console.log("Error in retrieving the informations for the current user"); })
 
