@@ -38,7 +38,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 			const user = await this.authService.validateToken(client.handshake.query.token as string);
 			console.log("Client with ID " + user.id + " connecting to status websocket server");
 			client.data = { userId: user.id, username: user.username };
-			if (user.status !== "offline") this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id });
+			if (user.status !== "offline") { this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id }); }
 			else {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
 				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
