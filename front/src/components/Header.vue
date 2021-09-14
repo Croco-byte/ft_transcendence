@@ -28,6 +28,7 @@
 import { defineComponent } from 'vue';
 import NavLink from './NavLink.vue';
 import userService from '../services/user.service';
+import { RouteLocation } from 'vue-router';
 
 export default defineComponent({
 	name: 'Header',
@@ -36,10 +37,10 @@ export default defineComponent({
 		NavLink,
 	},
 
-	data()
+	data() : {mode: string}
 	{
 		return {
-			mode : 'page'
+			mode : 'page',
 		}
 	},
 
@@ -53,7 +54,8 @@ export default defineComponent({
 
 	mounted()
 	{
-		if (this.$store.state.status.loggedIn === true) {
+		if (this.$store.state.status.loggedIn === true)
+		{
 			userService.getCurrUserAvatar().then(
 				response => {
 					const urlCreator = window.URL || window.webkitURL;
@@ -61,6 +63,13 @@ export default defineComponent({
 				},
 				() => { console.log("Couldn't get user avatar from backend"); }
 			)
+		}
+	},
+	watch:
+	{
+		$route: function(new_route: RouteLocation)
+		{
+			this.mode = 'page';
 		}
 	}
 });
@@ -130,6 +139,8 @@ export default defineComponent({
 		.links_container
 		{
 			position: fixed;
+			top: 0;
+			left: 0;
 			flex-direction: column;
 			transform: translateX(-100%);
 			transition: all 0.25s ease-out;
@@ -147,6 +158,7 @@ export default defineComponent({
 			text-align: center;
 			justify-content: center;
 			align-items: center;
+			box-shadow: 10px 0px 15px 5px rgba(0,0,0,0.5);
 			transform: translateX(0);
 		}
 

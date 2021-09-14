@@ -37,8 +37,9 @@ export default defineComponent ({
 
 .leaderboard
 {
-	width: 50%;
+	width: 60%;
 	height: 50%;
+	margin: 0 auto;
 }
 
 </style>
