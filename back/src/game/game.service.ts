@@ -116,8 +116,10 @@ export class GameService
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
 		
+		this.logger.log(`Updating room id for both players`);
+
 		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
-		this.usersService.updateRoomId(roomToFill.user2DbId, playerId);
+		this.usersService.updateRoomId(roomToFill.user2DbId, roomToFill.name);
 		return roomToFill;
 	}
 
@@ -415,21 +417,27 @@ export class GameService
 	 */
 	private async resetEndGameInfo(_room: Room, _clientId?: string) : Promise<EndGameInfo>
 	{
-		if (_room.nbPeopleConnected > 1)
+		if (_room.player2Id != '')
+		{
+			this.logger.log(`reseting database room for 2 players`);
 			return {
 				clientId: _clientId,
 				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
 				p2DbInfo: await this.resetPlayerDbInfo(_room.user2DbId),
 				room: _room,
 			}
+		}
 		
 		else
+		{
+			this.logger.log(`reseting database room for 1 players`);
 			return {
 				clientId: _clientId,
 				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
 				p2DbInfo: { username: '', avatar: '' },
 				room: _room,
 			}
+		}
 	}
 
 	/**
@@ -439,7 +447,7 @@ export class GameService
 	{
 		try {
 			this.logger.log(`in resetPlayerDBInfo: userDBId = ${userDbId}`)
-			const user = await this.usersService.findUserById(userDbId);
+			const user = await this.usersService.updateRoomId(userDbId, 'none');
 			return {
 				username: user.username,
 				avatar: user.avatar,

@@ -98,6 +98,19 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	}
 
 	@UseGuards(WsJwtGuard)
+	@SubscribeMessage('getSpectating')
+	async handleSpectating(client: Socket, data: any): Promise<void> {
+		try {
+			await this.userService.changeUserStatus(client.data.userId, 'spectating');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'spectating' });
+		} catch (e) {
+			this.logger.log(e.message);
+			throw new WsException(e.message);
+		}
+	}
+
+
+	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {
 		if (data.currUserId !== client.data.userId) {

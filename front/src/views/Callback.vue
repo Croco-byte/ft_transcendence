@@ -44,7 +44,7 @@ export default defineComponent({
 			} catch(error) {
 				this.$store.commit('loginFailure');
 				const errMessage = "Something went wrong. Please try again later."
-				this.$router.push({name: 'Login', params: { message: errMessage }});
+				this.$router.push({name: 'Home', params: { message: errMessage }});
 			}
 		}
 	},

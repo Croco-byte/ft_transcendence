@@ -49,6 +49,7 @@ export default defineComponent({
 
 		launchSpectate() : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', {});
 			this.RenderGameOption = false;
 			this.RenderGamePlay = true;
 			this.isSpectating = true;
@@ -56,12 +57,14 @@ export default defineComponent({
 		
 		waitingForPlayer() : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
 			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 		},
 		
 		startingGame() : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
 			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 			this.isStarting = true;

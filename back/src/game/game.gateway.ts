@@ -69,7 +69,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		this.usersService.updateRoomId(client.data.userDbId, 'none');
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
-
+		
 		if (room && room.name && room.nbPeopleConnected)
 			this.gameService.removeRoom(this.wss, this.intervalId, room, client.id);
 	}
