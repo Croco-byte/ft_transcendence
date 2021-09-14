@@ -34,7 +34,7 @@ if (user) {
 			store.state.avatar = '';
 			if (store.state.websockets.connectionStatusSocket) store.state.websockets.connectionStatusSocket.disconnect();
 			if (store.state.websockets.friendRequestsSocket) store.state.websockets.friendRequestsSocket.disconnect();
-			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+			router.push(({name: 'Home', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
 		}
 	})
 	initialState = { status: { loggedIn: true }, user: user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };

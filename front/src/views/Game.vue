@@ -1,10 +1,10 @@
 <template>
-	<div class="game">
+	<div id="game">
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
 		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
 		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
 		<!-- <GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)" @resetIsStarting="resetIsStarting($event)"></GameEnd> -->
-		<GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
+		<GameEnd v-if="RenderGameEnd" :isSpectating="isSpectating" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
 	</div>
 </template>
 
@@ -35,6 +35,7 @@ export default defineComponent({
 			RenderGamePlay: false as boolean,
 			RenderGameEnd: false as boolean,
 			isStarting: false as boolean,
+			isSpectating: false as boolean,
 			backColor: 'orange' as string,
 			gameID: 0 as number,
 		}
@@ -45,14 +46,25 @@ export default defineComponent({
 	{
 		// ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
+
+		launchSpectate() : void
+		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', {});
+			this.RenderGameOption = false;
+			this.RenderGamePlay = true;
+			this.isSpectating = true;
+		},
+		
 		waitingForPlayer() : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
 			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 		},
 		
 		startingGame() : void
 		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
 			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 			this.isStarting = true;
@@ -152,3 +164,11 @@ export default defineComponent({
 	}
 })
 </script>
+
+<style>
+
+body {
+	background-color: #4F4F4F;
+}
+
+</style>

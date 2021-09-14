@@ -55,6 +55,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'online');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
+			this.logger.log('status changed to online');
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -67,6 +68,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
+			this.logger.log('status changed to offline');
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -79,6 +81,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'in-game');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-game' });
+			this.logger.log('status changed to ingame');
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -91,11 +94,26 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'in-queue');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-queue' });
+			this.logger.log('status changed to in-queue');
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
 		}
 	}
+
+	@UseGuards(WsJwtGuard)
+	@SubscribeMessage('getSpectating')
+	async handleSpectating(client: Socket, data: any): Promise<void> {
+		try {
+			await this.userService.changeUserStatus(client.data.userId, 'spectating');
+			this.wss.emit('statusChange', { userId: client.data.userId, status: 'spectating' });
+			this.logger.log('status changed to spectating');
+		} catch (e) {
+			this.logger.log(e.message);
+			throw new WsException(e.message);
+		}
+	}
+
 
 	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('checkForJWTChanges')

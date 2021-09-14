@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import Home from '../views/Home.vue'
 import store from '../store'
 
 const ifAuthenticated = (from, to, next) =>
@@ -8,7 +7,7 @@ const ifAuthenticated = (from, to, next) =>
 		next();
 		return ;
 	}
-	next({name: 'Login', params: { message: 'Please login first !' }} );
+	next({name: 'Home', params: { message: 'Please login first !' }} );
 }
 
 const routes = [
@@ -22,11 +21,6 @@ const routes = [
 		name: 'Game',
 		component: () => import('../views/Game.vue'),
 		beforeEnter: ifAuthenticated
-	},
-	{
-		path: '/login',
-		name: 'Login',
-		component: () => import('../views/Login.vue')
 	},
 	{
 		path: '/auth/oauth_callback',
