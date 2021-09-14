@@ -23,7 +23,7 @@
 		<p>Score: {{ this.endGameInfo.room.game.p2Score }}</p>
 	</div>
 	<div class="play-again">
-		<button @click="playingAgain()">PLAY AGAIN</button>
+		<button id="button-play-again" @click="playingAgain()">PLAY AGAIN</button>
 	</div>
 </div>
 </template>
@@ -41,6 +41,10 @@ export default defineComponent ({
 	emits: ["playAgain"],
 	
 	props: {
+		isSpectating: {
+			required: true,
+			type: Boolean,
+		},
 		endGameInfo: {
 			required: true,
 			type: Object as PropType<EndGameInfo>
@@ -74,8 +78,23 @@ export default defineComponent ({
 	},
 
 	async created() {
+		console.log(`player1 ID : ${this.endGameInfo.room.player1Id}`);
+		console.log(`player2 ID : ${this.endGameInfo.room.player2Id}`);
+		console.log(`player1 DBID : ${this.endGameInfo.room.user1DbId.toString()}`);
+		console.log(`player2 DBID : ${this.endGameInfo.room.user2DbId.toString()}`);
+		console.log(`player1 username : ${this.endGameInfo.p1DbInfo.username}`);
+		console.log(`player2 username : ${this.endGameInfo.p2DbInfo.username}`);
+
 		this.loadAvatar(this.endGameInfo.room.user1DbId.toString());
 		this.loadAvatar(this.endGameInfo.room.user2DbId.toString());
+	},
+
+	mounted()
+	{
+		if (this.isSpectating) {
+			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
+			buttonPlayingAgain.innerHTML = "FINISH SPECTATING AND START A MATCH";
+		}
 	}
 })
 

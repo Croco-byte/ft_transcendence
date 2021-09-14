@@ -34,12 +34,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	/**
-	 * Connects the user to a room, and when a room is fulfilled with two players, launches the game.
-	 * Game will be proceed as following:
-	 * 		- Allows players to choose game options for x seconds.
-	 * 		- Displays options choosed during x seconds.
-	 * 		- Runs the game.
-	 * 		- Displays end screen when a player won the game or one disconnect.
+	 * Add database id to client object. If the user is has status set to 'spectating', makes him
+	 * join the correct room.
 	 * 
 	 * @param client Will be updated with database id for this user (client.data.userDbId).
 	 */
@@ -55,8 +51,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.disconnect();
 		}
 
-		if (client.data.userStatus === 'spectating')
-			this.gameService.attributeRoom(client.data.userDbId, client.id);
+		if (client.data.userStatus === 'spectating') {
+			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
+			client.join(room.name);
+		}
 	}
 
 	/**

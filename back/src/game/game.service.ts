@@ -89,6 +89,8 @@ export class GameService
 		const roomToFill: Room = this.rooms.find(el => el.nbPeopleConnected === 1 && 
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
+		this.logger.log(`roomToFIll = ${roomToFill}`);
+
 		if (roomToFill) 
 			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
@@ -107,6 +109,8 @@ export class GameService
 	 */
 	playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Room
 	{
+		this.logger.log(`in playerjoin func`);
+
 		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
@@ -411,12 +415,21 @@ export class GameService
 	 */
 	private async resetEndGameInfo(_room: Room, _clientId?: string) : Promise<EndGameInfo>
 	{
-		return {
-			clientId: _clientId,
-			p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
-			p2DbInfo: await this.resetPlayerDbInfo(_room.user2DbId),
-			room: _room,
-		}
+		if (_room.nbPeopleConnected > 1)
+			return {
+				clientId: _clientId,
+				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
+				p2DbInfo: await this.resetPlayerDbInfo(_room.user2DbId),
+				room: _room,
+			}
+		
+		else
+			return {
+				clientId: _clientId,
+				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
+				p2DbInfo: { username: '', avatar: '' },
+				room: _room,
+			}
 	}
 
 	/**
@@ -425,6 +438,7 @@ export class GameService
 	private async resetPlayerDbInfo(userDbId: number) : Promise<PlayerDbInfo>
 	{
 		try {
+			this.logger.log(`in resetPlayerDBInfo: userDBId = ${userDbId}`)
 			const user = await this.usersService.findUserById(userDbId);
 			return {
 				username: user.username,
@@ -508,8 +522,6 @@ export class GameService
 	 */
 	private resetSetup(setupChosen: Setup) : Setup
 	{
-		this.logger.log(`level = ${setupChosen.level} score = ${setupChosen.score}`)
-
 		return {
 			level: setupChosen.level,
 			score: setupChosen.score,

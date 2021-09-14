@@ -3,6 +3,7 @@ import { Injectable, BadRequestException, UnauthorizedException, ForbiddenExcept
 import { HttpService } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { User } from '../users/users.entity';
 
@@ -10,6 +11,8 @@ import { User } from '../users/users.entity';
 @Injectable()
 export class AuthService {
 	constructor(private readonly httpService: HttpService, private readonly jwtService: JwtService, private readonly configService: ConfigService) {}
+
+	private logger: Logger = new Logger('AuthService');
 
 	/* This function allows to authenticate the user. It takes the code returned by 42 OAuth, and verifies that it is valid
 	** by retrieving an OAuth token with it. Once we confirmed the validity of the code, this means that the user correctly
@@ -33,7 +36,7 @@ export class AuthService {
 			const infos = await this.getInfoFromAPI(result.access_token);
 			const existingUser = await User.findOne({ where: { username: infos.username } });
 			if (!existingUser) {
-				console.log("We don\'t have the user " + infos.username + ". Creating it in database.");
+				this.logger.log("We don\'t have the user " + infos.username + ". Creating it in database.");
 				const newUser = User.create();
 				newUser.username = infos.username;
 				newUser.displayName = infos.username;

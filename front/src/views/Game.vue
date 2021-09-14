@@ -4,7 +4,7 @@
 		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
 		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
 		<!-- <GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)" @resetIsStarting="resetIsStarting($event)"></GameEnd> -->
-		<GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
+		<GameEnd v-if="RenderGameEnd" :isSpectating="isSpectating" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
 	</div>
 </template>
 
@@ -35,6 +35,7 @@ export default defineComponent({
 			RenderGamePlay: false as boolean,
 			RenderGameEnd: false as boolean,
 			isStarting: false as boolean,
+			isSpectating: false as boolean,
 			backColor: 'orange' as string,
 			gameID: 0 as number,
 		}
@@ -45,6 +46,14 @@ export default defineComponent({
 	{
 		// ----------------------------------------
 		// ----------- SOCKET LISTENERS -----------
+
+		launchSpectate() : void
+		{
+			this.RenderGameOption = false;
+			this.RenderGamePlay = true;
+			this.isSpectating = true;
+		},
+		
 		waitingForPlayer() : void
 		{
 			this.RenderGameOption = false;

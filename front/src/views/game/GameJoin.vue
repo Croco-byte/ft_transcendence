@@ -15,8 +15,8 @@ export default defineComponent({
 
 	props: {
 		isStarting: {
-		required: true,
-		type: Boolean,
+			required: true,
+			type: Boolean,
 		}
 	},
 

@@ -555,6 +555,7 @@ export class UsersService {
 	async updateRoomId(userDbId: number, roomId: string): Promise<User>
 	{
 		try {
+			this.logger.log(`userDbId = ${userDbId}`);
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
 			user.roomId = roomId;
 			return this.usersRepository.save(user);
