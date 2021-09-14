@@ -14,7 +14,7 @@
 					<p v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Winner!</p>
 					<p v-else>Loser!</p>
-					<p>Score: {{ this.endGameInfo.room.game.p1Score }}</p>
+					<!-- <p>Score: {{ this.endGameInfo.room.game.p1Score }}</p> -->
 				</div>
 			</div>
 		</div>
@@ -32,10 +32,16 @@
 					<p v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Winner!</p>
 					<p v-else>Loser!</p>
-					<p>Score: {{ this.endGameInfo.room.game.p2Score }}</p>
+					<!-- <p>Score: {{ this.endGameInfo.room.game.p2Score }}</p> -->
 				</div>
 			</div>
 		</div>
+	</div>
+
+	<div class="scoreGame">
+		<p>{{ this.endGameInfo.room.game.p1Score }}</p>
+		<p>SCORE</p>
+		<p>{{ this.endGameInfo.room.game.p2Score }}</p>
 	</div>
 	
 	<div class="play-again">
@@ -81,11 +87,11 @@
 	background-color: coral;
 }
 
-.playerAvatar p {
-	font-style: ;
-
+.scoreGame {
+	background-color: gold;
+	display: flex;
+	justify-content: space-between;
 }
-
 
 .play-again {
 	width: 100vw;
