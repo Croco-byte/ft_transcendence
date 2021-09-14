@@ -11,10 +11,9 @@
 				</div>
 				<div class="gameStatus">
 					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Has disconnected from the game.</p>
-					<p v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
+					<p class="winner" v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Winner!</p>
-					<p v-else>Loser!</p>
-					<!-- <p>Score: {{ this.endGameInfo.room.game.p1Score }}</p> -->
+					<p class="loser" v-else>Loser!</p>
 				</div>
 			</div>
 		</div>
@@ -29,19 +28,18 @@
 				</div>
 				<div class="gameStatus">
 					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Has disconnected from the game.</p>
-					<p v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
+					<p class="winner" v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Winner!</p>
-					<p v-else>Loser!</p>
-					<!-- <p>Score: {{ this.endGameInfo.room.game.p2Score }}</p> -->
+					<p class="loser" v-else>Loser!</p>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<div class="scoreGame">
-		<p>{{ this.endGameInfo.room.game.p1Score }}</p>
-		<p>SCORE</p>
-		<p>{{ this.endGameInfo.room.game.p2Score }}</p>
+		<p class="p1score">{{ this.endGameInfo.room.game.p1Score }}</p>
+		<p> SCORE </p>
+		<p class="p2score">{{ this.endGameInfo.room.game.p2Score }}</p>
 	</div>
 	
 	<div class="play-again">
@@ -54,14 +52,15 @@
 <style scoped>
 
 .init {
+	top: 10vh;
 	position: absolute;
 	width: 100vw;
 	height: 80vh;
-	background-color: crimson;
+	/* background-color: crimson; */
 }
 
 .profile {
-	background-color: blueviolet;
+	/* background-color: blueviolet; */
 	position: relative;
 	display: flex;
 	width: 100 vw;
@@ -69,33 +68,59 @@
 
 .playerInfo {
 	width: 50vw;
-	height: 80vh;
+	height: 40vh;
 	display: flex;
 	justify-content: center;
-	background-color: darkgreen;
+	/* background-color: darkgreen; */
 }
 
 .playerBorder {
 	border: solid;
-	border-style: 0 1em 0 0;
+	border-color: azure;
+	border-style: 0 0.1em 0 0;
 }
+
+img {
+	border-radius: 50%;
+}
+
+.winner {
+	/* background-color: chartreuse; */
+	color: Yellow;
+	font-size: 2vw;
+	text-align: center;
+}
+
+.loser {
+	/* background-color: burlywood; */
+	color: red;
+	font-size: 2vh;
+	text-align: center;
+}
+
 .player1 {
-	background-color: cadetblue;
+	/* background-color: cadetblue; */
 }
 
 .player2 {
-	background-color: coral;
+	/* background-color: coral; */
 }
 
 .scoreGame {
-	background-color: gold;
+	/* background-color: gold; */
 	display: flex;
-	justify-content: space-between;
+	justify-content: space-around;
+	position: relative;
+}
+
+.scoreGame p {
+	color: azure;
+	font-size: 2vw;
 }
 
 .play-again {
 	width: 100vw;
-	background-color: cyan;
+	/* background-color: cyan; */
 	position: relative;
 	display: flex;
 	justify-content: center;
