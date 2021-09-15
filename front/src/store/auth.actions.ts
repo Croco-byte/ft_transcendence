@@ -10,8 +10,7 @@ export const actions: ActionTree<RootState, RootState> = {
 			const user = await AuthService.login(payload.code, payload.state);
 			return Promise.resolve(user);
 		} catch(error) {
-			commit('loginFailure');
-			return Promise.reject(error.message);
+			throw new Error();
 		}
 	},
 
@@ -26,5 +25,5 @@ export const actions: ActionTree<RootState, RootState> = {
 
 	logout({ commit }) {
 		commit('logout');
-	}
+	},
 }

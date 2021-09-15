@@ -118,8 +118,12 @@ export default defineComponent({
 	{
 		this.socket = io('http://localhost:3000/game', 
 				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
-		
+
 		if (this.socket) {
+			this.socket.on('unauthorized', () => {
+				this.$store.commit('disconnectUser', { message: "[DEBUG from websockets] Session expired" });
+			})
+
 			this.socket.on('waitingForPlayer', () => {
 				this.waitingForPlayer();
 			});

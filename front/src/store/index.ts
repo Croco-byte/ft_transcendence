@@ -1,7 +1,6 @@
 import VueX, { StoreOptions } from 'vuex';
 import authHeader from '../services/auth-header';
 import UserService from '../services/user.service';
-import router from '../router/index';
 import store from './index';
 import { io, Socket } from 'socket.io-client';
 import { RootState } from '../types/store.interface';
@@ -28,15 +27,18 @@ if (user) {
 	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
 		const result = await UserService.getCurrUserId();
 		if (data.userId == result.data.id) {
-			localStorage.removeItem('user');
-			store.state.status.loggedIn = false;
-			store.state.user = null;
-			store.state.avatar = '';
-			if (store.state.websockets.connectionStatusSocket) store.state.websockets.connectionStatusSocket.disconnect();
-			if (store.state.websockets.friendRequestsSocket) store.state.websockets.friendRequestsSocket.disconnect();
-			router.push(({name: 'Login', params: { message: 'Multiple connection requests for this account. Kicking everyone :)' }}));
+			store.commit('disconnectUser', { message: "Multiple connexions detected for this user. Please log in again" });
 		}
-	})
+	});
+	statusSocket.on('unauthorized', function() {
+		store.commit('disconnectUser', { message: "Session expired !" });
+	});
+	statusSocket.on('serverDown', function() {
+		store.commit('disconnectUser', { message: "Serveur is down or was rebooted. Please wait a bit before logging in again."})
+	});
+	friendSocket.on('unauthorized', function() {
+		store.commit('disconnectUser', { message: "Session expired !" });
+	});
 	initialState = { status: { loggedIn: true }, user: user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
 
 } else {

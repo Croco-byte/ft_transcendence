@@ -261,6 +261,9 @@ export default defineComponent(
 	{
 		this.mode = 'normal';
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});
+		this.socket.on('unauthorized', () => {
+				this.$store.commit('disconnectUser', { message: "Session expired or invalid token" });
+		})
 		this.loadChannelsList();
 	},
 
