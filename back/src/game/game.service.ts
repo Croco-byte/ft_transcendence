@@ -239,8 +239,8 @@ export class GameService
 			this.usersService.incUserWins(room.user2DbId);
 		}
 		else {
-			this.usersService.incUserLoses(room.user1DbId);
-			this.usersService.incUserWins(room.user2DbId);
+			this.usersService.incUserLoses(room.user2DbId);
+			this.usersService.incUserWins(room.user1DbId);
 		}
 	}	
 
