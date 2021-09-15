@@ -6,14 +6,14 @@
 		<div class="playerInfo">
 			<div class="player1">
 				<div class="playerAvatar">
-					<h2>{{ this.endGameInfo.p1DbInfo.username}}</h2>
+					<h2 class="fontStyle">{{ this.endGameInfo.p1DbInfo.username}}</h2>
 					<img :src="this.avatarPlayer1" width="200" height="200" alt="Player1Avatar">
 				</div>
 				<div class="gameStatus">
 					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Has disconnected from the game.</p>
-					<p class="winner" v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
+					<p class="winner fontStyle" v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Winner!</p>
-					<p class="loser" v-else>Loser!</p>
+					<p class="loser fontStyle" v-else>Loser!</p>
 				</div>
 			</div>
 		</div>
@@ -23,14 +23,14 @@
 		<div class="playerInfo">
 			<div class="player2">
 				<div class="playerAvatar">
-					<h2>{{ this.endGameInfo.p2DbInfo.username}}</h2>
+					<h2 class="fontStyle">{{ this.endGameInfo.p2DbInfo.username}}</h2>
 					<img :src="avatarPlayer2" width="200" height="200" alt="Player2Avatar">
 				</div>
 				<div class="gameStatus">
 					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Has disconnected from the game.</p>
-					<p class="winner" v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
+					<p class="winner fontStyle" v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
 						|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Winner!</p>
-					<p class="loser" v-else>Loser!</p>
+					<p class="loser fontStyle" v-else>Loser!</p>
 				</div>
 			</div>
 		</div>
@@ -50,6 +50,16 @@
 </template>
 
 <style scoped>
+@font-face {
+	font-family: Bravary;
+	src: "./front/public/bravary/Bravary.ttf";
+}
+
+
+.fontStyle {
+	font-size: 3vw;
+	text-align: center;
+}
 
 .init {
 	top: 10vh;
@@ -75,9 +85,8 @@
 }
 
 .playerBorder {
-	border: solid;
+	border: 1px solid;
 	border-color: azure;
-	border-style: 0 0.1em 0 0;
 }
 
 img {
@@ -85,37 +94,23 @@ img {
 }
 
 .winner {
-	/* background-color: chartreuse; */
 	color: Yellow;
-	font-size: 2vw;
-	text-align: center;
 }
 
 .loser {
-	/* background-color: burlywood; */
 	color: red;
-	font-size: 2vh;
-	text-align: center;
-}
-
-.player1 {
-	/* background-color: cadetblue; */
-}
-
-.player2 {
-	/* background-color: coral; */
 }
 
 .scoreGame {
 	/* background-color: gold; */
 	display: flex;
-	justify-content: space-around;
+	justify-content: space-evenly;
 	position: relative;
 }
 
 .scoreGame p {
 	color: azure;
-	font-size: 2vw;
+	font-size: 4vw;
 }
 
 .play-again {
@@ -128,6 +123,41 @@ img {
 
 .play-again button {
 	padding: 1em;
+	border: none;
+	border-radius: 10%;
+}
+
+button {
+	margin:0 0.3em 0.3em 0;
+	border-radius:0.12em;
+	box-sizing: border-box;
+	text-decoration:none;
+	border:1px solid #FFFFFF;
+	font-weight:300;
+	color:#FFFFFF;
+	background-color: #4F4F4F;
+	font-size: 2vw;
+	text-align:center;
+	transition: all 0.2s;
+	animation:bouncy 3s infinite linear;
+	position:relative;
+}
+
+@media all and (max-width:30em){
+button {
+	display:block;
+	margin:0.4em auto;
+}
+}
+
+@keyframes bouncy {
+	0%{top:0em}
+	40%{top:0em}
+	43%{top:-0.9em}
+	46%{top:0em}
+	48%{top:-0.4em}
+	50%{top:0em}
+	100%{top:0em;}
 }
 </style>
 

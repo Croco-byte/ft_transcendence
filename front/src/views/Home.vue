@@ -1,10 +1,7 @@
 <template>
-<div>
-	<div class="title">
+<div class='fullPage'>
+	<div class="welcome">
 		<h1>WELCOME</h1>
-	</div>
-
-	<div class="login">
 		<LoggingButton :message="message"/>
 	</div>
 
@@ -14,6 +11,30 @@
 	
 </div>
 </template>
+
+<style scoped>
+
+.fullPage {
+	width: 100vw;
+	position: absolute;
+	display: flex;
+	align-items: flex-start;
+}
+
+.fullPage>*:first-child {
+    align-self: center;
+}
+
+.leaderboard
+{
+	margin-left: auto;
+    margin-right: auto;
+	top: 10vh;
+	width: 50%;
+	height: 50%;
+}
+
+</style>
 
 <script lang="ts">
 
@@ -46,12 +67,3 @@ export default defineComponent ({
 })
 </script>
 
-<style scoped>
-
-.leaderboard
-{
-	width: 50%;
-	height: 50%;
-}
-
-</style>
