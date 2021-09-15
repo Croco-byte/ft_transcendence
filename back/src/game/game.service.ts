@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,7 +18,7 @@ import {
   matchHistory,
 } from './interfaces/game.interface';
 import { MatchHistoryEntity } from '../users/match-history.entity';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
@@ -73,7 +73,7 @@ export class GameService
 	 * @param userDbId The Id of an user in User's table.
 	 * @param playerId Client socket ID.
 	 * @param setupChosen Setup chosen by player.
-	 * @return A Room object with all the game information.
+	 * @return Promise of a Room object with all the game information.
 	 */
 	async attributeRoom(userDbId: number, playerId: string, setupChosen?: Setup) : Promise<Room>
 	{
@@ -89,10 +89,8 @@ export class GameService
 		const roomToFill: Room = this.rooms.find(el => el.nbPeopleConnected === 1 && 
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
-		this.logger.log(`roomToFIll = ${roomToFill}`);
-
 		if (roomToFill) 
-			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
+			return await this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
 			return this.createNewRoom(setupChosen, userDbId, playerId);
 	}
@@ -107,19 +105,15 @@ export class GameService
 	 * @param playerId Player 2 socket id.
 	 * @return A Room object with all the game information, so the game can be started.
 	 */
-	playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Room
+	async playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Promise<Room>
 	{
-		this.logger.log(`in playerjoin func`);
-
 		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
-		
-		this.logger.log(`Updating room id for both players`);
 
-		this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
-		this.usersService.updateRoomId(roomToFill.user2DbId, roomToFill.name);
+		await this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
+		await this.usersService.updateRoomId(roomToFill.user2DbId, roomToFill.name);
 		return roomToFill;
 	}
 
@@ -149,22 +143,17 @@ export class GameService
 	}
 
 	/**
-	 * Makes every connected socket leaves a specific room in order to close it.
+	 * Makes every connected socket leaves a specific room in order to close it. Reset roomId
+	 * in database for both players.
 	 * 
 	 * @param wss A websocket object.
-	 * @param intervalId Clear the interval if existing.
 	 * @param room Room object with all the game information.
-	 * @param clientId If fulfilled, will trigger opponentLeft event emit. If not gameEnded event
-	 * 			will be emit.
 	 */
-	async removeRoom(wss: Socket, intervalId: NodeJS.Timer, room: Room, clientId?: string) : Promise<void>
+	async removeRoom(wss: Socket, room: Room) : Promise<void>
 	{
-		const endGameInfo: EndGameInfo = await this.resetEndGameInfo(room, clientId);
-
-		!endGameInfo.clientId ? wss.to(room.name).emit('gameEnded', endGameInfo) : 
-				wss.to(room.name).emit('opponentLeft', endGameInfo);
-
-		clearInterval(intervalId);
+		await this.usersService.updateRoomId(room.user1DbId, 'none');
+		await this.usersService.updateRoomId(room.user2DbId, 'none');
+		
 		wss.in(room.name).socketsLeave(room.name);
 		
 		this.logger.log(`Room closed (room id: ${room.name})`);
@@ -189,11 +178,10 @@ export class GameService
 	/**
 	 * Handles the whole game (player scoring, ball hit by a player, game ended...).
 	 * 
-	 * @param wss A websocket object.
-	 * @param intervalId Clear the interval if existing.
 	 * @param room Object with game information. Will be updated with new ball / players position.
+	 * @return True when a player reaches max score.
 	 */
-	async updateGame(wss: Socket, intervalId: NodeJS.Timer, room: Room) : Promise<boolean>
+	updateGame(room: Room) : boolean
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
@@ -213,32 +201,55 @@ export class GameService
 
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
 				room.game.p2Score >= room.game.p1Left.setup.score) {
-			clearInterval(intervalId);
-			await this.removeRoom(wss, intervalId, room);
-			await this.addToMatchHistory(room);
-			return await this.updateScores(room);
+			return true;
 		}
 		
 		return false;
 	}
 
 	/**
-	 * Increments by one the number of wins / loses for a player depending on the result
+	 * Increments by one the number of wins / loses for both players depending on the result
 	 * of the game.
 	 * 
+	 * @param wss A websocket object.
 	 * @param room Object with game information.
-	 * @param playerId Client socket ID.
-	 * @param userDbId Database ID retrieved after authentification.
+	 * @param clientId Client socket ID. Fills it if the player disconnected.
 	 */
-	async updateScores(room: Room): Promise<boolean>
+	async updateScores(wss: Socket, room: Room, clientId?: string): Promise<boolean>
 	{
-		room.game.p1Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user1DbId) :
-															await this.usersService.incUserLoses(room.user1DbId);
+		this.logger.log(`Game won (client id: ${clientId} (room id: ${room.name})`);
+		const endGameInfo: EndGameInfo = await this.resetEndGameInfo(room, clientId);
 
-		room.game.p2Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user2DbId) :
-															await this.usersService.incUserLoses(room.user2DbId);
+		!endGameInfo.clientId ? wss.to(room.name).emit('gameEnded', endGameInfo) : 
+				wss.to(room.name).emit('opponentLeft', endGameInfo);
 
+		await this.addToMatchHistory(room);
+		await this.removeRoom(wss, room);
+				
+		!clientId ?	this.updateScoresDueToWin(room) :
+					this.updateScoresDueDisconnexion(room, clientId);
+				
 		return true;
+	}
+
+	async updateScoresDueDisconnexion(room: Room, clientId:string) : Promise<void>
+	{
+		if (clientId === room.player1Id) {
+			this.usersService.incUserLoses(room.user1DbId);
+			this.usersService.incUserWins(room.user2DbId);
+		}
+		else {
+			this.usersService.incUserLoses(room.user2DbId);
+			this.usersService.incUserWins(room.user1DbId);
+		}
+	}	
+
+	async updateScoresDueToWin(room: Room) : Promise<void>
+	{
+		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
+															this.usersService.incUserLoses(room.user1DbId);
+		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
+															this.usersService.incUserLoses(room.user2DbId);
 	}
 
 	async addToMatchHistory(room: Room): Promise<void>
@@ -257,7 +268,7 @@ export class GameService
 				looserScore,
 				gameOptions
 			}
-			this.matchHistoryRepository.save(record);
+			await this.matchHistoryRepository.save(record);
 		}
 		else
 		{
@@ -265,13 +276,15 @@ export class GameService
 			const looser: User = await this.usersService.findUserById(room.user1DbId);
 			const winnerScore = room.game.p2Score;
 			const looserScore = room.game.p1Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
 			const record: matchHistory= {
 				winner,
 				looser,
 				winnerScore,
-				looserScore
+				looserScore,
+				gameOptions
 			}
-			this.matchHistoryRepository.save(record);
+			await this.matchHistoryRepository.save(record);
 		}
 	}
 
@@ -491,7 +504,7 @@ export class GameService
 	{
 		return {
 			radius: this.BALL_RADIUS,
-			dir: dir,
+			dir: -dir,
 			x: this.GAME_WIDTH * 0.5,
 			y: this.GAME_HEIGHT * 0.5,
 			speed: this.BASE_SPEED,

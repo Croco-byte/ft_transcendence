@@ -1,10 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, OnModuleDestroy, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import { WsJwtGuard } from '../auth/ws-jwt-strategy'
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
+import { User } from './users.entity';
+import { getConnection } from 'typeorm';
 
 /* This is the gateway that handles the users status.
 ** When the user connects to the gateway, his ID is stored in the client Socket object.
@@ -14,9 +15,18 @@ import { UsersService } from './users.service';
 */
 
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
-export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
 	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
+	
+	async onModuleDestroy() {
+		this.wss.emit('serverDown', {});
+		await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ status: "offline" })
+					.execute();
+	}
 
 	@WebSocketServer() wss: Server;
 	private logger: Logger = new Logger('StatusGateway');
@@ -27,16 +37,18 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
 	async handleDisconnect(client: any) {
 		if (client.data && client.data.userId) {
-			console.log("Client with ID " + client.data.userId + " disconnecting from status websocket server");
+			console.log("[Status Gateway] Client disconnected from gateway : " + client.data.userId);
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
 		}
 	}
 
 	async handleConnection(client: Socket, args: any[]) {
+		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+		if (!user) { client.emit('unauthorized', {}); return; }
+			
 		try {
-			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			console.log("Client with ID " + user.id + " connecting to status websocket server");
+			console.log("[Status Gateway] Client connected to gateway : " + user.id);
 			client.data = { userId: user.id, username: user.username };
 			if (user.status !== "offline") { this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id }); }
 			else {
@@ -44,14 +56,16 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
 			}
 		} catch(e) {
-			console.log("Unauthorized client trying to connect");
-			client.disconnect();
+			this.logger.log(e.message);
+			throw new WsException(e.message);
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
+		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+		if (!user) { client.emit('unauthorized', {}); return; }
+		
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'online');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
@@ -62,9 +76,11 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('getOffline')
 	async handleOffline(client: Socket, data: any): Promise<void> {
+		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+		if (!user) { client.emit('unauthorized', {}); return; }
+
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
@@ -75,7 +91,7 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
+		/* Note : even if the JWT token is expired, if the player is already connected to the Game Gateway, he can get in queue and play a game. */
 	@SubscribeMessage('getInGame')
 	async handleInGame(client: Socket, data: any): Promise<void> {
 		try {
@@ -88,7 +104,6 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('getInQueue')
 	async handleInQueue(client: Socket, data: any): Promise<void> {
 		try {
@@ -101,9 +116,11 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('getSpectating')
 	async handleSpectating(client: Socket, data: any): Promise<void> {
+		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+		if (!user) { client.emit('unauthorized', {}); return; }
+		
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'spectating');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'spectating' });
@@ -115,7 +132,6 @@ export class StatusGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 	}
 
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {
 		if (data.currUserId !== client.data.userId) {

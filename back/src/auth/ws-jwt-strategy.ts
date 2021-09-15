@@ -13,7 +13,7 @@ import { User } from 'src/users/users.entity'
 @Injectable()
 export class WsJwtGuard implements CanActivate {
 	constructor(private authService: AuthService) {}
-	
+
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		try {
 			const client: Socket = context.switchToWs().getClient<Socket>();

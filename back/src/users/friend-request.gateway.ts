@@ -4,6 +4,7 @@ import { WsJwtGuard } from '../auth/ws-jwt-strategy'
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
+import { User } from './users.entity';
 
 /* This is the Gateway that handles friendrequests. It allows to :
 ** >> Accept, decline, or send a friendrequest, unfriend a user
@@ -23,25 +24,23 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	handleDisconnect(client: any) {
-			this.logger.log(`Client disconnected to FriendRequests Gateway. ${client.id}`)
+			console.log("[FriendRequest Gateway] Client disconnected from gateway : " + client.id);
 	}
 
 
 	async handleConnection(client: Socket, args: any[]) {
-		try {
-			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			this.logger.log(`Client connected to FriendRequests Gateway. ${client.id}`);
-		} catch(e) {
-			client.disconnect();
-			this.logger.log("Unauthorized client trying to connect to the websocket. Bouncing him.")
-		}
-		
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+	
+			console.log("[FriendRequest Gateway] Client connected to gateway : " + client.id);
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('acceptFriendRequest')
 	async handleAcceptFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "accepted");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 			client.emit('friendRequestConfirmation', { type: "accept", message: "Friend request successfully accepted" });
@@ -50,10 +49,12 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('declineFriendRequest')
 	async handleDeclineFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "declined");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 			client.emit('friendRequestConfirmation', { type: "decline", message: "Friend request successfully declined" });
@@ -62,23 +63,26 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('sendFriendRequest')
-	async handleSendFriendRequest(client: Socket, data: { receiverId: number, user: { id: number, username: string } }) {
+	async handleSendFriendRequest(client: Socket, data: { receiverId: number }) {
 		try {
-			const result = await this.userService.sendFriendRequest(data.receiverId, data.user.id);
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+			
+			const result = await this.userService.sendFriendRequest(data.receiverId, user.id);
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
 			client.emit('friendRequestConfirmation', { type: "send", message: "Friend request successfully sent" });
 		} catch(e) {
 			client.emit('friendRequestError', { type: "send", message: e.message });
 		}
-
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('unfriendUser')
 	async handleUnfriendUser(client: Socket, data: { friendId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+
 			const result = await this.userService.unfriendUser(data.user.id, data.friendId);
 			this.wss.emit('friendStatusChanged', result);
 			client.emit('friendRequestConfirmation', { type: "unfriend", message: "User successfully unfriended" });
@@ -87,10 +91,12 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 		}
 	}
 
-	@UseGuards(WsJwtGuard)
 	@SubscribeMessage('cancelFriendRequest')
 	async handleCancelFriendRequest(client: Socket, data: { receiverId: number, user: { id: number, username: string } }): Promise<void> {
 		try {
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+
 			const result = await this.userService.cancelFriendRequest(data.user.id, data.receiverId);
 			this.wss.emit('friendStatusChanged', result);
 			client.emit('friendRequestConfirmation', { type: "cancel", message: "Friend request successfully canceled" });

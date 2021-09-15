@@ -507,20 +507,21 @@ export class UsersService {
 	/* ==== Lucas' utility functions ==== */
 
 	/**
-	 * Increment by one the number of wins for a specific user.
+	 * Increments by one the number of wins for a specific user.
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
-	 * @return Promise with an the User updated in database.
 	 */
-	async incUserWins(userDbId: number): Promise<User>
+	incUserWins(userDbId: number): void
 	{
 		try {
-			this.logger.log(`inc wins for userDbId ${userDbId}`);
-
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } })
-			user.wins++;
-			user.score += 50;
-			return this.usersRepository.save(user);
+			this.usersRepository.createQueryBuilder()
+			.update(User)
+			.set({ 
+				wins: () => "wins + 1",
+				score: () => "score + 50"
+			})
+			.where("id = :id", { id: userDbId })
+			.execute();
 		} 
 		catch (e) {
 			this.logger.log('Couldn\'t find user required in order to increment wins');
@@ -528,26 +529,21 @@ export class UsersService {
 	}
 
 	/**
-	 * Increment by one the number of loses for a specific user.
+	 * Increments by one the number of loses for a specific user.
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
-	 * @return Promise with the User object updated in database.
 	 */
-	async incUserLoses(userDbId: number): Promise<User>
+	incUserLoses(userDbId: number): void
 	{
 		try {
-			this.logger.log(`inc loses for userDbId ${userDbId}`);
-
-			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.loses++;
-			if (user.score > 30) user.score -= 30;
-			else user.score = 0;
-			user = await this.usersRepository.save(user);
-
-			user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			this.logger.log(`nb of loses is: ${user.loses}`);
-
-			return this.usersRepository.save(user);
+			this.usersRepository.createQueryBuilder()
+			.update(User)
+			.set({ 
+				loses: () => "loses + 1",
+				score: () => "score - 30"
+			})
+			.where("id = :id", { id: userDbId })
+			.execute();
 		} 
 		catch (e) {
 			this.logger.log('Couldn\'t find user required in order to increment loses');
@@ -555,22 +551,26 @@ export class UsersService {
 	}
 
 	/**
-	 * Update the room ID for a specific user.
+	 * Updates the room ID for a specific user.
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
-	 * @param roomId Should be a room ID or 'none' in case of a reset.
-	 * @return Promise with the User object updated in database.
+	 * @param newRoomId Should be a room ID or 'none' in case of a reset.
+	 * @return Promise with an user entity.
 	 */
-	async updateRoomId(userDbId: number, roomId: string): Promise<User>
+	async updateRoomId(userDbId: number, newRoomId: string): Promise<User>
 	{
 		try {
-			this.logger.log(`updating roomID for userDbId ${userDbId} with: ${roomId}`);
-			let user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.roomId = roomId;
-			user = await this.usersRepository.save(user);
-			this.logger.log(`updated roomID for userDbId ${userDbId} is: ${user.roomId}`);
-
-			return user;
+			await this.usersRepository.createQueryBuilder()
+			.update(User)
+			.set({ 
+				roomId: newRoomId
+			})
+			.where("id = :id", { id: userDbId })
+			.execute();
+			
+			return await this.usersRepository.createQueryBuilder("user")
+			.where("user.id = :id", { id: userDbId })
+			.getOne();
 		}
 		catch(e) {
 			this.logger.log('Could\'t find user required in order to update room ID');

@@ -7,13 +7,14 @@ import { UsersModule } from 'src/users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MatchHistoryEntity } from '../users/match-history.entity';
+import { User } from 'src/users/users.entity';
 
 @Module({
 	imports: [
 		AuthModule, 
 		UsersModule, 
 		ConfigModule,
-		TypeOrmModule.forFeature([MatchHistoryEntity])],
+		TypeOrmModule.forFeature([MatchHistoryEntity, User])],
 	providers: [
 		GameGateway, 
 		GameService],

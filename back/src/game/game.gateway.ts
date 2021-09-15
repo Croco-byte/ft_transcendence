@@ -6,7 +6,8 @@ import { SubscribeMessage,
 	OnGatewayDisconnect,
 	ConnectedSocket,
 	WebSocketServer, 
-	MessageBody} from '@nestjs/websockets';
+	MessageBody,
+	WsException} from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io'
 import { Room, 
@@ -14,6 +15,7 @@ import { Room,
 import { GameService } from './game.service';
 import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
+import { User } from 'src/users/users.entity';
 
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
@@ -42,12 +44,14 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	async handleConnection(@ConnectedSocket() client: Socket): Promise<void>
 	{
 		try {
-			const user = await this.authService.validateToken(client.handshake.query.token as string);
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+			
 			client.data = { userDbId: user.id, userStatus: user.status };
-			this.logger.log(`Client connected (client id: ${client.id})`);
+			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
 		catch(e) {
-			this.logger.log('Unauthorized client trying to connect');
+			this.logger.log('[Game Gateway] Unauthorized client trying to connect');
 			client.disconnect();
 		}
 
@@ -58,20 +62,33 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	/**
-	 * When an user disconnect, updates the database with new roomId. If it was a player,
+	 * When an user disconnect, reset in database his roomId. If it was a player,
 	 * emits to everybody from its room to indicate that game is over and removes the room.
 	 * 
 	 * @param client Need to contain user db id (client.data.userDbId).
 	 */
-	handleDisconnect(@ConnectedSocket() client: Socket): void
+	async handleDisconnect(@ConnectedSocket() client: Socket): Promise<void>
 	{
-		this.logger.log(`Client disconnected: client id: ${client.id})`);
-		this.usersService.updateRoomId(client.data.userDbId, 'none');
+		console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
+		const user = await this.usersService.findUserById(client.data.userDbId)
+		clearInterval(this.intervalId);
+
+		if (room && client.data.wasInGame) {
+			await this.gameService.updateScores(this.wss, room, client.id);
+		}
 		
-		if (room && room.name && room.nbPeopleConnected)
-			this.gameService.removeRoom(this.wss, this.intervalId, room, client.id);
+		else if (room && room.player2Id != '') {
+			this.wss.to(room.name).emit('resetMatchmaking');
+			this.gameService.removeRoom(this.wss, room);
+		}
+		
+		else if (room)
+			this.gameService.removeRoom(this.wss, room);
+
+		else
+			await this.usersService.updateRoomId(client.data.userDbId, 'none');
 	}
 
 	/**
@@ -81,6 +98,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * 		- Displays a waiting screen until another player is matched.
 	 * 		- Runs the game.
 	 * 		- Displays end screen when a player won the game or one disconnect.
+	 * 		- Updates scores and stats in database.
 	 * 
 	 * @param client Socket object with user information.
 	 * @param setupChosen Setup chosen by the player.
@@ -91,25 +109,34 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
 		client.join(room.name);
 
+		this.logger.log(`room.player2Id = ${room.player2Id}`);
+
 		if (room.player2Id === '')
 			client.emit('waitingForPlayer');
 		
 		else if (room.player2Id != '') {
-			
-			this.wss.to(room.name).emit('startingGame');
 
+			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
+			this.wss.to(room.name).emit('startingGame', true);
 
-			this.intervalId = setInterval(() => {
-				this.wss.to(room.name).emit('actualizeGameScreen', room);
-
-				if (this.gameService.updateGame(this.wss, this.intervalId, room))
-				{
-					clearInterval(this.intervalId);
-					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
-				}
-					
-			}, this.gameService.FRAMERATE);
+			// To prevent to launch the game if one player left during starting game screen
+			if (this.gameService.findRoomByPlayerId(client.id))
+			{
+				await new Promise<void>((resolve) => {
+					this.intervalId = setInterval(async () => {
+		
+						this.wss.to(room.name).emit('actualizeGameScreen', room);
+		
+						if (this.gameService.updateGame(room)) {
+							clearInterval(this.intervalId);
+							resolve();
+						}
+					}, this.gameService.FRAMERATE);
+				});
+				
+				await this.gameService.updateScores(this.wss, room);
+			}
 		}
 	}
 
@@ -129,10 +156,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * Disconnects the client when it leaves the game vue.
 	 * 
 	 * @param client Socket object with user information.
+	 * @param boolean True if the player was playing, false if it was in-queue.
 	 */
 	@SubscribeMessage('disconnectClient')
-	handleDisconnectClient(@ConnectedSocket() client: Socket): void
+	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
 	{
+		client.data.wasInGame = wasInGame;
 		client.disconnect();
 	}
 };

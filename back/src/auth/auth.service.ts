@@ -72,12 +72,20 @@ export class AuthService {
 	/* A simple function that verifies the validity of a JWT, and returns the corresponding User object */
 	async validateToken(access_token: string): Promise<User> {
 		try {
-			access_token = access_token.trim();
-			const decoded = this.jwtService.verify(access_token);
+			const decoded = await this.jwtService.verify(access_token);
 			const user = User.findOne(decoded.id);
 			return user;
 		} catch {
 			throw new UnauthorizedException();
+		}
+	}
+
+	async customWsGuard(access_token: string): Promise<User | null> {
+		try {
+			const user = await this.validateToken(access_token);
+			return user;
+		} catch {
+			return null;
 		}
 	}
 }
