@@ -15,18 +15,39 @@
 <style scoped>
 
 .fullPage {
+	background-image: url('https://en-marche.fr/assets/images/ecole-42-en-marche-emmanuel-macron-niel-code-dev-french-tech.jpg?q=70&cache=15d88f6e63eaa73b665c&fm=pjpg&s=3127360a86ae16887bbc61182836c450');
+	background-size: cover;
+	height: 80vh;
 	width: 100vw;
 	position: absolute;
 	display: flex;
 	align-items: flex-start;
 }
 
-.fullPage>*:first-child {
-    align-self: center;
+.fullPage:after {
+	opacity: 0.7;
+    content: "";  /*/ :before and :after both require content*/
+    position: absolute;
+    width: 100%; /*/ Makes the overlay same size to accommodate the skew*/
+    height: 100%;
+    top: 0;
+    left: 50%; /*/ Push the element 50% of the container's width to the right*/
+    transform: skew(0deg) /*/ Puts the element on an angle*/
+               translateX(-50%); /*/ Moves the element 50% of its width back to the left*/
+    background-image: linear-gradient(120deg, black,grey);
 }
 
-.leaderboard
-{
+
+.fullPage>*:first-child {
+	color: red;
+    align-self: center;
+	z-index: 100;
+}
+
+
+.leaderboard {
+	z-index: 99;
+	align-self: center;
 	margin-left: auto;
     margin-right: auto;
 	top: 10vh;
