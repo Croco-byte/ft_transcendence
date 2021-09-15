@@ -18,7 +18,7 @@ import {
   matchHistory,
 } from './interfaces/game.interface';
 import { MatchHistoryEntity } from '../users/match-history.entity';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
@@ -26,6 +26,8 @@ export class GameService
 	constructor(
 		@InjectRepository(MatchHistoryEntity)
 		private matchHistoryRepository: Repository<MatchHistoryEntity>,
+//		@InjectRepository(MatchHistoryEntity)
+//		private userRepository: Repository<User>,
 		private usersService: UsersService,
 		private configService: ConfigService,
 	) {}
@@ -158,7 +160,6 @@ export class GameService
 		!endGameInfo.clientId ? wss.to(room.name).emit('gameEnded', endGameInfo) : 
 				wss.to(room.name).emit('opponentLeft', endGameInfo);
 
-		clearInterval(intervalId);
 		wss.in(room.name).socketsLeave(room.name);
 		
 		this.logger.log(`Room closed (room id: ${room.name})`);
@@ -206,11 +207,12 @@ export class GameService
 		}
 
 		if (room.game.p1Score >= room.game.p1Left.setup.score || 
-				room.game.p2Score >= room.game.p1Left.setup.score) {
-			clearInterval(intervalId);
-			this.removeRoom(wss, intervalId, room);
-			this.addToMatchHistory(room);
-			return this.updateScores(room);
+			room.game.p2Score >= room.game.p1Left.setup.score) {
+				clearInterval(intervalId);
+				this.addToMatchHistory(room);
+				this.updateScores(room);
+				this.removeRoom(wss, intervalId, room);
+				return true;
 		}
 		
 		return false;
@@ -224,14 +226,39 @@ export class GameService
 	 * @param playerId Client socket ID.
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	updateScores(room: Room): boolean
+	async updateScores(room: Room): Promise<boolean>
 	{
-		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
-															this.usersService.incUserLoses(room.user1DbId);
+		if (room.game.p1Score >= room.game.p1Left.setup.score)
+		{
+			await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ wins: () => "wins + 1", score: () => "score + 50" })
+					.where("id = :id", { id: room.user1DbId })
+					.execute();
 
-		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
-															this.usersService.incUserLoses(room.user2DbId);
+			await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ loses: () => "loses + 1", score: () => "score - 30" })
+					.where("id = :id", { id: room.user2DbId })
+					.execute();
+		} else
+		{
+			await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ wins: () => "wins + 1", score: () => "score + 50" })
+					.where("id = :id", { id: room.user2DbId })
+					.execute();
 
+			await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ loses: () => "loses + 1", score: () => "score - 30" })
+					.where("id = :id", { id: room.user1DbId })
+					.execute();
+		}
 		return true;
 	}
 
@@ -251,6 +278,7 @@ export class GameService
 				looserScore,
 				gameOptions
 			}
+
 			this.matchHistoryRepository.save(record);
 		}
 		else
@@ -259,11 +287,13 @@ export class GameService
 			const looser: User = await this.usersService.findUserById(room.user1DbId);
 			const winnerScore = room.game.p2Score;
 			const looserScore = room.game.p1Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
 			const record: matchHistory= {
 				winner,
 				looser,
 				winnerScore,
-				looserScore
+				looserScore,
+				gameOptions
 			}
 			this.matchHistoryRepository.save(record);
 		}

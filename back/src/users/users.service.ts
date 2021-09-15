@@ -535,7 +535,7 @@ export class UsersService {
 	{
 		try {
 			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.loses++;
+			user.loses = user.loses + 1;
 			if (user.score > 30) user.score -= 30;
 			else user.score = 0;
 			return this.usersRepository.save(user);

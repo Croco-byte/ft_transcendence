@@ -115,7 +115,7 @@ export default defineComponent({
 	},
 
 	created() 
-	{ 
+	{
 		this.socket = io('http://localhost:3000/game', 
 				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 		

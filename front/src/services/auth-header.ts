@@ -4,7 +4,7 @@ export default function authHeader(): { Authorization: string } | Record<string,
 	try {
 		const user: LocalStorageUserInterface = JSON.parse(localStorage.getItem('user') as string);
 		if (user && user.accessToken) {
-			return { Authorization: 'Bearer ' + user.accessToken };
+			return { Authorization: 'Bearer ' + user.accessToken.trim() };
 		}
 		return {};
 	} catch(e) {
