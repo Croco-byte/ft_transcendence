@@ -36,13 +36,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	}
 
-	@SubscribeMessage('message')
-	async handleMessage(client: Socket, data: any)
-	{
-		// Verifier que l utilisateur est dans le channel de la requete et qu il n est pas mute ou ban
-		this.logger.log("Receive : " + JSON.stringify(data));
-	}
-
 	async sendNewMessage(room: string, msg: Object, user: User, channel: Channel)
 	{
 		let unauthaurizedUsers : User[] = [];
@@ -73,7 +66,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	handleDisconnect(client: Socket)
 	{
 		let user = this.clients[client.id];
-		//this.logger.log(`Client disconnected: ${user.username} -  ${Object.keys(this.clients).length - 1} clients connected`);
 		delete this.clients[client.id];
 	}
 
@@ -117,7 +109,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			}
 		}
 		socket.leave("channel_" + channel.id);
-		//delete this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID];
 	}
 
 	async joinChannel(channel: Channel, user: User)

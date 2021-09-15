@@ -104,7 +104,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 				this.wss.to(room.name).emit('actualizeGameScreen', room);
 
 				if (this.gameService.updateGame(this.wss, this.intervalId, room))
+				{
+					clearInterval(this.intervalId);
 					this.logger.log(`Game won (client id: ${client.id} (room id: ${room.name})`);
+				}
 					
 			}, this.gameService.FRAMERATE);
 		}

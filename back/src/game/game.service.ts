@@ -215,7 +215,7 @@ export class GameService
 				room.game.p2Score >= room.game.p1Left.setup.score) {
 			clearInterval(intervalId);
 			await this.removeRoom(wss, intervalId, room);
-			this.addToMatchHistory(room);
+			await this.addToMatchHistory(room);
 			return await this.updateScores(room);
 		}
 		

@@ -129,6 +129,10 @@ export default defineComponent({
 				<table class="stat_container">
 					<tbody>
 						<!-- For each stat item -->
+						<tr>
+							<td class="name">Win</td>
+							<td class="value">12</td>
+						</tr>
 						<tr class="stat_item" v-for="item in 4" :key="item">
 							<td class="name">Win</td>
 
