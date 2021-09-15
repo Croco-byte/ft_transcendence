@@ -69,9 +69,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 		const user = await this.usersService.findUserById(client.data.userDbId)
-		
-		if (room && user.status === 'in-game') {
-			clearInterval(this.intervalId);
+		clearInterval(this.intervalId);
+
+		if (room && client.data.wasInGame) {
 			await this.gameService.updateScores(this.wss, room, client.id);
 		}
 		
@@ -94,6 +94,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * 		- Displays a waiting screen until another player is matched.
 	 * 		- Runs the game.
 	 * 		- Displays end screen when a player won the game or one disconnect.
+	 * 		- Updates scores and stats in database.
 	 * 
 	 * @param client Socket object with user information.
 	 * @param setupChosen Setup chosen by the player.
@@ -103,6 +104,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
 		client.join(room.name);
+
+		this.logger.log(`room.player2Id = ${room.player2Id}`);
 
 		if (room.player2Id === '')
 			client.emit('waitingForPlayer');
@@ -116,23 +119,20 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			// To prevent to launch the game if one player left during starting game screen
 			if (this.gameService.findRoomByPlayerId(client.id))
 			{
-				await this.gameService.launchGame(this.wss, room, this.intervalId);
+				await new Promise<void>((resolve) => {
+					this.intervalId = setInterval(async () => {
+		
+						this.wss.to(room.name).emit('actualizeGameScreen', room);
+		
+						if (this.gameService.updateGame(room)) {
+							clearInterval(this.intervalId);
+							resolve();
+						}
+					}, this.gameService.FRAMERATE);
+				});
+				
 				await this.gameService.updateScores(this.wss, room);
 			}
-
-			
-			// 	this.intervalId = setInterval(async () => {
-
-			// 		this.logger.log('LAUCHING GAME BITCH');
-
-			// 		this.wss.to(room.name).emit('actualizeGameScreen', room);
-
-			// 		if (this.gameService.updateGame(this.intervalId, room)) {
-			// 			clearInterval(this.intervalId);
-			// 			await this.gameService.updateScores(this.wss, room);
-			// 		}
-			// 	}, this.gameService.FRAMERATE);
-			// }
 		}
 	}
 
@@ -152,10 +152,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * Disconnects the client when it leaves the game vue.
 	 * 
 	 * @param client Socket object with user information.
+	 * @param boolean True if the player was playing, false if it was in-queue.
 	 */
 	@SubscribeMessage('disconnectClient')
-	handleDisconnectClient(@ConnectedSocket() client: Socket): void
+	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
 	{
+		client.data.wasInGame = wasInGame;
 		client.disconnect();
 	}
 };

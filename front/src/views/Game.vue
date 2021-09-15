@@ -2,8 +2,7 @@
 	<div id="game">
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
 		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
-		<GamePlay v-if="RenderGamePlay" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
-		<!-- <GameEnd v-if="RenderGameEnd" :endGameInfo="endGameInfo" @playAgain="playAgain($event)" @resetIsStarting="resetIsStarting($event)"></GameEnd> -->
+		<GamePlay v-if="RenderGamePlay" :isSpectating="isSpectating" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
 		<GameEnd v-if="RenderGameEnd" :isSpectating="isSpectating" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
 	</div>
 </template>
@@ -49,6 +48,7 @@ export default defineComponent({
 
 		launchSpectate() : void
 		{
+			console.log('launchSpectate listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', {});
 			this.RenderGameOption = false;
 			this.RenderGamePlay = true;
@@ -57,13 +57,23 @@ export default defineComponent({
 		
 		waitingForPlayer() : void
 		{
+			console.log('waitingForPlayer listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
 			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 		},
 		
+		resetMatchmaking() : void
+		{
+			console.log('resetMatchmaking listener event');
+			this.RenderGameOption = true;
+			this.RenderGameJoin = false;
+			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
+		},
+
 		startingGame(inGame: boolean) : void
 		{
+			console.log('startingGame listener event');
 			if (!inGame) {
 				this.RenderGameOption = false;
 				this.RenderGameJoin = true;
@@ -76,6 +86,7 @@ export default defineComponent({
 
 		actualizeGameScreen(room: Room) : void
 		{
+			
 			this.room = room;
 			if (this.RenderGameJoin) {
 				this.RenderGameJoin = false
@@ -85,6 +96,7 @@ export default defineComponent({
 
 		gameEnded(endGameInfo: EndGameInfo) : void
 		{
+			console.log('gameEnded listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
@@ -94,6 +106,7 @@ export default defineComponent({
 
 		opponentLeft(endGameInfo: EndGameInfo) : void
 		{
+			console.log('opponentLeft listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
@@ -140,6 +153,10 @@ export default defineComponent({
 				this.waitingForPlayer();
 			});
 
+			this.socket.on('resetMatchmaking', () => {
+				this.resetMatchmaking();
+			});
+
 			this.socket.on('startingGame', (inGame: boolean) => {
 				this.startingGame(inGame);
 			});
@@ -163,7 +180,10 @@ export default defineComponent({
 	beforeRouteLeave (to, from , next)
 	{
 		this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-		this.socket.emit('disconnectClient');
+
+		const wasInGame = this.RenderGamePlay ? true : false;
+		this.socket.emit('disconnectClient', wasInGame);
+		
 		next();
 	}
 })
