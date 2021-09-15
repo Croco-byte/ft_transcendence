@@ -488,8 +488,7 @@ export class GameService
 		return {
 			width: this.GAME_WIDTH,
 			height: this.GAME_HEIGHT,
-			p1Score: 5,
-			// p1Score: _p1score,
+			p1Score: _p1score,
 			p2Score: _p2score,
 			ball: this.resetBall(dir),
 			paddle: this.resetPaddle(),
