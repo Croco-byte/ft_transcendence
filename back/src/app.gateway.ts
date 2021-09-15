@@ -61,26 +61,16 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	handleDisconnect(client: Socket)
 	{
 		let user = this.clients[client.id];
-		//this.logger.log(`Client disconnected: ${user.username} -  ${Object.keys(this.clients).length - 1} clients connected`);
+		console.log("[Chat Gateway] User disconnected from chat gateway : " + client.id);
 		delete this.clients[client.id];
 	}
 
 	async handleConnection(client: Socket, ...args: any[])
 	{
-		try
-		{
-			const user = await this.authService.validateToken(client.handshake.query.token as string);
-			client.data = { userId: user.id, username: user.username };
-			this.logger.log(`Client connected to Status Gateway. User ID: ${client.data.userId}`);
-		}
-		catch(e)
-		{
-			client.disconnect();
-			this.logger.log("Unauthorized client trying to connect to the websocket. Bouncing him.");
-			throw new UnauthorizedException();
-		}
+		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+		if (!user) { client.emit('unauthorized', {}); return; }
 		// Récupérer les channels ou l user est présent et les joins
-		let user = await this.userService.findById(client.data.userId);
+
 		this.clients[client.id] = user;
 		for (let i = 0; i < user.channels.length; i++)
 		{
@@ -88,7 +78,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			client.join("channel_" + channel.id);
 		}
 
-		this.logger.log(`Client connected: ${user.username} - ${client.id} -  ${Object.keys(this.clients).length} clients connected`);
+		console.log("[Chat Gateway] User connected to chat gateway : " + client.id + "Total clients connected : " + Object.keys(this.clients).length);
 	}
 
 	async leaveChannel(channel: Channel, user: User)

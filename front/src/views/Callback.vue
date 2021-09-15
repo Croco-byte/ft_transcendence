@@ -42,9 +42,7 @@ export default defineComponent({
 				if (result.twoFARedirect === true) { this.$router.push('/twoFA'); }
 				else { this.$store.commit('loginSuccess', result); }
 			} catch(error) {
-				this.$store.commit('loginFailure');
-				const errMessage = "Something went wrong. Please try again later."
-				this.$router.push({name: 'Home', params: { message: errMessage }});
+				this.$store.commit('disconnectUser', { message: "Something went wrong. Please try again later." });
 			}
 		}
 	},

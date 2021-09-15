@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,8 +26,6 @@ export class GameService
 	constructor(
 		@InjectRepository(MatchHistoryEntity)
 		private matchHistoryRepository: Repository<MatchHistoryEntity>,
-//		@InjectRepository(MatchHistoryEntity)
-//		private userRepository: Repository<User>,
 		private usersService: UsersService,
 		private configService: ConfigService,
 	) {}

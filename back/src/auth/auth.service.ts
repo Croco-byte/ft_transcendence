@@ -79,4 +79,13 @@ export class AuthService {
 			throw new UnauthorizedException();
 		}
 	}
+
+	async customWsGuard(access_token: string): Promise<User | null> {
+		try {
+			const user = await this.validateToken(access_token);
+			return user;
+		} catch {
+			return null;
+		}
+	}
 }

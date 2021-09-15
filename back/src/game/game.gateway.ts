@@ -15,6 +15,7 @@ import { Room,
 import { GameService } from './game.service';
 import { UsersService } from '../users/users.service'
 import { AuthService } from '../auth/auth.service';
+import { User } from 'src/users/users.entity';
 
 @WebSocketGateway({ cors: true, namespace: 'game' })
 export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
@@ -43,12 +44,14 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	async handleConnection(@ConnectedSocket() client: Socket): Promise<void>
 	{
 		try {
-			const user = await this.authService.validateToken(client.handshake.query.token as string);
+			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
+			if (!user) { client.emit('unauthorized', {}); return; }
+			
 			client.data = { userDbId: user.id, userStatus: user.status };
-			this.logger.log(`Client connected (client id: ${client.id})`);
+			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
 		catch(e) {
-			this.logger.log('Unauthorized client trying to connect');
+			this.logger.log('[Game Gateway] Unauthorized client trying to connect');
 			client.disconnect();
 		}
 
@@ -66,8 +69,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 */
 	async handleDisconnect(@ConnectedSocket() client: Socket): Promise<void>
 	{
-		this.logger.log(`Client disconnected: client id: ${client.id})`);
-
+		console.log("[Game Gateway] Client connected to gateway : " + client.id);
+		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 		const user = await this.usersService.findUserById(client.data.userDbId)
 		clearInterval(this.intervalId);
