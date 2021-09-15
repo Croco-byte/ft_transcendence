@@ -517,7 +517,8 @@ export class UsersService {
 			this.usersRepository.createQueryBuilder()
 			.update(User)
 			.set({ 
-				wins: () => "wins + 1"
+				wins: () => "wins + 1",
+				score: () => "score + 50"
 			})
 			.where("id = :id", { id: userDbId })
 			.execute();
@@ -538,7 +539,8 @@ export class UsersService {
 			this.usersRepository.createQueryBuilder()
 			.update(User)
 			.set({ 
-				loses: () => "loses + 1"
+				loses: () => "loses + 1",
+				score: () => "score - 30"
 			})
 			.where("id = :id", { id: userDbId })
 			.execute();
