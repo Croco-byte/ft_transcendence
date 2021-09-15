@@ -18,7 +18,7 @@ import {
   matchHistory,
 } from './interfaces/game.interface';
 import { MatchHistoryEntity } from '../users/match-history.entity';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
@@ -26,6 +26,8 @@ export class GameService
 	constructor(
 		@InjectRepository(MatchHistoryEntity)
 		private matchHistoryRepository: Repository<MatchHistoryEntity>,
+//		@InjectRepository(MatchHistoryEntity)
+//		private userRepository: Repository<User>,
 		private usersService: UsersService,
 		private configService: ConfigService,
 	) {}
@@ -276,11 +278,13 @@ export class GameService
 			const looser: User = await this.usersService.findUserById(room.user1DbId);
 			const winnerScore = room.game.p2Score;
 			const looserScore = room.game.p1Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
 			const record: matchHistory= {
 				winner,
 				looser,
 				winnerScore,
-				looserScore
+				looserScore,
+				gameOptions
 			}
 			await this.matchHistoryRepository.save(record);
 		}
