@@ -68,6 +68,7 @@ export default defineComponent({
 			console.log('resetMatchmaking listener event');
 			this.RenderGameOption = true;
 			this.RenderGameJoin = false;
+			this.isStarting = false;
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 		},
 
@@ -80,8 +81,10 @@ export default defineComponent({
 				this.isStarting = true;
 			}
 			
-			else
+			else {
+				this.socket.emit('launchGame');
 				this.$store.state.websockets.connectionStatusSocket.emit('getInGame', {});
+			}
 		},
 
 		actualizeGameScreen(room: Room) : void

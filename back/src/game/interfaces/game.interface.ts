@@ -3,6 +3,7 @@ import { User } from "src/users/users.entity";
 /* eslint-disable prettier/prettier */
 export interface Room
 {
+	intervalId: NodeJS.Timer | undefined;
 	name: string;
 	user1DbId: number;
 	user2DbId: number;

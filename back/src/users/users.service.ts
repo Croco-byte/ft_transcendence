@@ -511,10 +511,10 @@ export class UsersService {
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	incUserWins(userDbId: number): void
+	async incUserWins(userDbId: number): Promise<void>
 	{
 		try {
-			this.usersRepository.createQueryBuilder()
+			await getConnection().createQueryBuilder()
 			.update(User)
 			.set({ 
 				wins: () => "wins + 1",
@@ -533,10 +533,10 @@ export class UsersService {
 	 * 
 	 * @param userDbId Database ID retrieved after authentification.
 	 */
-	incUserLoses(userDbId: number): void
+	async incUserLoses(userDbId: number): Promise<void>
 	{
 		try {
-			this.usersRepository.createQueryBuilder()
+			await getConnection().createQueryBuilder()
 			.update(User)
 			.set({ 
 				loses: () => "loses + 1",
@@ -560,7 +560,7 @@ export class UsersService {
 	async updateRoomId(userDbId: number, newRoomId: string): Promise<User>
 	{
 		try {
-			await this.usersRepository.createQueryBuilder()
+			await getConnection().createQueryBuilder()
 			.update(User)
 			.set({ 
 				roomId: newRoomId
@@ -568,7 +568,9 @@ export class UsersService {
 			.where("id = :id", { id: userDbId })
 			.execute();
 			
-			return await this.usersRepository.createQueryBuilder("user")
+			return await getConnection()
+			.getRepository(User)
+			.createQueryBuilder("user")
 			.where("user.id = :id", { id: userDbId })
 			.getOne();
 		}

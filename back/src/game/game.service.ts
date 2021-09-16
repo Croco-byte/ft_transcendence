@@ -90,7 +90,7 @@ export class GameService
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
 		if (roomToFill) 
-			return await this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
+			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
 			return this.createNewRoom(setupChosen, userDbId, playerId);
 	}
@@ -105,15 +105,13 @@ export class GameService
 	 * @param playerId Player 2 socket id.
 	 * @return A Room object with all the game information, so the game can be started.
 	 */
-	async playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Promise<Room>
+	playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Room
 	{
 		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
 
-		await this.usersService.updateRoomId(roomToFill.user1DbId, roomToFill.name);
-		await this.usersService.updateRoomId(roomToFill.user2DbId, roomToFill.name);
 		return roomToFill;
 	}
 
@@ -128,6 +126,7 @@ export class GameService
 	createNewRoom(setupChosen: Setup, userDbId: number, playerId: string) : Room
 	{
 		this.rooms.push({ 
+			intervalId: undefined,
 			name: playerId, 
 			user1DbId: userDbId,
 			user2DbId: 0,
@@ -224,10 +223,11 @@ export class GameService
 				wss.to(room.name).emit('opponentLeft', endGameInfo);
 
 		await this.addToMatchHistory(room);
+		
+		!clientId ?	await this.updateScoresDueToWin(room) :
+					await this.updateScoresDueDisconnexion(room, clientId);
+
 		await this.removeRoom(wss, room);
-				
-		!clientId ?	this.updateScoresDueToWin(room) :
-					this.updateScoresDueDisconnexion(room, clientId);
 				
 		return true;
 	}
@@ -235,21 +235,21 @@ export class GameService
 	async updateScoresDueDisconnexion(room: Room, clientId:string) : Promise<void>
 	{
 		if (clientId === room.player1Id) {
-			this.usersService.incUserLoses(room.user1DbId);
-			this.usersService.incUserWins(room.user2DbId);
+			await this.usersService.incUserLoses(room.user1DbId);
+			await this.usersService.incUserWins(room.user2DbId);
 		}
 		else {
-			this.usersService.incUserLoses(room.user2DbId);
-			this.usersService.incUserWins(room.user1DbId);
+			await this.usersService.incUserLoses(room.user2DbId);
+			await this.usersService.incUserWins(room.user1DbId);
 		}
 	}	
 
 	async updateScoresDueToWin(room: Room) : Promise<void>
 	{
-		room.game.p1Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user1DbId) :
-															this.usersService.incUserLoses(room.user1DbId);
-		room.game.p2Score >= room.game.p1Left.setup.score ? this.usersService.incUserWins(room.user2DbId) :
-															this.usersService.incUserLoses(room.user2DbId);
+		room.game.p1Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user1DbId) :
+															await this.usersService.incUserLoses(room.user1DbId);
+		room.game.p2Score >= room.game.p1Left.setup.score ? await this.usersService.incUserWins(room.user2DbId) :
+															await this.usersService.incUserLoses(room.user2DbId);
 	}
 
 	async addToMatchHistory(room: Room): Promise<void>
@@ -432,7 +432,6 @@ export class GameService
 	{
 		if (_room.player2Id != '')
 		{
-			this.logger.log(`reseting database room for 2 players`);
 			return {
 				clientId: _clientId,
 				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
@@ -443,7 +442,6 @@ export class GameService
 		
 		else
 		{
-			this.logger.log(`reseting database room for 1 players`);
 			return {
 				clientId: _clientId,
 				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
@@ -459,7 +457,6 @@ export class GameService
 	private async resetPlayerDbInfo(userDbId: number) : Promise<PlayerDbInfo>
 	{
 		try {
-			this.logger.log(`in resetPlayerDBInfo: userDBId = ${userDbId}`)
 			const user = await this.usersService.updateRoomId(userDbId, 'none');
 			return {
 				username: user.username,
