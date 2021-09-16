@@ -21,7 +21,7 @@ export class User extends BaseEntity
 	score: number
 
 	@Column({ default: 'offline' })
-	status?: string;
+	status: string;
 
 	@OneToMany(() => Message, msg => msg.user)
     messages: Message[];
