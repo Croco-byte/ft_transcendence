@@ -126,7 +126,7 @@ export class ChannelController
 		curr_user = await this.userService.findById(req.user.id);
 		let channel = await this.channelService.findOne(channelID).then(async (channel) =>
 		{
-			if (this.channelService.isAdmin(channel, curr_user))
+			if (!this.channelService.isAdmin(channel, curr_user))
 				throw new UnauthorizedException("You must be an administrator to perform this action");
 			let username = body.username;
 		

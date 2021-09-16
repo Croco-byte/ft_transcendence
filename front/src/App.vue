@@ -16,7 +16,9 @@ export default defineComponent({
 <template>
 	<div>
 		<Header/>
-		<router-view></router-view>
+		<div class="router_view header_mode">
+			<router-view></router-view>
+		</div>
 	</div>
 </template>
 
@@ -25,7 +27,6 @@ export default defineComponent({
 	{
 		margin: 0;
 		overflow-x: hidden;
-		background-color: #4F4F4F;
 	}
 
 	*
@@ -47,6 +48,26 @@ export default defineComponent({
 	.j-sb
 	{
 		justify-content: space-between;
+	}
+
+	#app > div
+	{
+		display: flex;
+		width: 100%;
+	}
+
+	.router_view
+	{
+		width: 100%;
+		background: white;
+		transition: all 0.25s;
+		min-height: 100vh;
+	}
+
+	.router_view.header_mode
+	{
+		width: calc(100% - 6.5rem);
+		margin-left: 6.5rem;
 	}
 
 </style>

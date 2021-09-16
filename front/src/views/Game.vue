@@ -195,8 +195,14 @@ export default defineComponent({
 
 <style>
 
-body {
+.router_view
+{
 	background-color: #4F4F4F;
+}
+
+.game
+{
+	overflow-y: auto;
 }
 
 </style>

@@ -99,7 +99,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 				break ;
 			}
 		}
-		socket.leave("channel_" + channel.id);
+		if (socket)
+			socket.leave("channel_" + channel.id);
 	}
 
 	async joinChannel(channel: Channel, user: User)
@@ -115,7 +116,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 				break ;
 			}
 		}
-		socket.join("channel_" + channel.id);
+		if (socket)
+			socket.join("channel_" + channel.id);
 		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
 	}
 

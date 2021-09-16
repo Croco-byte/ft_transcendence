@@ -30,12 +30,7 @@ export default defineComponent({
 })
 </script>
 
-<style>
-
-body
-{
-	background: #F9F9F9;
-}
+<style scoped>
 
 #container
 {
@@ -43,6 +38,7 @@ body
 	justify-content: space-around;
 	padding: 2rem;
 	width: 100%;
+	background-color: white;
 }
 
 .friends_list

@@ -73,7 +73,7 @@ export class AuthService {
 	async validateToken(access_token: string): Promise<User> {
 		try {
 			const decoded = await this.jwtService.verify(access_token);
-			const user = User.findOne(decoded.id);
+			const user = User.findOne(decoded.id, {relations: ["channels"]});
 			return user;
 		} catch {
 			throw new UnauthorizedException();

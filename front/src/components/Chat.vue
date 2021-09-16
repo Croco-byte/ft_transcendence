@@ -511,19 +511,17 @@ export default defineComponent(
 
 	#chat
 	{
-		height: calc(100vh - 5rem);
+		background: white;
 	}
 
 	.chat_container
 	{
 		display: flex;
 		flex-direction: row;
-		align-items: center;
 		justify-content: center;
 		width: 100%;
-		height: 100%;
+		min-height: 100vh;
 		margin: 0 auto;
-		border: solid 1px black;
 		position: relative;
 	}
 
@@ -544,7 +542,7 @@ export default defineComponent(
 		position: relative;
 		flex-direction: column;
 		width: 30%;
-		height: 100%;
+		min-height: 100%;
 		background-color: white;
 		color: black;
 		box-shadow: 5px 0px 13px -4px rgb(0 0 0 / 61%);
@@ -646,7 +644,7 @@ export default defineComponent(
 		color: white;
 		background-color: #efefef;
 		width: 70%;
-		height: 100%;
+		max-height: 100vh;
 	}
 
 	.chat_view .no_chat_div

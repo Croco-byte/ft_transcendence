@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { tmpdir } from "os";
 import ChannelBannedUserService from "src/channel_banned_users/channel_banned_user.service";
@@ -10,7 +10,6 @@ import MessageService from "src/messages/message.service";
 import { User } from "src/users/users.entity";
 import { Connection, getConnection, getRepository, Repository } from "typeorm";
 import {Channel} from './channel.entity';
-import ChannelRepository from "./channel.repository";
 
 @Injectable()
 export default class ChannelService
@@ -143,7 +142,7 @@ export default class ChannelService
 		this.repository.save(channel);
 	}
 
-	async isAdmin(channel: Channel, user: User): Promise<boolean>
+	isAdmin(channel: Channel, user: User): boolean
 	{
 		if (channel.owner && channel.owner.id == user.id)
 			return true;
