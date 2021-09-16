@@ -150,9 +150,19 @@ export default defineComponent({
 		cursor: pointer;
 	}
 
+	header:not(.visible) .links_toggle
+	{
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	header:not(.visible) .links_toggle:hover
+	{
+		background: white;
+	}
+
 	.links_toggle i
 	{
-		font-size: 2rem;
+		font-size: 1.5rem;
 		transform-origin: center center;
 		transition: all 0.25s;
 	}
@@ -160,10 +170,5 @@ export default defineComponent({
 	header:not(.visible) .links_toggle i
 	{
 		transform: rotateZ(-180deg);
-	}
-
-	@media screen and (max-width: 900px)
-	{
-		
 	}
 </style>

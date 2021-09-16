@@ -1,15 +1,3 @@
-<template>
-<div id="container">
-	<div class="friends_list">
-		<FriendList/>
-	</div>
-	<div class="friends_search_requests_container">
-		<UserSearch/>
-		<FriendRequests/>
-	</div>
-</div>
-</template>
-
 <script>
 
 /* The view for the "Friends" page. Everything is implemented in the components. */
@@ -30,6 +18,18 @@ export default defineComponent({
 })
 </script>
 
+<template>
+<div id="container">
+	<div class="friends_list">
+		<FriendList/>
+	</div>
+	<div class="friends_search_requests_container">
+		<UserSearch/>
+		<FriendRequests/>
+	</div>
+</div>
+</template>
+
 <style scoped>
 
 #container
@@ -38,6 +38,7 @@ export default defineComponent({
 	justify-content: space-around;
 	padding: 2rem;
 	width: 100%;
+	height: 100vh;
 	background-color: white;
 }
 
@@ -52,6 +53,20 @@ export default defineComponent({
 	flex-direction: column;
 	width: 45%;
 	height: 80vh;
+}
+
+@media screen and (max-width: 850px)
+{
+	#container
+	{
+		flex-direction: column-reverse;
+	}
+
+	#container > div
+	{
+		width: 100%;
+		margin: 0 auto;
+	}
 }
 
 </style>

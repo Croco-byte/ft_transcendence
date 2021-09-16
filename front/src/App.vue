@@ -27,6 +27,7 @@ export default defineComponent({
 	{
 		margin: 0;
 		overflow-x: hidden;
+		font-family: 'Source Sans Pro';
 	}
 
 	*

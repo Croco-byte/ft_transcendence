@@ -74,6 +74,7 @@ export default defineComponent(
 			{
 				this.channel.messages = res.data.messages;
 				this.channel.user_role = res.data.user_role;
+				document.getElementsByClassName('view')[0].scrollTop =  document.getElementsByClassName('view')[0].scrollHeight;
 			})
 			.catch((error) =>
 			{
@@ -510,7 +511,8 @@ export default defineComponent(
 					if (this.channels[i].id === data.channel)
 					{
 						this.channels[i].has_new_message = true;
-						this.channels[i].messages.push(data);
+						if (this.channels[i].messages)
+							this.channels[i].messages.push(data);
 					}
 				}
 			}
@@ -720,6 +722,8 @@ export default defineComponent(
 		flex-direction: column;
 		width: 30%;
 		min-height: 100%;
+		max-height: 100vh;
+		overflow-y: auto;
 		background-color: white;
 		color: black;
 		box-shadow: 5px 0px 13px -4px rgb(0 0 0 / 61%);
@@ -1067,6 +1071,7 @@ export default defineComponent(
 		position: absolute;
 		overflow-y: auto;
 		width: 20rem;
+		max-width: 80%;
 		height: 100%;
 		right: 0;
 		padding: 1rem;

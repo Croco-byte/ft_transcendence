@@ -352,4 +352,39 @@ input:placeholder
 	background-color: white;
 }
 
+@media screen and (max-width: 850px)
+{
+	h2
+	{
+		width: 100%;
+		text-align: center;
+	}
+
+	.buttons_container
+	{
+		justify-content: center;
+	}
+
+	.friend_item
+	{
+		min-height: 3rem;
+		height: 3rem;
+	}
+
+	.friend_item img
+	{
+		width: 2rem;
+		height: 2rem;
+	}
+}
+
+@media screen and (max-width: 500px)
+{
+	.user_status,
+	.friend_item .image
+	{
+		display: none;
+	}
+}
+
 </style>
