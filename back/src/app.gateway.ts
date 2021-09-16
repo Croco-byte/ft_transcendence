@@ -58,6 +58,44 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		}
 	}
 
+	async addMember(room: string, msg: string, channel: Channel)
+	{
+		let unauthaurizedUsers = channel.pending_users;
+
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.leave(room);
+		}
+		this.server.to(room).emit('new_member', msg);
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.join(room);
+		}
+	}
+
+	async notifChannel(room: string, notif: string, msg:string, channel: Channel)
+	{
+		let unauthaurizedUsers = channel.pending_users;
+
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.leave(room);
+		}
+		this.server.to(room).emit(notif, msg);
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.join(room);
+		}
+	}
+
 	afterInit(server: Server)
 	{
 		this.logger.log('Init');

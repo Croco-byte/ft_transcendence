@@ -130,13 +130,15 @@ export class ChannelController
 				throw new UnauthorizedException("You must be an administrator to perform this action");
 			let username = body.username;
 		
-			return await this.userService.findByUsername(username).then((new_user) =>
-			{
-				this.channelService.addUser(channel, new_user);
+			let new_user = await this.userService.findByUsername(username);
+			if (!new_user)
+				throw new NotFoundException("User " + username + " not found");
 
-				this.logger.log("Add user '" + new_user.username + "' to this channel");
-				return {message: "User " + username + " added successfully"};
-			});
+			this.channelService.addUser(channel, new_user);
+
+			this.logger.log("Add user '" + new_user.username + "' to channel '" + channel.name + "'.");
+			this.websocketGateway.addMember("channel_" + channel.id, curr_user.username + " has added " + new_user.username + " to this channel !", channel);
+			return {message: "User " + username + " added successfully"};
 		});
 	}
 
@@ -396,8 +398,13 @@ export class ChannelController
 	{
 		let user = await this.userService.findById(req.user.id);
 		let channel = await this.channelService.findOne(channelID);
+		if (!user)
+			throw new UnauthorizedException();
+		if (!channel)
+			throw new NotFoundException("Channel not found");
 		if (channel.users.findIndex((u) => u.id == user.id) == -1)
 			throw new NotFoundException("User not in this channel");
 		await this.channelService.removeUser(channel, user);
+		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", user.username + " leave channel " + channel.name, channel);
 	}
 }

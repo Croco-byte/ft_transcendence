@@ -168,7 +168,24 @@ export default defineComponent(
 		async addMember(): Promise<void>
 		{
 			let username = $('#add_member_input').val() as string;
-			await axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username}, {headers: authHeader()});
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.mode = 'normal'
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			})
+			;
 		},
 
 		async addAdmin(): Promise<void>
@@ -502,7 +519,8 @@ export default defineComponent(
 
 	mounted(): void
 	{
-		(this.socket as Socket).on('message', (data: MessageInterface) =>
+		let socket = this.socket as Socket;
+		socket.on('message', (data: MessageInterface) =>
 		{
 			if (data.channel !== this.channel.id)
 			{
@@ -520,6 +538,30 @@ export default defineComponent(
 			{
 				this.channel.messages.push(data);
 			}
+		})
+		socket.on('new_member', (msg: string) =>
+		{
+			createToast({
+						title: 'New member',
+						description: msg
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+		});
+		socket.on('member_leave', (msg) =>
+		{
+			createToast({
+						title: 'Member leave',
+						description: msg
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
 		})
 	},
 });
@@ -659,7 +701,7 @@ export default defineComponent(
 				</div>
 			</div>
 			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
-				<input type="text" placeholder="Member's username" id="add_member_input"/>
+				<input type="text" placeholder="Member's username" id="add_member_input" @keypress.enter="addMember"/>
 				<button id="add_member" @click="addMember">
 					<i class="fas fa-arrow-right"></i>
 				</button>
