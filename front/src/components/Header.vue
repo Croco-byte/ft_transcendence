@@ -3,20 +3,20 @@
 		<!-- <NavLink url="/" text="Ft_transcendence" class="brand"/> -->
 		<div class="links_container" :class="{active: mode == 'links'}">
 			<router-link to="/">
-				<img src="svg/home.svg" alt="Home"/>
+				<img src="/svg/home.svg" alt="Home"/>
 			</router-link>
 			<router-link to="/friends">
-				<img src="svg/friends.svg" alt="Friends"/>
+				<img src="/svg/friends.svg" alt="Friends"/>
 			</router-link>
 			<router-link to="/chat">
-				<img src="svg/chat.svg" alt="Chat"/>
+				<img src="/svg/chat.svg" alt="Chat"/>
 			</router-link>
 			<router-link to="/game">
-				<img src="svg/game.svg" alt="Game"/>
+				<img src="/svg/game.svg" alt="Game"/>
 			</router-link>
 
 			<router-link to="/account" id="profile_div" v-if="$store.state.status.loggedIn === true">
-				<img src="svg/profile.svg" alt="Profile"/>
+				<img src="/svg/profile.svg" alt="Profile"/>
 			</router-link>
 		</div>
 		<div class="links_toggle" @click="changeVisibility()">

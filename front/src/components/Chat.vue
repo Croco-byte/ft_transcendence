@@ -3,13 +3,15 @@
 import axios, { AxiosResponse } from 'axios';
 //import axios from '../axios-instance';
 import { io, Socket } from 'socket.io-client';
-import Vue, { defineComponent } from 'vue'
+import { defineComponent } from 'vue'
 import ChannelInterface from '../interface/channel.interface';
 import MessageInterface from '../interface/message.interface';
 import DOMEventInterface from '../interface/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
 import authService from '../services/auth.service';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 export default defineComponent(
 {
@@ -28,7 +30,7 @@ export default defineComponent(
 				has_new_message: false,
 				members: [],
 				administrators: [],
-				userRole: 'MEMBER'
+				user_role: 'MEMBER'
 			} as ChannelInterface,
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
@@ -68,14 +70,25 @@ export default defineComponent(
 
 		loadMessages(): void
 		{
-			axios.get(this.serverURL + "/channels/" + this.channel.id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/", {headers: authHeader()}).then((res: {data: {messages: Array<MessageInterface>, user_role: string}}) =>
 			{
-				this.channel.messages = res.data;
+				this.channel.messages = res.data.messages;
+				this.channel.user_role = res.data.user_role;
 			})
 			.catch((error) =>
 			{
 				if (error.response.data.authentify_in_channel)
 					this.changeMode("authentify_user_in_channel");
+				else
+					createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 			});
 		},
 		
@@ -87,7 +100,15 @@ export default defineComponent(
 			{
 				// Axios send to nestjs the name
 				this.mode = 'normal';
-				alert("Create channel named '" + name + "'");
+				createToast({
+						title: 'Error',
+						description: "Create channel named '" + name + "'"
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
 
 				axios.post(this.serverURL + '/channels', {name: name}, {headers: authHeader()})
 				.then(() =>
@@ -96,6 +117,15 @@ export default defineComponent(
 				})
 				.catch(error =>
 				{
+					createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 					console.log(error)
 				})
 			}
@@ -122,7 +152,15 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
-				alert(error);
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 			});
 		},
 
@@ -158,6 +196,8 @@ export default defineComponent(
 
 		muteMember(username: string): void
 		{
+			if (this.channel.user_role == "MEMBER")
+				return ;
 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/mute', {}, {headers: authHeader()})
 			.then(() =>
 			{
@@ -165,7 +205,16 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
-				console.log(error)
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error, error.response);
 			})
 		},
 
@@ -178,13 +227,23 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 				console.log(error)
 			})
 		},
 
 		banMember(username: string): void
 		{
-			alert(username);
+			if (this.channel.user_role == "MEMBER")
+				return ;
 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/ban', {}, {headers: authHeader()})
 			.then(() =>
 			{
@@ -192,6 +251,15 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 				console.log(error)
 			})
 		},
@@ -205,6 +273,15 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 				console.log(error)
 			})
 		},
@@ -221,42 +298,104 @@ export default defineComponent(
 			if (!this.channel.requirePassword)
 			{
 				url = this.serverURL + '/channels/' + this.channel.id + '/password';
-				await axios.delete(url, {headers: authHeader()});
+				await axios.delete(url, {headers: authHeader()}).catch(error =>
+				{
+					createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				});
 			}
 		},
 
 		async updateChannelPassword(): Promise<void>
 		{
 			let password = $('#channel_password').val() as string;
-			alert("Set channel password to '" + password + "'");
-			await axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password}, {headers: authHeader()});
+			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password}, {headers: authHeader()})
+			.then(() =>
+			{
+				createToast({
+						title: 'Error',
+						description: "Password modified successfully"
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			});
 		},
 
 		updateChannelName(): void
 		{
 			let new_name : string = $('#channel_name_input').val() as string;
 			let id  = this.channel.id;
-			alert("Update channel name to '" + new_name + "'");
 			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/name', {id: id, new_name: new_name}, {headers: authHeader()})
 			.then(() =>
 			{
 				this.loadChannelsList();
 				this.channel.name = new_name;
+				createToast({
+						title: 'Error',
+						description: "Channel name changed to '" + new_name + "' !"
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 			})
 			.catch(error =>
 			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 				console.log(error)
 			})
 		},
 
 		async loadChannelsList(): Promise<void>
 		{
-			await axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
+			axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
 			{
 				console.log(res.data);
 				this.channels = res.data;
 			})
-			.catch(err => console.log(err));
+			.catch(err =>
+			{
+				createToast({
+						title: 'Error',
+						description: err.response.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			});
 		},
 
 		getUserLink(user_id: number)
@@ -267,8 +406,9 @@ export default defineComponent(
 		async leaveChannel()
 		{
 			let leave_id = this.channel.id
-			axios.delete(this.serverURL + "/channels/" + leave_id + "/members", {headers: authHeader()}).then((res) =>
+			axios.delete(this.serverURL + "/channels/" + leave_id + "/members", {headers: authHeader()}).then(() =>
 			{
+				let ex_name = this.channel.name;
 				this.loadChannelsList();
 				this.channel = {
 					id: -1,
@@ -279,29 +419,66 @@ export default defineComponent(
 					has_new_message: false,
 					members: [],
 					administrators: [],
-					userRole: 'MEMBER'
-				}
+					user_role: "MEMBER"
+				} as ChannelInterface;
+
 				let index = this.channels.findIndex(c => c.id == leave_id);
+
 				if (index != -1)
 					this.channels.splice(index, 1);
+
+				createToast({
+					title: 'Error',
+					description: "You leave channel '" + ex_name + "'"
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 			});
 		},
 
 		async authentifyUser()
 		{
 			let password = $('#channel_password').val() as string;
-			axios.post(this.serverURL + "/channels/" + this.channel.id + "/check_password", {password: password}, {headers: authHeader()}).then(res =>
+			axios.post(this.serverURL + "/channels/" + this.channel.id + "/check_password", {password: password}, {headers: authHeader()}).then(() =>
 			{
 				this.changeMode("normal");
 				this.loadMessages();
+				createToast({
+						title: 'Error',
+						description: "You have now access to this channel !"
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
 			})
 			.catch(error =>
 			{
-				if (error.response.status == 401)
-				{
-					alert("Authentification failure, retry please");
-					$('#channel_password').val('');
-				}
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
 			});
 		},
 
@@ -409,12 +586,12 @@ export default defineComponent(
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<div v-if="channel.userRole != 'MEMBER'">
-							<input readonly="true" type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
+						<div v-if="channel.user_role != 'MEMBER'">
+							<input type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
 							<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
 						</div>
 						<div v-else>
-							<p>channel.name</p>
+							<p>{{ channel.name }}</p>
 						</div>
 					</div>
 				</section>
@@ -435,7 +612,7 @@ export default defineComponent(
 								<p v-else class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(member.username)"></p>
 							</div>
 						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_member')">
+						<p id="add_member_button" v-on:click="changeMode('add_member')" v-if="channel.user_role != 'MEMBER'">
 							<i class="fas fa-plus-square"></i>
 							Add member
 						</p>
@@ -455,13 +632,13 @@ export default defineComponent(
 						<div v-if="channel.administrators && channel.administrators.length == 0">
 							No administrators in this channel
 						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_admin')" v-if="channel.userRole == 'OWNER'">
+						<p id="add_member_button" v-on:click="changeMode('add_admin')" v-if="channel.user_role == 'OWNER'">
 							<i class="fas fa-plus-square"></i>
 							Add an administrator
 						</p>
 					</div>
 				</section>
-				<section v-if="channel.userRole == 'OWNER'">
+				<section v-if="channel.user_role == 'OWNER'">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
 						<i class="arrow fas fa-chevron-left"></i>

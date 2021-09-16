@@ -63,7 +63,7 @@ export class ChannelController
 	{
 		let user = await this.userService.findById(req.user.id);
 		if (!user)
-			throw new UnauthorizedException();
+			throw new UnauthorizedException("You are not authorized to perform this action.");
 
 		let ret: Object[];
 		let channels = user.channels;
@@ -99,11 +99,11 @@ export class ChannelController
 	{
 		let user = await this.userService.findOne(req.user.id);
 		if (!user)
-			throw new UnauthorizedException();
+			throw new UnauthorizedException("You are not authorized to perform this action.");
 		return await this.channelService.findOne(channelID).then(async c =>
 		{
 			if (c.pending_users.findIndex(tmp_user => tmp_user.id == user.id) != -1)
-				throw new UnauthorizedException();
+				throw new UnauthorizedException("You must authenticate to access to this channel !");
 
 			let channel = {...c};
 			delete channel.pending_users;
@@ -290,42 +290,50 @@ export class ChannelController
 		}
 	}
 
-	@Get(":channelID/messages")
-	async getMessages(@Param('channelID') channelID: string, @Request() req)
+	@Get(":channelID")
+	async getChannel(@Param('channelID') channelID: string, @Request() req)
 	{
 		let user = await this.userService.findById(req.user.id);
-		let messages = await this.channelService.findOne(channelID).then(async (channel) =>
-		{
-			if (!channel)
-			{
-				console.log("Error with " + channelID);
-				throw new NotFoundException("Channel not found");
-			}
-			if (await this.channelService.isBanned(channel, user))
-				throw new UnauthorizedException();
-			if (this.channelService.isPendingUser(channel, user))
-				throw new UnauthorizedException({message:"User is on pending in this channel.", authentify_in_channel: true});
+		let channel = await this.channelService.findOne(channelID);
+
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		if (await this.channelService.isBanned(channel, user))
+			throw new UnauthorizedException("You are not authorized to perform this action.");
+		if (this.channelService.isPendingUser(channel, user))
+			throw new UnauthorizedException({message: "You must authenticate to access to this channel !", authentify_in_channel: true});
 			
-			return await this.channelService.getMessages(channel);
-		});
+		let messages = await this.channelService.getMessages(channel);
 		for (let i = 0; i < messages.length; i++)
 		{
 			messages[i].user_id = messages[i].user.id;
 			messages[i].user = messages[i].user.username;
 			delete messages[i].channel;  //messages[i].channel_id = messages[i].channel.id;
 		}
-		return messages;
+		let role: "MEMBER" | "ADMIN" | "OWNER";
+		if (this.channelService.isOwner(channel, user))
+			role = "OWNER";
+		else if (this.channelService.isAdmin(channel, user))
+			role = "ADMIN";
+		else
+			role = "MEMBER";
+		return {messages: messages, user_role: role};
 	}
 
 	@Patch(":channelID/name")
 	async changeName(@Param('channelID') channelID: string, @Body() body, @Request() req)
 	{
-		
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new UnauthorizedException("You must be an administrator to perform this action");
 		let newName = body.new_name;
 
 		let channel = await this.channelService.findOne(channelID);
+
+		if (!this.channelService.isAdmin(channel, user))
+			throw new UnauthorizedException("You must be an administrator to perform this action");
 		channel.name = newName;
-		this.channelService.save(channel);
+		await this.channelService.save(channel);
 
 		this.logger.log("Channel " + channelID + " renamed '" + newName + "'");
 		return {message: "Channel " + channelID + " renamed '" + newName + "'"};
@@ -368,7 +376,7 @@ export class ChannelController
 	{
 		let user = await this.userService.findById(req.user.id);
 		if (!user)
-			throw new UnauthorizedException();
+			throw new UnauthorizedException("You are not authorized to perform this action.");
 
 		let channel = await this.channelService.findOne(channelID);
 		if (!channel)
@@ -380,7 +388,7 @@ export class ChannelController
 			return ;
 		}
 		else
-			throw new UnauthorizedException();
+			throw new UnauthorizedException("Authentification failed, retry please.");
 	}
 
 	@Delete("/:channelID/members")

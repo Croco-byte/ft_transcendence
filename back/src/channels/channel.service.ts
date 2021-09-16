@@ -142,6 +142,13 @@ export default class ChannelService
 		this.repository.save(channel);
 	}
 
+	isOwner(channel: Channel, user: User): boolean
+	{
+		if (channel.owner && channel.owner.id == user.id)
+			return true;
+		return false;
+	}
+
 	isAdmin(channel: Channel, user: User): boolean
 	{
 		if (channel.owner && channel.owner.id == user.id)
