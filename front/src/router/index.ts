@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 
-const ifAuthenticated = (from, to, next) => {
+const ifAuthenticated = (from, to, next) =>
+{
 	if (store.state.status.loggedIn === true) {
 		next();
 		return ;
@@ -46,13 +47,19 @@ const routes = [
 	{
 		path: '/user/:id',
 		name: 'User',
-		component: () => import('../views/User.vue'),
+		component: () => import('../views/User-v2.vue'),
 		beforeEnter: ifAuthenticated
 	},
 	{
 		path: '/friends',
 		name: 'Friends',
 		component: () => import('../views/Friends.vue'),
+		beforeEnter: ifAuthenticated
+	},
+	{
+		path: '/ranking',
+		name: "Ranking",
+		component: () => import('../views/Ranking.vue'),
 		beforeEnter: ifAuthenticated
 	}
 ]

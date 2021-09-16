@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { tmpdir } from "os";
 import ChannelBannedUserService from "src/channel_banned_users/channel_banned_user.service";
 import ChannelMutedUserRepository from "src/channel_muted_users/channel_muted_user.repository";
 import ChannelMutedUserService from "src/channel_muted_users/channel_muted_user.service";
@@ -14,8 +15,9 @@ import ChannelRepository from "./channel.repository";
 @Injectable()
 export default class ChannelService
 {
+	private relations : Array<string> = ["users", "administrators", "owner", "pending_users"];
 	constructor (
-				@InjectRepository(ChannelRepository) private repository,
+				@InjectRepository(Channel) private repository: Repository<Channel>,
 				private readonly channelMutedUserService: ChannelMutedUserService,
 				private readonly channelBannedUserService: ChannelBannedUserService,
 				private readonly messageService: MessageService)
@@ -23,9 +25,9 @@ export default class ChannelService
 
 	}
 
-	async insert(channel: Channel)
+	async insert(channel: Channel): Promise<Channel>
 	{
-		return this.repository.save(channel);
+		return await this.repository.save(channel);
 	}
 
 	async findAll(): Promise<Channel[]>
@@ -43,7 +45,7 @@ export default class ChannelService
 	
 	async findOne(id: string): Promise<Channel>
 	{
-		return await this.repository.findOne({relations: ["users", "administrators"], where: [{id: id}]});
+		return await this.repository.findOne({relations: this.relations, where: [{id: id}]});
 	}
 	
 	async delete(id: string): Promise<void>
@@ -61,7 +63,23 @@ export default class ChannelService
 		if (channel.users == null)
 			channel.users = new Array();
 		channel.users.push(user);
-		user.channels.push(channel)
+		user.channels.push(channel);
+		if (channel.requirePassword)
+			channel.pending_users.push(user);
+		this.repository.save(channel);
+	}
+
+	async addPassword(channel: Channel, password: string)
+	{
+		channel.requirePassword = true;
+		channel.password = password;
+		this.repository.save(channel);
+	}
+
+	async removePassword(channel: Channel)
+	{
+		channel.requirePassword = false;
+		channel.pending_users = [];
 		this.repository.save(channel);
 	}
 
@@ -117,5 +135,67 @@ export default class ChannelService
 	async isBanned(channel: Channel, user: User)
 	{
 		return (await this.channelBannedUserService.isBanned(channel, user));
+	}
+
+	async updateModifiedDate(channel: Channel)
+	{
+		channel.modifiedDate = new Date();
+		this.repository.save(channel);
+	}
+
+	async isAdmin(channel: Channel, user: User): Promise<boolean>
+	{
+		if (channel.owner && channel.owner.id == user.id)
+			return true;
+		if (!channel.administrators)
+			return false;
+		for (let admin of channel.administrators)
+		{
+			if (admin.id == user.id)
+				return true;
+		}
+		return false;
+	}
+
+	async removeUser(channel: Channel, user: User)
+	{
+		if (channel.owner && channel.owner.id == user.id)
+		{
+			channel.owner = null;
+		}
+		if (await this.isAdmin(channel, user))
+		{
+			let index = channel.administrators.findIndex((admin) => admin.id == user.id);
+			if (index != -1)
+				channel.administrators.splice(index, 1);
+		}
+		let index = channel.users.findIndex((u) => u.id == user.id);
+		if (index != -1)
+			channel.users.splice(index, 1);
+		await this.repository.save(channel);
+	}
+
+	isPendingUser(channel: Channel, user: User): boolean
+	{
+		if (channel.pending_users.findIndex(tmp_user => tmp_user.id == user.id) == -1)
+			return false;
+		return true;
+	}
+
+	async removePendingUser(channel: Channel, user: User): Promise<void>
+	{
+		let index = channel.pending_users.findIndex((tmp_user) => tmp_user.id == user.id);
+		channel.pending_users.splice(index, 1);
+		this.save(channel);
+	}
+
+	getUserRole(channel: Channel, user: User)
+	{
+		if (this.isAdmin(channel, user))
+			return 'ADMIN';
+		if (channel.owner && channel.owner.id == user.id)
+			return 'OWNER';
+		else
+			return 'MEMBER';
 	}
 }

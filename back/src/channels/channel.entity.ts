@@ -1,6 +1,5 @@
 import { User } from 'src/users/users.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, OneToMany, JoinColumn, JoinTable, BaseEntity, ManyToMany } from 'typeorm';
-import { Channel_banned_user } from 'src/channel_banned_users/channel_banned_user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, OneToMany, JoinColumn, JoinTable, BaseEntity, ManyToMany, ManyToOne } from 'typeorm';
 import { Channel_muted_user } from 'src/channel_muted_users/channel_muted_user.entity';
 import { Message } from 'src/messages/message.entity';
 
@@ -25,12 +24,8 @@ class Channel extends BaseEntity
 	@Column({nullable: true})
 	lastMessage: string;
 
-	@Column({type: 'timestamptz', nullable: true})
+	@Column({default: "2021-09-08 18:08:11"})
 	modifiedDate: Date
-
-	@OneToOne(() => User)
-	@JoinColumn()
-	owner: User;
 
 	@Column({ type: 'timestamptz' }) // Recommended
 	creationDate: Date;
@@ -45,6 +40,9 @@ class Channel extends BaseEntity
 	@ManyToMany(() => User)
 	@JoinTable()
 	administrators: User[];
+
+	@ManyToOne(() => User, (user: User) => user.own_channels)
+	owner: User;
 	
 	// @OneToMany(() => Channel_banned_user, banned => banned.channel)
 	// bannedUsers: Channel_banned_user[];
@@ -57,6 +55,10 @@ class Channel extends BaseEntity
 
 	@OneToMany(() => Channel_muted_user, muted => muted.channel)
 	mutedUsers: Channel_muted_user[];
+
+	@ManyToMany(()=> User, user => user.pending_channels)
+	@JoinTable({name: "pending_channels_users"})
+	pending_users: User[];
 
 	toJSON()
 	{

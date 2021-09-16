@@ -8,4 +8,5 @@ export default interface ChannelInterface
 	has_new_message: boolean,
 	members: [],
 	administrators: [],
+	userRole: 'ADMIN' | 'OWNER' | 'MEMBER'
 };

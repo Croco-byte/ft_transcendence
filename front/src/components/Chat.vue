@@ -9,6 +9,7 @@ import MessageInterface from '../interface/message.interface';
 import DOMEventInterface from '../interface/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
+import authService from '../services/auth.service';
 
 export default defineComponent(
 {
@@ -27,10 +28,13 @@ export default defineComponent(
 				has_new_message: false,
 				members: [],
 				administrators: [],
+				userRole: 'MEMBER'
 			} as ChannelInterface,
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
+			user_id: -1,
+			show_channels_list: false
 		}
 	},
 
@@ -59,21 +63,20 @@ export default defineComponent(
 			this.channel = this.channels[id];
 			this.channels[id].has_new_message = false;
 
-			axios.get(this.serverURL + "/channels/" + this.channels[id].id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
+			this.loadMessages();
+		},
+
+		loadMessages(): void
+		{
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/messages", {headers: authHeader()}).then((res: {data: Array<MessageInterface>}) =>
 			{
 				this.channel.messages = res.data;
 			})
-			.catch(error =>
+			.catch((error) =>
 			{
-				alert(error);
+				if (error.response.data.authentify_in_channel)
+					this.changeMode("authentify_user_in_channel");
 			});
-
-			// this.channel.id = this.channels[id].id;
-			// this.channel.name = this.channels[id].name;
-			// this.channel.has_new_message = false;
-			// this.channel.members = this.channels[id].members;
-			// this.channel.messages = [];
-			//$('.view').scrollTop(document.getElementsByClassName('.view').scrollHeight);
 		},
 		
 		createChannel(): void
@@ -106,7 +109,7 @@ export default defineComponent(
 		changeMode(mode: string): void
 		{
 			this.mode = mode;
-			if (this.mode == "channel_info")
+			if (this.mode == "channel_info" && this.channel.id != -1)
 				this.loadChannelInfo();
 		},
 
@@ -255,6 +258,57 @@ export default defineComponent(
 			})
 			.catch(err => console.log(err));
 		},
+
+		getUserLink(user_id: number)
+		{
+			return "/user/" + user_id;
+		},
+
+		async leaveChannel()
+		{
+			let leave_id = this.channel.id
+			axios.delete(this.serverURL + "/channels/" + leave_id + "/members", {headers: authHeader()}).then((res) =>
+			{
+				this.loadChannelsList();
+				this.channel = {
+					id: -1,
+					name: '',
+					requirePassword: false,
+					password: '',
+					messages: [],
+					has_new_message: false,
+					members: [],
+					administrators: [],
+					userRole: 'MEMBER'
+				}
+				let index = this.channels.findIndex(c => c.id == leave_id);
+				if (index != -1)
+					this.channels.splice(index, 1);
+			});
+		},
+
+		async authentifyUser()
+		{
+			let password = $('#channel_password').val() as string;
+			axios.post(this.serverURL + "/channels/" + this.channel.id + "/check_password", {password: password}, {headers: authHeader()}).then(res =>
+			{
+				this.changeMode("normal");
+				this.loadMessages();
+			})
+			.catch(error =>
+			{
+				if (error.response.status == 401)
+				{
+					alert("Authentification failure, retry please");
+					$('#channel_password').val('');
+				}
+			});
+		},
+
+		isMe(message: MessageInterface)
+		{
+			return message.user_id == this.user_id;
+		},
 	},
 
 	created(): void
@@ -265,6 +319,7 @@ export default defineComponent(
 				this.$store.commit('disconnectUser', { message: "Session expired or invalid token" });
 		})
 		this.loadChannelsList();
+		this.user_id = Number(authService.parseJwt().id);
 	},
 
 	mounted(): void
@@ -283,340 +338,20 @@ export default defineComponent(
 				}
 			}
 			else
+			{
 				this.channel.messages.push(data);
+			}
 		})
 	},
 });
 
-// export default
-// {
-// 	name: 'Chat',
-// 	components:
-// 	{
-
-// 	},
-// 	data: function() : unknown
-// 	{
-// 		return {
-// 			mode: 'normal',
-// 			socket: null,
-// 			channel:
-// 			{
-// 				id: null,
-// 				name: null,
-// 				requirePassword: false,
-// 				password: '',
-// 				messages: [],
-// 				has_new_message: false,
-// 				members: [],
-// 				administrators: [],
-// 			},
-// 			friends: [],
-// 			channels: [],
-// 			serverURL: "http://" + window.location.hostname + ":3000",
-// 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat",
-// 		};
-// 	},
-// 	computed:
-// 	{
-// 		placeholder(): string
-// 		{
-// 			return 'Dites-bonjour à ' + this.channel.name + '...';
-// 		},
-// 		timestampzToDate(str: string): string
-// 		{
-// 			return (str.toString().split('T')[0])
-// 		}
-// 	},
-// 	methods:
-// 	{
-// 		switchChat(event: Event): void
-// 		{
-// 			let id = $(event.currentTarget).attr('data-id');
-// 			$('.chat_item.selected').removeClass('selected');
-// 			$(event.currentTarget).addClass('selected');
-
-// 			this.channel = this.channels[id];
-// 			this.channels[id].has_new_message = false;
-
-// 			axios.get(this.serverURL + "/channels/" + this.channels[id].id + "/messages", {headers: authHeader()}).then(res =>
-// 			{
-// 				this.channel.messages = res.data;
-// 			})
-// 			.catch(error =>
-// 			{
-// 				alert(error);
-// 			});
-
-// 			// this.channel.id = this.channels[id].id;
-// 			// this.channel.name = this.channels[id].name;
-// 			// this.channel.has_new_message = false;
-// 			// this.channel.members = this.channels[id].members;
-// 			// this.channel.messages = [];
-// 			$('.view').scrollTop($('.view').scrollHeight);
-// 		},
-		
-// 		createChannel(): void
-// 		{
-// 			let name = $('#create_channel_input').val().trim();
-			
-// 			if (name && name.length > 0)
-// 			{
-// 				// Axios send to nestjs the name
-// 				this.mode = 'normal';
-// 				alert("Create channel named '" + name + "'");
-
-// 				axios.post(this.serverURL + '/channels', {name: name}, {headers: authHeader()})
-// 				.then((res) =>
-// 				{
-// 					console.log(res);
-// 					this.loadChannelsList();
-// 				})
-// 				.catch(error =>
-// 				{
-// 					console.log(error)
-// 				})
-// 			}
-// 		},
-
-// 		expandInfoSection(event: Event): void
-// 		{
-// 			$(event.target).closest('section').toggleClass('active');
-// 		},
-
-// 		changeMode(mode: string): void
-// 		{
-// 			this.mode = mode;
-// 			if (this.mode == "channel_info")
-// 				this.loadChannelInfo();
-// 		},
-
-// 		loadChannelInfo(): void
-// 		{
-// 			axios.get(this.serverURL + "/channels/" + this.channel.id + "/info", {headers: authHeader()}).then(res =>
-// 			{
-// 				this.channel.members = res.data.users;
-// 				this.channel.administrators = res.data.administrators;
-// 			})
-// 			.catch(error =>
-// 			{
-// 				alert(error);
-// 			});
-// 		},
-
-// 		addMember(): void
-// 		{
-// 			let username = $('#add_member_input').val();
-// 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members', {username: username}, {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		addAdmin(): void
-// 		{
-// 			let username = $('#add_admin_input').val();
-// 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		createMatch(): void
-// 		{
-// 			if (window.confirm("Do you want to start match with " + this.channel.name + " ?"))
-// 			{
-// 				alert("Start");
-// 			}
-// 		},
-
-// 		async sendMessage(): Promise<void>
-// 		{
-// 			let message = $('#msg_input').val();
-// 			if (message && message.length > 0)
-// 				await axios.post(this.serverURL + "/channels/" + this.channel.id + "/messages", {channel: this.channel.id, user: this.username, content: message}, {headers: authHeader()});
-// 				//this.socket.emit('message', {channel: this.channel.id, user: this.username, content: message});
-			
-// 			$('#msg_input').val('');
-// 		},
-
-// 		muteMember(username: string): void
-// 		{
-// 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/mute', {}, {headers: authHeader()})
-// 			.then(res =>
-// 			{
-// 				console.log(res);
-// 				this.loadChannelInfo();
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		unmuteMember(username: string): void
-// 		{
-// 			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unmute', {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 				this.loadChannelInfo();
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		banMember(username: string): void
-// 		{
-// 			alert(username);
-// 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/ban', {}, {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 				this.loadChannelInfo();
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		unbanMember(username: string): void
-// 		{
-// 			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unban', {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 				this.loadChannelInfo();
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		setRequirePassword(): void
-// 		{
-// 			let checked = $('#active_password:checked').length != 0;
-// 			if (checked)
-// 				this.channel.requirePassword = true;
-// 			else
-// 				this.channel.requirePassword = false;
-
-// 			let url;
-// 			if (!this.channel.requirePassword)
-// 			{
-// 				url = this.serverURL + '/channels/' + this.channel.id + '/password';
-// 				axios.delete(url, {headers: authHeader()})
-// 				.then((res) =>
-// 				{
-// 					console.log(res);
-// 				})
-// 				.catch(error =>
-// 				{
-// 					console.log(error)
-// 				})
-// 			}
-// 		},
-
-// 		updateChannelPassword(): void
-// 		{
-// 			let password = $('#channel_password').val();
-// 			alert("Set channel password to '" + password + "'");
-// 			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/password', {password: password}, {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		updateChannelName(): void
-// 		{
-// 			let new_name = $('#channel_name_input').val();
-// 			let id  = this.channel.id;
-// 			alert("Update channel name to '" + new_name + "'");
-// 			axios.patch(this.serverURL + '/channels/' + this.channel.id + '/name', {id: id, new_name: new_name}, {headers: authHeader()})
-// 			.then((res) =>
-// 			{
-// 				console.log(res);
-// 				this.loadChannelsList();
-// 				this.channel.name = new_name;
-// 			})
-// 			.catch(error =>
-// 			{
-// 				console.log(error)
-// 			})
-// 		},
-
-// 		loadChannelsList(): void
-// 		{
-// 			this.channels = axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
-// 			{
-// 				console.log(res.data);
-// 				this.channels = res.data;
-// 			})
-// 			.catch(err => console.log(err));
-// 		}
-// 	},
-// 	head:
-// 	{
-// 		link:
-// 		[
-// 			{rel: "stylesheet", href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"}
-// 		],
-// 	},
-// 	created(): void
-// 	{
-// 		let user = JSON.parse(localStorage.getItem('user'));
-// 		console.log(user);
-// 		this.socket = io(this.websocketServerURL, {query: "token=" + authHeader().Authorization.split(" ")[1]});
-// 		this.loadChannelsList();
-// 		this.username = "yel-alou";//prompt("Quel est votre nom d'utilisateur de l'intra svp bg?", "yel-alou");
-// 	},
-
-// 	mounted(): void
-// 	{
-// 		this.socket.on('message', (data) =>
-// 		{
-// 			if (data.channel !== this.channel.id)
-// 			{
-// 				for (let i = 0; i < this.channels.length; i++)
-// 				{
-// 					if (this.channels[i].id === data.channel)
-// 					{
-// 						this.channels[i].has_new_message = true;
-// 						this.channels[i].messages.push(data);
-// 					}
-// 				}
-// 			}
-// 			else
-// 				this.channel.messages.push(data);
-// 		})
-// 	}
-// }
 </script>
 
 <template>
 	<div id="chat">
 		<div class="chat_container">
-			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin'" v-on:click="changeMode('normal')"></div>
-			<div class="chat_list">
+			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel' || mode == 'channel_list'" v-on:click="changeMode('normal')"></div>
+			<div class="chat_list" :class="{active: mode == 'channel_list'}">
 				<div class="list">
 					<div @click="switchChat" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
 						<div class="flex j-sb">
@@ -638,16 +373,21 @@ export default defineComponent(
 				</div>
 				<div v-if="channel.id">
 					<div class="chat_view_header">
+						<p class="toggle_chat_list_button" @click="changeMode('channel_list')">
+							<span></span>
+							<span></span>
+							<span></span>
+						</p>
 						<p id="chat_title">{{ channel.name }}</p>
 						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')"></p>
 					</div>
 					<div class="view">
-						<div v-for="message in channel.messages" v-bind:key="message" class="message">
-							<p class="username">{{ message.user }}</p>
+						<div v-for="message in channel.messages" :key="message" class="message" :class="{ me: isMe(message)}">
+							<a class="username" :href="getUserLink(message.user_id)">{{ message.user }}</a>
 							<p class="content">{{ message.content }}</p>
 						</div>
 					</div>
-					<div class="message_bar">
+					<div class="message_bar" v-if="channel.id != -1">
 						<input id="msg_input" type="text" v-bind:placeholder="placeholder" v-on:keyup.enter="sendMessage"/>
 						<button id="send_button" v-on:click="sendMessage">Envoyer</button>
 						<p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch"></p>
@@ -661,7 +401,7 @@ export default defineComponent(
 				</button>
 			</div>
 			
-			<div class="channel_info_container" v-if="mode == 'channel_info'">
+			<div class="channel_info_container" v-if="mode == 'channel_info' && channel.id != -1">
 				<p>Info</p>
 				<section class="active">
 					<p class="title" v-on:click="expandInfoSection">
@@ -669,8 +409,13 @@ export default defineComponent(
 						<i class="arrow fas fa-chevron-left"></i>
 					</p>
 					<div class="content">
-						<input type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
-						<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
+						<div v-if="channel.userRole != 'MEMBER'">
+							<input readonly="true" type="text" id="channel_name_input" v-bind:value="channel.name" v-on:keyup.enter="updateChannelName"/>
+							<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
+						</div>
+						<div v-else>
+							<p>channel.name</p>
+						</div>
 					</div>
 				</section>
 				<section>
@@ -707,13 +452,16 @@ export default defineComponent(
 								{{ admin.username }}
 							</p>
 						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_admin')">
+						<div v-if="channel.administrators && channel.administrators.length == 0">
+							No administrators in this channel
+						</div>
+						<p id="add_member_button" v-on:click="changeMode('add_admin')" v-if="channel.userRole == 'OWNER'">
 							<i class="fas fa-plus-square"></i>
 							Add an administrator
 						</p>
 					</div>
 				</section>
-				<section>
+				<section v-if="channel.userRole == 'OWNER'">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
 						<i class="arrow fas fa-chevron-left"></i>
@@ -727,6 +475,9 @@ export default defineComponent(
 						<button class="save_channel_config_button" v-on:click="updateChannelPassword" v-if="channel.requirePassword">Save</button>
 					</div>
 				</section>
+				<div class="leave_button" @click="leaveChannel">
+					Leave {{ channel.name }}
+				</div>
 			</div>
 			<div class="input_popup" id="add_member_popup" v-if="mode == 'add_member'">
 				<input type="text" placeholder="Member's username" id="add_member_input"/>
@@ -737,6 +488,12 @@ export default defineComponent(
 			<div class="input_popup" id="add_admin_popup" v-if="mode == 'add_admin'">
 				<input type="text" placeholder="New admin's username" id="add_admin_input"/>
 				<button id="add_admin" @click="addAdmin">
+					<i class="fas fa-arrow-right"></i>
+				</button>
+			</div>
+			<div class="input_popup" id="authentify_user" v-if="mode == 'authentify_user_in_channel'">
+				<input type="password" placeholder="Channel's password" id="channel_password" @keypress.enter="authentifyUser"/>
+				<button id="authentify_user" @click="authentifyUser">
 					<i class="fas fa-arrow-right"></i>
 				</button>
 			</div>
@@ -989,6 +746,7 @@ export default defineComponent(
 
 	.chat_view .message .username
 	{
+		color: white;
 		padding-bottom: 0.25rem;
 		font-size: 1.1rem;
 	}
@@ -1132,6 +890,7 @@ export default defineComponent(
 	.channel_info_container
 	{
 		position: absolute;
+		overflow-y: auto;
 		width: 20rem;
 		height: 100%;
 		right: 0;
@@ -1236,6 +995,28 @@ export default defineComponent(
 		color: red;
 	}
 
+	.leave_button
+	{
+		width: 100%;
+		background-color: red;
+		color: white;
+		padding: 0.5rem 1rem;
+		text-align: center;
+		cursor: pointer;
+	}
+
+	.leave_button:hover
+	{
+		background-color: transparent;
+		color: red;
+		border: solid 1px red;
+	}
+
+	.toggle_chat_list_button
+	{
+		display: none;
+	}
+
 	@keyframes show_info_div
 	{
 		from
@@ -1245,6 +1026,58 @@ export default defineComponent(
 		to
 		{
 			transform: translateX(0);
+		}
+	}
+
+	@media all and (max-width: 500px)
+	{
+		.chat_list
+		{
+			position: absolute;
+			top: 0;
+			left: 0;
+			transform: translateX(-100%);
+			transition: all 0.25s ease-out;
+		}
+
+		.chat_view
+		{
+			width: 100%;
+		}
+
+		.toggle_chat_list_button
+		{
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			cursor: pointer;
+		}
+
+		.toggle_chat_list_button span
+		{
+			width: 2rem;
+			height: 0.125rem;
+			background-color: black;
+			margin: 0.2rem
+		}
+
+		.chat_list.active
+		{
+			z-index: 99;
+			transform: translateX(0);
+			width: 80%;
+		}
+
+		.chat_container .blur
+		{
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+
+		.input_popup input
+		{
+			width: 100%;
 		}
 	}
 

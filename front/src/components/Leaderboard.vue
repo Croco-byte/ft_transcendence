@@ -143,7 +143,7 @@ export default defineComponent({
 					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="getLeaderboardUsers(leaderboardMeta.currentPage - 1)">Previous</button>
 					<span class="paginationSpan">
 						<form id="goToleaderboardUsersPage">
-							<input class="goToleaderboardUsersPageInput" name="goToleaderboardUsersPageInput" v-model.number="leaderboardMeta.currentPage" v-on:input="goToleaderboardUsersPage">
+							<input type="number" class="goToleaderboardUsersPageInput" name="goToleaderboardUsersPageInput" v-model.number="leaderboardMeta.currentPage" v-on:input="goToleaderboardUsersPage">
 						</form>
 					</span>
 					<span class="paginationSpan"> /{{ leaderboardMeta.totalPages }}</span>
@@ -155,6 +155,11 @@ export default defineComponent({
 </template>
 
 <style scoped>
+
+#leaderboard
+{
+	margin: 0 auto;
+}
 
 h2
 {
@@ -173,10 +178,51 @@ h2
 
 .pagination
 {
-	display: inline-block;
-	height: 3rem;
+	display: flex;
+	height: auto;
 	width: 100%;
+	align-items: center;
 	text-align: center;
+}
+
+.paginationButtonNext,
+.paginationButtonPrev
+{
+	background: #39D88F;
+    color: white;
+    border: none;
+    outline: none;
+    padding: 0.25rem 1rem;
+	margin: 0 1rem;
+	cursor: pointer;
+	border: solid 1px white;
+	transition: all 0.25s;
+}
+
+.paginationButtonNext:enabled:hover
+{
+	background: white;
+	border-color: #39D88F;
+	color: #39D88F;
+}
+
+.paginationButtonNext:disabled
+{
+	background-color: grey;
+	cursor: not-allowed;
+}
+
+.paginationButtonPrev:enabled:hover
+{
+	background: white;
+	border-color: #39D88F;
+	color: #39D88F;
+}
+
+.paginationButtonPrev:disabled
+{
+	background-color: grey;
+	cursor: not-allowed;
 }
 
 .paginationButtonPrev
@@ -198,7 +244,7 @@ h2
 
 .goToleaderboardUsersPageInput
 {
-	width: 30px;
+	width: 3rem;
 }
 
 .leaderboardUsers_item_container
@@ -217,14 +263,21 @@ h2
 	justify-content: space-around;
 	width: 100%;
 	height: 5rem;
-	border: solid 3px #000000;
-	background: white;
-	margin: 0.25rem 0;
+	background: #39D88F;
+    color: white;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
 }
 
 .leaderboard_header .rank
 {
 	font-weight: bold;
+	color: white;
+}
+
+.rank
+{
+	color: #39D88F;
 }
 
 .leaderboard_header .profile
@@ -266,9 +319,6 @@ h2
 	justify-content: space-around;
 	width: 100%;
 	height: 5rem;
-	border: solid 1px #39D88F;
-	background: white;
-	margin: 0.25rem 0;
 }
 
 .userInfo
@@ -305,11 +355,9 @@ h2
 	align-items: center;
 	width: 33%;
 	height: 100%;
-	color: white;
 	padding: 0 1rem;
 	font-size: 1.125rem;
 	align-self: center;
-	background-color: #39D88F;
 }
 
 .wins

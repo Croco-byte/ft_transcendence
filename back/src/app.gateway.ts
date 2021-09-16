@@ -26,36 +26,41 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	@WebSocketServer() server: Server;
 
 	private logger: Logger = new Logger('AppGateway');
-	private clients: any[];
+	private clients: any[] = new Array();
 
 	constructor(private readonly channelService: ChannelService,
 				private readonly authService: AuthService,
 				private readonly userService: UsersService,
 				private readonly messageService: MessageService)
 	{
-		this.clients = new Array();
+
 	}
 
-	@SubscribeMessage('message')
-	async handleMessage(client: Socket, data: any)
+	async sendNewMessage(room: string, msg: Object, user: User, channel: Channel)
 	{
-		// Verifier que l utilisateur est dans le channel de la requete et qu il n est pas mute ou ban
-		this.logger.log("Receive : " + JSON.stringify(data));
-	}
+		let unauthaurizedUsers : User[] = [];
+		let blockedUsers = await this.userService.getBiDirectionalBlockedUsers(user);
+		unauthaurizedUsers.concat(blockedUsers);
+		unauthaurizedUsers.concat(channel.pending_users);
 
-	async sendNewMessage(room: string, msg: Object)
-	{
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.leave(room);
+		}
 		this.server.to(room).emit('message', msg);
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.join(room);
+		}
 	}
 
 	afterInit(server: Server)
 	{
 		this.logger.log('Init');
-	}
-
-	test(arg)
-	{
-		this.logger.log(this.clients);
 	}
 
 	handleDisconnect(client: Socket)
@@ -70,8 +75,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 		if (!user) { client.emit('unauthorized', {}); return; }
 		// Récupérer les channels ou l user est présent et les joins
+		this.clients[client.id] = [user, client];
 
-		this.clients[client.id] = user;
 		for (let i = 0; i < user.channels.length; i++)
 		{
 			let channel = user.channels[i];
@@ -84,28 +89,45 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	async leaveChannel(channel: Channel, user: User)
 	{
 		let sockID = null;
+		let socket : Socket = null;
 		for (let key in this.clients)
 		{
-			if (this.clients[key].username == user.username)
+			if (this.clients[key][0].username == user.username)
 			{
 				sockID = key;
+				socket = this.clients[key][1];
 				break ;
 			}
 		}
-		delete this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID];
+		socket.leave("channel_" + channel.id);
 	}
 
 	async joinChannel(channel: Channel, user: User)
 	{
 		let sockID = null;
+		let socket: Socket = null;
 		for (let key in this.clients)
 		{
-			if (this.clients[key].username == user.username)
+			if (this.clients[key][0].username == user.username)
 			{
 				sockID = key;
+				socket = this.clients[key][1];
 				break ;
 			}
 		}
-		this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
+		socket.join("channel_" + channel.id);
+		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
+	}
+
+	getSocketByUser(search: User): Socket
+	{
+		for (let arr of this.clients.entries())
+		{
+			let val = arr[1];
+			let user = val[0];
+			if (user.id == search.id)
+				return val[1];
+		}
+		return null;
 	}
 }

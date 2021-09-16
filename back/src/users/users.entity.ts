@@ -26,12 +26,15 @@ export class User extends BaseEntity
 	@OneToMany(() => Message, msg => msg.user)
     messages: Message[];
 
-	@ManyToMany(() => User)
+	@ManyToMany(() => User, (user: User) => user.blocked)
 	@JoinTable({ name: "blocked_users" })
 	blocked: User[];
 
 	@ManyToMany(() => Channel, channel => channel.users)
 	channels: Channel[];
+
+	@OneToMany(() => Channel, channel => channel.owner)
+	own_channels: Channel[];
 
 	@Column({ default: false })
 	isTwoFactorAuthenticationEnabled?: boolean
@@ -62,6 +65,9 @@ export class User extends BaseEntity
 	
 	@Column({ default: 'none' })
 	roomId: string;
+
+	@ManyToMany(()=> Channel, channel => channel.pending_users)
+	pending_channels: Channel[];
 
 	toPublic()
 	{
