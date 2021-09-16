@@ -46,7 +46,7 @@ export class AuthService {
 			let returnObject : { username?: string, accessToken?: string, twoFARedirect?: boolean };
 			returnObject = {};
 			returnObject.username = infos.username;
-			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '1m' });
+			returnObject.accessToken = this.jwtService.sign({ id: user.id, username: user.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
 			if (user.isTwoFactorAuthenticationEnabled === true) {
 				returnObject.twoFARedirect = true;
 			}

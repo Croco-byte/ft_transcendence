@@ -20,12 +20,12 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
 	
 	async onModuleDestroy() {
-		this.wss.emit('serverDown', {});
 		await getConnection()
 					.createQueryBuilder()
 					.update(User)
 					.set({ status: "offline" })
 					.execute();
+		this.wss.emit('serverDown', {});
 	}
 
 	@WebSocketServer() wss: Server;
@@ -50,7 +50,10 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 		try {
 			console.log("[Status Gateway] Client connected to gateway : " + user.id);
 			client.data = { userId: user.id, username: user.username };
-			if (user.status !== "offline") { this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id }); }
+			if (user.status !== "offline") {
+				await this.userService.changeUserStatus(user.id, "offline");
+				this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id });
+			}
 			else {
 				await this.userService.changeUserStatus(client.data.userId, 'online');
 				this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
@@ -69,7 +72,6 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'online');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'online' });
-			this.logger.log('status changed to online');
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -84,7 +86,6 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'offline' });
-			this.logger.log('status changed to offline');
 		} catch(e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -135,6 +136,8 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {
 		if (data.currUserId !== client.data.userId) {
+			await this.userService.changeUserStatus(data.currUserId, "offline");
+			await this.userService.changeUserStatus(client.data.userId, "offline");
 			this.wss.emit('multipleConnectionsOnSameUser', { userId: data.currUserId })
 			client.disconnect();
 		}
