@@ -36,7 +36,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	@SubscribeMessage('acceptFriendRequest')
-	async handleAcceptFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
+	async handleAcceptFriendRequest(client: Socket, data: { friendRequestId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', {}); return; }
@@ -50,7 +50,7 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	@SubscribeMessage('declineFriendRequest')
-	async handleDeclineFriendRequest(client: Socket, data: { friendRequestId: number, user: { id: number, username: string } }): Promise<void> {
+	async handleDeclineFriendRequest(client: Socket, data: { friendRequestId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', {}); return; }
@@ -78,12 +78,12 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	@SubscribeMessage('unfriendUser')
-	async handleUnfriendUser(client: Socket, data: { friendId: number, user: { id: number, username: string } }): Promise<void> {
+	async handleUnfriendUser(client: Socket, data: { friendId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', {}); return; }
 
-			const result = await this.userService.unfriendUser(data.user.id, data.friendId);
+			const result = await this.userService.unfriendUser(user.id, data.friendId);
 			this.wss.emit('friendStatusChanged', result);
 			client.emit('friendRequestConfirmation', { type: "unfriend", message: "User successfully unfriended" });
 		} catch(e) {
@@ -92,15 +92,16 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	}
 
 	@SubscribeMessage('cancelFriendRequest')
-	async handleCancelFriendRequest(client: Socket, data: { receiverId: number, user: { id: number, username: string } }): Promise<void> {
+	async handleCancelFriendRequest(client: Socket, data: { receiverId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', {}); return; }
 
-			const result = await this.userService.cancelFriendRequest(data.user.id, data.receiverId);
+			const result = await this.userService.cancelFriendRequest(user.id, data.receiverId);
 			this.wss.emit('friendStatusChanged', result);
 			client.emit('friendRequestConfirmation', { type: "cancel", message: "Friend request successfully canceled" });
 		} catch(e) {
+			console.log(e.message);
 			client.emit('friendRequestError', { type: "cancel", message: "Something wrong happened while canceling friend request. Please try again later" });
 		}
 	}

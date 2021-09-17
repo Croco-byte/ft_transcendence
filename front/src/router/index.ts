@@ -47,7 +47,7 @@ const routes = [
 	{
 		path: '/user/:id',
 		name: 'User',
-		component: () => import('../views/User-v2.vue'),
+		component: () => import('../views/User.vue'),
 		beforeEnter: ifAuthenticated
 	},
 	{
