@@ -1,5 +1,8 @@
 <template>
 <div class='fullPage'>
+	<div class="homeImage">
+		<img src="https://i.pinimg.com/originals/d7/65/ca/d765cadd577d6901922c2bfcd8419015.gif ">
+	</div>
 	<div class="welcome">
 		<h1>WELCOME</h1>
 		<LoggingButton :message="message"/>
@@ -14,44 +17,38 @@
 
 <style scoped>
 
+.homeImage {
+	/* width: 20vw;
+	height: 20vh; */
+	right: 0px;
+	top: 0px;
+	position: absolute;
+	z-index: 10;
+}
+
+
 .fullPage {
-	/* background-image: url('https://en-marche.fr/assets/images/ecole-42-en-marche-emmanuel-macron-niel-code-dev-french-tech.jpg?q=70&cache=15d88f6e63eaa73b665c&fm=pjpg&s=3127360a86ae16887bbc61182836c450'); */
-	background-size: cover;
 	height: 100%;
 	width: 100%;
 	position: absolute;
 	display: flex;
 	align-items: flex-start;
-	background: white;
+	background-color: #E6EFF2;
+	z-index: 100;
 }
 
-.fullPage:after {
-	opacity: 0.7;
-    content: "";  /*/ :before and :after both require content*/
-    position: absolute;
-    width: 100%; /*/ Makes the overlay same size to accommodate the skew*/
-    height: 100%;
-    top: 0;
-    left: 50%; /*/ Push the element 50% of the container's width to the right*/
-    transform: skew(0deg) /*/ Puts the element on an angle*/
-               translateX(-50%); /*/ Moves the element 50% of its width back to the left*/
-    background-image: linear-gradient(120deg, lightblue,white);
-}
-
-
-.fullPage>*:first-child {
-	color: red;
-    align-self: center;
+.welcome {
+	color: #73C6B6;
+	top: 10vh;
+	left: 70vw;
 	z-index: 100;
 }
 
 
 .leaderboard {
-	z-index: 99;
+	z-index: 1;
 	align-self: center;
-	margin-left: auto;
-    margin-right: auto;
-	top: 10vh;
+	top: 20vh;
 	width: 50%;
 	height: 50%;
 }

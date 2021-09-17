@@ -200,7 +200,7 @@ export default defineComponent({
 
 .router_view
 {
-	background-color: #4F4F4F;
+	background-color: #E6EFF2;
 }
 
 .game
