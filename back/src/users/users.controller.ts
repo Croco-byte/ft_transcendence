@@ -94,11 +94,11 @@ export class UserController {
 	}
 // 
 	/* Allows to change the current user display name */
-	@Post('displayName')
+	@Post('displayname')
 	@UseGuards(JwtTwoFactorGuard)
-	changeUserDisplayName(@Body('displayName') newDisplayName: string, @Req() req): Promise<string> {
+	changeUserdisplayname(@Body('displayname') newdisplayname: string, @Req() req): Promise<string> {
 		try {
-			return this.userService.changeUserDisplayName(req.user.id, newDisplayName);
+			return this.userService.changeUserdisplayname(req.user.id, newdisplayname);
 		} catch (e) {
 			throw e;
 		}
@@ -143,7 +143,7 @@ export class UserController {
 		if (username == null) {
 			return this.userService.paginateUsers({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' });
 		} else {
-			return this.userService.paginateUsersFilterByDisplayName({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
+			return this.userService.paginateUsersFilterBydisplayname({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
 		}
 	}
 
@@ -290,4 +290,36 @@ export class UserController {
 		if (!friendRequestId) throw new BadRequestException();
 		return this.userService.respondToFriendRequest(friendRequestId, responseStatus.status);
 	}
+
+
+	/* ==== Endpoints related to website administration  ==== */
+	@Get('/administration/owner')
+	@UseGuards(JwtTwoFactorGuard)
+	async getWebsiteOwner(): Promise<User> {
+		return await this.userService.getWebsiteOwner();
+	}
+
+	@Get('/administration/moderators')
+	@UseGuards(JwtTwoFactorGuard)
+	getWebsiteModerators(): Promise<User[]> {
+		return this.userService.getWebsiteModerators();
+	}
+
+	@Post('/administration/make_moderator')
+	@UseGuards(JwtTwoFactorGuard)
+	makeWebsiteModerator(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		if (req.user.is_admin === "owner" && data.targetUserId !== req.user.id) return this.userService.makeUserModerator(data.targetUserId);
+		else if (data.targetUserId === req.user.id) throw new ForbiddenException("You can't make the site owner a moderator");
+		else throw new ForbiddenException("Only the website owner can make users moderators !");
+	}
+
+	@Post('/administration/make_regular')
+	@UseGuards(JwtTwoFactorGuard)
+	makeuserRegular(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		if (req.user.is_admin === "owner" && data.targetUserId !== req.user.id) return this.userService.makeUserRegular(data.targetUserId);
+		else if (data.targetUserId === req.user.id) throw new ForbiddenException("You can't make the site owner a regular user");
+		else throw new ForbiddenException("Only the website owner can make users regular users !");
+	}
+
+
 }

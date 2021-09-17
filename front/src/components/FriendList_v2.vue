@@ -58,7 +58,7 @@ export default defineComponent({
 	methods: {
 	
 		/* This method uses the UserService to get the list of the current user's friends, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getFriends: function(page = 1): void {
@@ -184,7 +184,7 @@ export default defineComponent({
 					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + friend.id ">{{ friend.displayName }}</a>
+					<a :href="'/user/' + friend.id ">{{ friend.displayname }}</a>
 				</p>
 <!--			<p class="watch_button">		This "watch" button should only be displayed when the user has status "in-game"
 					watch

@@ -20,18 +20,18 @@
 	<div id="info_and_match_history">
 		<div id="info">
 			<div class="header">
-				<h2>{{ displayName }}</h2>
+				<h2>{{ displayname }}</h2>
 				<UserStatus :status="status"/>
 			</div>
 			<div class="info_body" style="display: flex;">
 			<div class="basic_info">
 				<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
-				<div v-if="!displayNameEditMode"><p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayName }}</p>
-				<button class="edit_displayname" @click="displayNameEditMode = true">Edit Display name</button></div>
-				<form v-else id="changeDisplayNameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
-				<input name="changeDisplayNameInput" v-model="displayNameInput"><br/>
-				<button class="edit_displayname" type="button" v-on:click="changeDisplayName()">Update</button>
-				<button class="cancel_displayname" @click="displayNameEditMode = false; displayNameInput = displayName; displayNameErrorMessage = '';">Cancel</button></form>
+				<div v-if="!displaynameEditMode"><p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayname }}</p>
+				<button class="edit_displayname" @click="displaynameEditMode = true">Edit Display name</button></div>
+				<form v-else id="changedisplaynameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
+				<input name="changedisplaynameInput" v-model="displaynameInput"><br/>
+				<button class="edit_displayname" type="button" v-on:click="changedisplayname()">Update</button>
+				<button class="cancel_displayname" @click="displaynameEditMode = false; displaynameInput = displayname; displaynameErrorMessage = '';">Cancel</button></form>
 			</div>
 			<div class="score_info">
 				<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
@@ -71,9 +71,9 @@ interface AccountViewData
 {
 	id: number;
 	name: string;
-	displayName: string;
-	displayNameEditMode: boolean;
-	displayNameInput: string;
+	displayname: string;
+	displaynameEditMode: boolean;
+	displaynameInput: string;
 	status: string;
 	TwoFA: boolean;
 	score: number;
@@ -95,9 +95,9 @@ export default defineComponent({
 		return {
 			id: 0,
 			name: '',
-			displayName: '',
-			displayNameEditMode: false,
-			displayNameInput: '',
+			displayname: '',
+			displaynameEditMode: false,
+			displaynameInput: '',
 			status: 'online',
 			TwoFA: false,
 			score: 0,
@@ -109,20 +109,20 @@ export default defineComponent({
 	},
 	methods: {
 
-		changeDisplayName: function(): void {
+		changedisplayname: function(): void {
 			var ref = this;
-			let formData: FormData = new FormData(document.getElementById("changeDisplayNameForm") as HTMLFormElement);
-			let tmp: string | null = formData.get('changeDisplayNameInput') as string | null;
+			let formData: FormData = new FormData(document.getElementById("changedisplaynameForm") as HTMLFormElement);
+			let tmp: string | null = formData.get('changedisplaynameInput') as string | null;
 			if (tmp === null) tmp = '';
-			UserService.changeDisplayName(tmp).then(
+			UserService.changedisplayname(tmp).then(
 				response => {
-					ref.displayNameEditMode = false;
-					ref.displayName = ref.displayNameInput = response.data;
+					ref.displaynameEditMode = false;
+					ref.displayname = ref.displaynameInput = response.data;
 					ref.confirmationNotification('Display name successfully updated');
 				},
 				(e) => {
-					ref.displayNameInput = ref.displayName;
-					ref.displayNameEditMode = false;
+					ref.displaynameInput = ref.displayname;
+					ref.displaynameEditMode = false;
 					if (e.response.status == 403) ref.errorNotification('Error in updating display name : Unauthorized characters or name too long');
 					if (e.response.status == 400) ref.errorNotification('Error in updating display name : Name already taken');
 				}
@@ -178,7 +178,7 @@ export default defineComponent({
 		UserService.getCurrUserInfo().then(
 			response => {
 				this.name = response.data.username;
-				this.displayName = this.displayNameInput = response.data.displayName;
+				this.displayname = this.displaynameInput = response.data.displayname;
 				this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
 				this.id = response.data.id;
 				this.score = response.data.score;
@@ -317,7 +317,7 @@ export default defineComponent({
 	width: 50%;
 }
 
-input[name="changeDisplayNameInput"]
+input[name="changedisplaynameInput"]
 {
 	width: 120px;
 }

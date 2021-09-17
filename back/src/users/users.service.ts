@@ -93,16 +93,16 @@ export class UsersService {
 	/* Allows to change the user display name. If the name contains caracters that are not letters, numbers, of '_', '-', or if the
 	** chosen name is already taken, throws an exception.
 	*/
-	async changeUserDisplayName(id: number, newDisplayName: string): Promise<string> {
+	async changeUserdisplayname(id: number, newdisplayname: string): Promise<string> {
 		const invalidChars = /^[a-zA-Z0-9-_]+$/;
-		if (newDisplayName.search(invalidChars) === -1 || newDisplayName.length > 15) { throw new ForbiddenException(); }
-		const duplicate = await this.usersRepository.findOne({ where: { displayName: newDisplayName } });
+		if (newdisplayname.search(invalidChars) === -1 || newdisplayname.length > 15) { throw new ForbiddenException(); }
+		const duplicate = await this.usersRepository.findOne({ where: { displayname: newdisplayname } });
 		if (duplicate) { throw new BadRequestException(); }
 
 		const user = await this.usersRepository.findOne({ where: {id: id} });
-		user.displayName = newDisplayName;
+		user.displayname = newdisplayname;
 		this.usersRepository.save(user);
-		return user.displayName;
+		return user.displayname;
 	}
 
 	/* This function updates the path of the avatar of the user in the database (the file was already uploaded from the controller).
@@ -344,7 +344,7 @@ export class UsersService {
 	async paginateUsersOrderByScore(options: IPaginationOptions): Promise<Pagination<UserWithRank>> {
 		let ref = this;
 		const queryBuilder = this.usersRepository.createQueryBuilder('c');
-		queryBuilder.select(["c.id", "c.displayName", "c.avatar", "c.score", "c.wins", "c.loses"]);
+		queryBuilder.select(["c.id", "c.displayname", "c.avatar", "c.score", "c.wins", "c.loses"]);
 		queryBuilder.orderBy('c.score', 'DESC');
 		const result = await paginate(queryBuilder, options);
 
@@ -364,22 +364,22 @@ export class UsersService {
 	}
 
 	/* Displays user matching a filter in their displayname, paginated */
-	paginateUsersFilterByDisplayName(options: IPaginationOptions, displayName: string): Observable<Pagination<User>> {
+	paginateUsersFilterBydisplayname(options: IPaginationOptions, displayname: string): Observable<Pagination<User>> {
 		return from(this.usersRepository.findAndCount({
 			skip: ((options.page as number) - 1) * (options.limit as number) || 0,
 			take: (options.limit as number ) || 10,
-			order: {displayName: 'ASC'},
-			select: ['id', 'username', 'displayName', 'status', 'avatar', 'score'],
-			where: { displayName: Raw(alias =>`LOWER(${alias}) Like ('%${displayName.toLowerCase()}%')`) }
+			order: {displayname: 'ASC'},
+			select: ['id', 'username', 'displayname', 'status', 'avatar', 'score'],
+			where: { displayname: Raw(alias =>`LOWER(${alias}) Like ('%${displayname.toLowerCase()}%')`) }
 		})).pipe(
 			map(([users, totalUsers]) => {
 				const usersPageable: Pagination<User> = {
 					items: users,
 					links: {
-						first: options.route + `?limit=${options.limit}&username=${displayName}`,
-						previous: options.route + `?limit=${options.limit}&?page=${options.page > 0 ? (options.page as number) - 1 : 0}&username=${displayName}`,
-						next: options.route + `?limit=${options.limit}&?page=${options.page < Math.ceil(totalUsers / (options.limit as number)) ? (options.page as number) + 1 : options.page}&username=${displayName}`,
-						last: options.route + `?limit=${options.limit}&page=${Math.ceil(totalUsers / (options.limit as number))}&username=${displayName}`
+						first: options.route + `?limit=${options.limit}&username=${displayname}`,
+						previous: options.route + `?limit=${options.limit}&?page=${options.page > 0 ? (options.page as number) - 1 : 0}&username=${displayname}`,
+						next: options.route + `?limit=${options.limit}&?page=${options.page < Math.ceil(totalUsers / (options.limit as number)) ? (options.page as number) + 1 : options.page}&username=${displayname}`,
+						last: options.route + `?limit=${options.limit}&page=${Math.ceil(totalUsers / (options.limit as number))}&username=${displayname}`
 					},
 					meta: {
 						currentPage: (options.page as number),
@@ -463,6 +463,49 @@ export class UsersService {
 				return friendRequests;
 			})
 		);
+	}
+
+
+	/* ==== Functions allowing to interact with website owner and moderators */
+
+	async getWebsiteOwner(): Promise<User> {
+		return await this.usersRepository.createQueryBuilder("user")
+		.select([
+			"user.id",
+			"user.username",
+			"user.displayname",
+			"user.avatar"
+		])
+		.where("user.is_admin = 'owner'")
+		.getOne()
+	}
+
+	async getWebsiteModerators(): Promise<User[]> {
+		return await this.usersRepository.createQueryBuilder("user")
+		.select([
+			"user.id",
+			"user.username",
+			"user.displayname",
+			"user.avatar"
+		])
+		.where("is_admin = 'moderator'")
+		.getMany()
+	}
+
+	async makeUserModerator(userId: number): Promise<void> {
+		await this.usersRepository.createQueryBuilder()
+		.update(User)
+		.set({ is_admin: "moderator" })
+		.where("id = :id", { id: userId })
+		.execute();
+	}
+
+	async makeUserRegular(userId: number): Promise<void> {
+		await this.usersRepository.createQueryBuilder()
+		.update(User)
+		.set({ is_admin: "regular" })
+		.where("id = :id", { id: userId })
+		.execute();
 	}
 
 

@@ -4,6 +4,22 @@ import authHeader from './auth-header';
 const API_URL = "http://127.0.0.1:3000/"
 
 class UserService {
+	getWebsiteOwner() {
+		return axios.get(API_URL + 'user/administration/owner', { headers: authHeader() });
+	}
+
+	getWebsiteModerators() {
+		return axios.get(API_URL + 'user/administration/moderators', { headers: authHeader() });
+	}
+
+	makeModerator(userId: number) {
+		return axios.post(API_URL + 'user/administration/make_moderator', { targetUserId: userId }, { headers: authHeader() });
+	}
+
+	makeRegularUser(userId: number) {
+		return axios.post(API_URL + 'user/administration/make_regular', { targetUserId: userId }, { headers: authHeader() });
+	}
+	
 	getCurrUserId() {
 		return axios.get(API_URL + 'user', { headers: authHeader() });
 	}
@@ -72,8 +88,8 @@ class UserService {
 		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
 	}
 
-	changeDisplayName(newDisplayName) {
-		return axios.post(API_URL + 'user/displayName', { displayName: newDisplayName }, { headers: authHeader() });
+	changedisplayname(newdisplayname) {
+		return axios.post(API_URL + 'user/displayname', { displayname: newdisplayname }, { headers: authHeader() });
 	}
 
 	getLeaderboardUsers(page = 1) {

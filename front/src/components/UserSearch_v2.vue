@@ -1,6 +1,6 @@
 <script lang="ts">
 
-/* This component allows to search for users by displayName. If no displayName is provided, all the users are returned.
+/* This component allows to search for users by displayname. If no displayname is provided, all the users are returned.
 ** The results are displayed paginated, just like the friend list and the friend requests.
 ** The search is case-insensitive. Typing "a" returns all usernames with a "a" in it. "au" all usernames with "au" in it. Etc...
 */
@@ -17,7 +17,7 @@ interface UserSearchComponentData
 	searchResults: User[];
 	avatars: string[];
 	searchMeta: PaginationMeta;
-	searchDisplayName: string | null;
+	searchdisplayname: string | null;
 }
 
 export default defineComponent({
@@ -27,7 +27,7 @@ export default defineComponent({
 			searchResults: [],
 			avatars: [],
 			searchMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
-			searchDisplayName: ''
+			searchdisplayname: ''
 		}
 	},
 
@@ -49,18 +49,18 @@ export default defineComponent({
   },
 
 	methods: {
-		/* This function uses the UserService to return the corresponding displayName. */
+		/* This function uses the UserService to return the corresponding displayname. */
 		searchUser: function(username: string): void
 		{
 			var ref = this;
-			this.searchDisplayName = username;
-			if (!this.searchDisplayName)
+			this.searchdisplayname = username;
+			if (!this.searchdisplayname)
 			{
-				this.searchDisplayName = '';
+				this.searchdisplayname = '';
 				this.searchResults = [];
 				return ;
 			}
-			UserService.searchUser(this.searchDisplayName).then(
+			UserService.searchUser(this.searchdisplayname).then(
 				response =>
 				{
 					ref.searchResults = response.data.items;
@@ -74,7 +74,7 @@ export default defineComponent({
 							() => { ref.avatars[i] = "x"; console.log("Couldn't load user's avatar") })
 					}
 				},
-				() => { ref.searchDisplayName = ''; console.log("Couldn't get search results from backend") }
+				() => { ref.searchdisplayname = ''; console.log("Couldn't get search results from backend") }
 			)
 		},
 
@@ -83,7 +83,7 @@ export default defineComponent({
 			let data: FormData = new FormData(document.getElementById("goToSearchPage") as HTMLFormElement);
 			const destinationPage: number | null = data.get('goToSearchPageInput') as number | null;
 			if (destinationPage !== null && !Number.isNaN(destinationPage) && destinationPage >= 1 && destinationPage <= this.searchMeta.totalPages) {
-				this.changeSearchPage(this.searchDisplayName, destinationPage);
+				this.changeSearchPage(this.searchdisplayname, destinationPage);
 			}
 		},
 
@@ -165,7 +165,7 @@ export default defineComponent({
 		<h2>Search</h2>
 		<input class="searchInput" type="text" placeholder="Search for a user..." @input="searchUser($event.target.value)"/>
 		<div class="friends_item_container">
-			<div class="friend_item" v-for="(result, index) in searchResults" :key="result.displayName">
+			<div class="friend_item" v-for="(result, index) in searchResults" :key="result.displayname">
 				<div class="score">
 					{{ result.score }}
 					<i class="fas fa-trophy"></i>
@@ -174,7 +174,7 @@ export default defineComponent({
 					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + result.id ">{{ result.displayName }}</a>
+					<a :href="'/user/' + result.id ">{{ result.displayname }}</a>
 				</p>
 				<div class="add_friend_button" @click="sendFriendRequest(result.id)">
 					Add
@@ -182,14 +182,14 @@ export default defineComponent({
 			</div>
 			<div class="paginationMenu" v-if="searchResults.length > 0">
 				<p class="pagination">
-					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
+					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchdisplayname, searchMeta.currentPage - 1)">Previous</button>
 					<span class="paginationSpan">
 						<form id="goToSearchPage">
 							<input class="goToSearchPageInput" name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage">
 						</form>
 					</span>
 					<span class="paginationSpan"> /{{ searchMeta.totalPages }}</span>
-					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
+					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchdisplayname, searchMeta.currentPage + 1)">Next</button>
 				</p>
 			</div>
 		</div>

@@ -68,8 +68,8 @@ export default defineComponent({
 		},
 
 		showOpponentName: function(match: MatchHistory): string {
-			if (match.winner.id === this.currUserId) return match.looser.displayName;
-			else return match.winner.displayName;	
+			if (match.winner.id === this.currUserId) return match.looser.displayname;
+			else return match.winner.displayname;	
 		},
 
 		showGameScore: function(match: MatchHistory): string {
@@ -78,7 +78,7 @@ export default defineComponent({
 		},
 	
 		/* This method uses the UserService to get the list of the current user's friends, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getHistory: function(page = 1): void {

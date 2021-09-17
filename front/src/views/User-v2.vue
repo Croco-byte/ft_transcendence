@@ -15,7 +15,7 @@ interface UserViewData
 {
 	currUserId: number;
 	userId: number;
-	displayName: string;
+	displayname: string;
 	status: string;
 	avatar: string;
 	userNotFound: string;
@@ -28,7 +28,7 @@ export default defineComponent({
 		return {
 			currUserId: -1,
 			userId: -1,
-			displayName: '',
+			displayname: '',
 			status: '',
 			avatar: '',
 
@@ -40,7 +40,7 @@ export default defineComponent({
 
 	computed: {
 		isDataLoaded(): boolean {
-			if (this.displayName && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
+			if (this.displayname && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
 			return false;
 		}
 	},
@@ -80,7 +80,7 @@ export default defineComponent({
 
 		UserService.getUserInfo(this.$route.params.id).then(
 			response => {
-				this.displayName = response.data.displayName;
+				this.displayname = response.data.displayname;
 				this.status = response.data.status;
 				UserService.getUserAvatar(response.data.avatar).then(
 					response => {
@@ -121,7 +121,7 @@ export default defineComponent({
 				<div class="image_container">
 					<img :src="avatar"/>
 				</div>
-				<p>{{ displayName }}</p>
+				<p>{{ displayname }}</p>
 				<p class="status" :class="status">{{ status }}</p>
 			</div>
 			<div class="stat">

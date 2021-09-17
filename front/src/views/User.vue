@@ -8,7 +8,7 @@
 		</div>
 		<div class="header">
 			<div>
-				<h2><i class="fas fa-user"></i> Profile page of {{ displayName }}</h2>
+				<h2><i class="fas fa-user"></i> Profile page of {{ displayname }}</h2>
 				<div v-if="friendRequestStatus === 'accepted'">
 					<UserStatus :status="status"/>
 					<button class="Unfriend" v-on:click="unfriendUser">Unfriend</button>
@@ -34,7 +34,7 @@
 				<br/>
 				<div class="basic_info">
 					<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
-					<p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayName }}</p>
+					<p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayname }}</p>
 				</div>
 				<br/>
 				
@@ -76,7 +76,7 @@ interface UserViewData
 	currUserId: number;
 	userId: number;
 	name: string;
-	displayName: string;
+	displayname: string;
 	status: string;
 	avatar: string;
 	score: number;
@@ -96,7 +96,7 @@ export default defineComponent({
 			currUserId: -1,
 			userId: -1,
 			name: '',
-			displayName: '',
+			displayname: '',
 			status: '',
 			avatar: '',
 			score: 0,
@@ -111,7 +111,7 @@ export default defineComponent({
 
 	computed: {
 		isDataLoaded(): boolean {
-			if (this.displayName && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
+			if (this.displayname && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
 			return false;
 		}
 	},
@@ -176,7 +176,7 @@ export default defineComponent({
 		UserService.getUserInfo(this.$route.params.id).then(
 			response => {
 				this.name = response.data.username;
-				this.displayName = response.data.displayName;
+				this.displayname = response.data.displayname;
 				this.status = response.data.status;
 				this.score = response.data.score;
 				this.wins = response.data.wins;
