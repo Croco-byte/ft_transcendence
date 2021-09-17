@@ -107,6 +107,7 @@ button.diffActive, button.scoreActive {
 }
 
 .start button {
+	color: white;
 	background-color: #A9DFBF;
 	border-radius: 10px;
 	padding: 14px 40px;
