@@ -27,7 +27,7 @@ if (user) {
 	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
 		const result = await UserService.getCurrUserId();
 		if (data.userId == result.data.id) {
-			store.commit('disconnectUser', { message: "Multiple connexions detected for this user. Please log in again" });
+			store.commit('disconnectUser', { message: "Multiple connexions for this user, or resetting after server went down. Please log in again" });
 		}
 	});
 	statusSocket.on('unauthorized', function() {

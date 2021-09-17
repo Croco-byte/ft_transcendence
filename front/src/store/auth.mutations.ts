@@ -17,7 +17,7 @@ export const mutations: MutationTree<RootState> = {
 		state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
 			const result = await UserService.getCurrUserId();
 			if (data.userId == result.data.id) {
-				store.commit('disconnectUser', { message: "Multiple connexions detected for this user. Please log in again" });
+				store.commit('disconnectUser', { message: "Multiple connexions detected for this user, or resetting after server went down. Please log in again" });
 			}
 		})
 		state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
