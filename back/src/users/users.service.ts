@@ -127,9 +127,13 @@ export class UsersService {
 	/* Explicit */
 	async changeUserStatus(userId: number, targetStatus: User_Status): Promise<void> {
 		try {
-			const user = await this.usersRepository.findOne(userId);
-			user.status = targetStatus;
-			await this.usersRepository.save(user);
+			await getConnection().createQueryBuilder()
+			.update(User)
+			.set({ 
+				status: targetStatus,
+			})
+			.where("id = :id", { id: userId })
+			.execute();
 		} catch {
 			throw new NotFoundException();
 		}
@@ -576,6 +580,22 @@ export class UsersService {
 		}
 		catch(e) {
 			this.logger.log('Could\'t find user required in order to update room ID');
+		}
+	}
+
+	async resetRoomId(roomToReset: string) : Promise<void>
+	{
+		try {
+			await getConnection().createQueryBuilder()
+			.update(User)
+			.set({ 
+				roomId: 'none'
+			})
+			.where("roomId = :roomId", { roomId: roomToReset })
+			.execute();
+		}
+		catch (e) {
+			this.logger.log('Could\'t find room required in order to reset it');
 		}
 	}
 

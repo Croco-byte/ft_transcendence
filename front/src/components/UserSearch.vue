@@ -10,7 +10,7 @@
 				<li v-for="result in searchResults" :key="result.displayName">
 					<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
 					<br/>
-					<UserStatus :status="result.status"/>
+					<UserStatus :status="result.status" />
 				</li>
 			</ul>
 			<div id="paginationMenu" v-if="searchResults.length > 0">

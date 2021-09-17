@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Logger, OnModuleDestroy, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from './users.service';
 import { User } from './users.entity';
@@ -118,14 +118,19 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	}
 
 	@SubscribeMessage('getSpectating')
-	async handleSpectating(client: Socket, data: any): Promise<void> {
+	async handleSpectating(@ConnectedSocket() client: Socket, @MessageBody() dbIds: any): Promise<void> {
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 		if (!user) { client.emit('unauthorized', {}); return; }
 		
 		try {
+			const user: User = await this.userService.findUserById(dbIds.friendId);
+			await this.userService.updateRoomId(dbIds.userId, user.roomId);
 			await this.userService.changeUserStatus(client.data.userId, 'spectating');
+			
+			client.emit('goToSpectateView');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'spectating' });
 			this.logger.log('status changed to spectating');
+
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);

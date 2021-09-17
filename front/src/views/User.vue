@@ -10,7 +10,7 @@
 			<div>
 				<h2><i class="fas fa-user"></i> Profile page of {{ displayName }}</h2>
 				<div v-if="friendRequestStatus === 'accepted'">
-					<UserStatus :status="status"/>
+					<UserStatus :status="status" :friendId="userId" :userId="currUserId"/>
 					<button class="Unfriend" v-on:click="unfriendUser">Unfriend</button>
 				</div>
 					<div v-if="friendRequestStatus === 'not-sent'">

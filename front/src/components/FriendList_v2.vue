@@ -189,7 +189,7 @@ export default defineComponent({
 <!--			<p class="watch_button">		This "watch" button should only be displayed when the user has status "in-game"
 					watch
 				</p> -->
-				<UserStatus :status="friend.status"/>
+				<UserStatus :status="friend.status" :friendId="friend.id" :userId="currUserId"/>
 				<button class="unfriend_button" v-on:click="unfriendUser(friend.id)">Unfriend</button>
 			</div>
 			<div class="paginationMenu" v-if="friends.length > 0">

@@ -49,6 +49,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 				return; 
 			}
 			
+			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
+
 			client.data = { userDbId: user.id, userStatus: user.status };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
@@ -61,6 +63,11 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
 			client.join(room.name);
 			client.emit('launchSpectate');
+
+			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
+		}
+		else {
+			client.emit('renderOption');
 		}
 	}
 

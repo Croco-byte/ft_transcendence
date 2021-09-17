@@ -5,7 +5,7 @@
 		<span v-if="status === 'in-queue'" class="in-queue">in queue</span>
 		<span v-if="status === 'in-game'">
 			<span class="in-game">in game</span>
-			<button>watch</button>
+			<button @click="launchSpectating()">watch</button>
 		</span>
 	</p>
 </template>
@@ -16,10 +16,41 @@
 	*/
 
 import { defineComponent } from 'vue'
+import router from '../router/index';
 
 export default defineComponent({
 	name: 'UserStatus',
-	props: { status }
+	props: {
+		status: {
+			required: true,
+			type: String,
+		}, 
+		friendId: {
+			required: false,
+			type: Number,
+		},
+		userId: {
+			required: false,
+			type: Number,
+		}
+	},
+
+	methods: {
+		launchSpectating()
+		{
+			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', { 
+				friendId: this.friendId,
+				userId: this.userId 
+			});
+
+			this.$store.state.websockets.connectionStatusSocket.on('goToSpectateView',() => {
+				router.push(({name: 'Game', params: { 
+					RenderGameOption: 'false',
+					RenderGamePlay: 'true', 
+					}}));
+			});
+		},
+	},
 })
 </script>
 

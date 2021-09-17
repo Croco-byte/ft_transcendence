@@ -77,8 +77,6 @@ export class GameService
 	 */
 	async attributeRoom(userDbId: number, playerId: string, setupChosen?: Setup) : Promise<Room>
 	{
-		this.logger.log(`user ${userDbId}: setup: ${setupChosen.level}`);
-
 		const user: User = await this.usersService.findUserById(userDbId);
 
 		if (user.roomId != 'none' && user.status === 'spectating')
@@ -146,8 +144,7 @@ export class GameService
 	 */
 	async removeRoom(wss: Socket, room: Room) : Promise<void>
 	{
-		await this.usersService.updateRoomId(room.user1DbId, 'none');
-		await this.usersService.updateRoomId(room.user2DbId, 'none');
+		await this.usersService.resetRoomId(room.name);
 		
 		wss.in(room.name).socketsLeave(room.name);
 		

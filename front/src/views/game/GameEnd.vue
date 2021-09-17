@@ -225,6 +225,8 @@ export default defineComponent ({
 
 	mounted()
 	{
+		console.log('gameend mounted');
+
 		if (this.isSpectating) {
 			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
 			buttonPlayingAgain.innerHTML = "FINISH SPECTATING AND START A MATCH";
