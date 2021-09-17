@@ -66,7 +66,8 @@ export class ChannelController
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 
 		let ret: Object[];
-		let channels = user.channels;
+		// let channels = user.channels;
+		let channels = await this.channelService.findAll();
 		ret = new Array();
 
 		for (let i = 0; i < channels.length; i++)
