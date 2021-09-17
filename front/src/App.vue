@@ -25,7 +25,7 @@ export default defineComponent({
 	{
 		margin: 0;
 		overflow-x: hidden;
-		background-color: #4F4F4F;
+		background-color: rgb(240, 240, 240);
 	}
 
 	*

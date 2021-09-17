@@ -15,7 +15,7 @@
 <style scoped>
 
 .fullPage {
-	background-image: url('https://en-marche.fr/assets/images/ecole-42-en-marche-emmanuel-macron-niel-code-dev-french-tech.jpg?q=70&cache=15d88f6e63eaa73b665c&fm=pjpg&s=3127360a86ae16887bbc61182836c450');
+	/* background-image: url('https://en-marche.fr/assets/images/ecole-42-en-marche-emmanuel-macron-niel-code-dev-french-tech.jpg?q=70&cache=15d88f6e63eaa73b665c&fm=pjpg&s=3127360a86ae16887bbc61182836c450'); */
 	background-size: cover;
 	height: 80vh;
 	width: 100vw;
@@ -34,7 +34,7 @@
     left: 50%; /*/ Push the element 50% of the container's width to the right*/
     transform: skew(0deg) /*/ Puts the element on an angle*/
                translateX(-50%); /*/ Moves the element 50% of its width back to the left*/
-    background-image: linear-gradient(120deg, black,grey);
+    background-image: linear-gradient(120deg, lightblue,white);
 }
 
 
