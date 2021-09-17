@@ -193,16 +193,16 @@ export default defineComponent({
 				<button class="unfriend_button" v-on:click="unfriendUser(friend.id)">Unfriend</button>
 			</div>
 			<div class="paginationMenu" v-if="friends.length > 0">
-				<p class="pagination">
+				<div class="pagination">
 					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="getFriends(friendsMeta.currentPage - 1)">Previous</button>
-					<span class="paginationSpan">
+					<div class="paginationSpan">
 						<form id="goToFriendsPage">
 							<input class="goToFriendsPageInput" name="goToFriendsPageInput" v-model.number="friendsMeta.currentPage" v-on:input="goToFriendsPage">
 						</form>
-					</span>
-					<span class="paginationSpan"> /{{ friendsMeta.totalPages }}</span>
+					</div>
+					<p class="paginationSpan"> /{{ friendsMeta.totalPages }}</p>
 					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="getFriends(friendsMeta.currentPage + 1)">Next</button>
-				</p>
+				</div>
 		</div>
 		</div>
 	</div>
@@ -238,10 +238,17 @@ h2
 
 .pagination
 {
-	display: inline-block;
+	display: flex;
+    align-items: center;
+    justify-content: center;
 	height: 3rem;
 	width: 100%;
 	text-align: center;
+}
+
+.pagination > *
+{
+	margin: 0 0.25rem;
 }
 
 .paginationButtonPrev
@@ -271,6 +278,7 @@ h2
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
+	margin: 1rem 0;
 }
 
 .friend_item
@@ -347,7 +355,7 @@ h2
 
 .unfriend_button
 {
-	padding: 0.25rem 1rem;
+	padding: 0.25rem 0.5rem;
 	background-color: #c40707;
 	color: white;
 	border-radius: 2rem;
@@ -362,6 +370,41 @@ h2
 	border-color: #c40707;
 	color: #c40707;
 	background-color: white;
+}
+
+@media screen and (max-width: 850px)
+{
+	h2
+	{
+		width: 100%;
+		text-align: center;
+	}
+
+	.friend_item
+	{
+		min-height: 3rem;
+		height: 3rem;
+	}
+
+	.friend_item img
+	{
+		width: 2rem;
+		height: 2rem;
+	}
+
+	.paginationMenu
+	{
+		width: 100%;
+	}
+}
+
+@media screen and (max-width: 500px)
+{
+	.user_status,
+	.friend_item .image
+	{
+		display: none;
+	}
 }
 
 </style>

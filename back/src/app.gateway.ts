@@ -58,6 +58,44 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		}
 	}
 
+	async addMember(room: string, msg: string, channel: Channel)
+	{
+		let unauthaurizedUsers = channel.pending_users;
+
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.leave(room);
+		}
+		this.server.to(room).emit('new_member', msg);
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.join(room);
+		}
+	}
+
+	async notifChannel(room: string, notif: string, msg:string, channel: Channel)
+	{
+		let unauthaurizedUsers = channel.pending_users;
+
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.leave(room);
+		}
+		this.server.to(room).emit(notif, msg);
+		for (let unauthorized of unauthaurizedUsers)
+		{
+			let socket = this.getSocketByUser(unauthorized);
+			if (socket)
+				socket.join(room);
+		}
+	}
+
 	afterInit(server: Server)
 	{
 		this.logger.log('Init');
@@ -99,7 +137,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 				break ;
 			}
 		}
-		socket.leave("channel_" + channel.id);
+		if (socket)
+			socket.leave("channel_" + channel.id);
 	}
 
 	async joinChannel(channel: Channel, user: User)
@@ -115,7 +154,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 				break ;
 			}
 		}
-		socket.join("channel_" + channel.id);
+		if (socket)
+			socket.join("channel_" + channel.id);
 		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
 	}
 
