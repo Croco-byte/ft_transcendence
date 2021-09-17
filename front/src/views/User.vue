@@ -220,18 +220,26 @@ export default defineComponent({
 
 .profile_page_container
 {
-	width: 50%;
+	width: 100%;
+	min-height: 100%;
 	margin: auto;
 	display: flex;
-	justify-content: space-evenly;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 }
 
 
 .header
 {
 	display: flex;
-	flex-direction: column;
+	flex-wrap: wrap;
 	justify-content: space-around;
+}
+
+.header > div
+{
+	margin: 1rem 2rem;
 }
 
 .avatar img

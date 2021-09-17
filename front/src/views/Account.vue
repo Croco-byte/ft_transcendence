@@ -1,52 +1,3 @@
-<template>
-<div id="container">
-	<div id="avatar_and_config">
-		<div id="avatar-display" v-if="$store.state.avatar">
-			<img class="avatar" :src="$store.state.avatar" fluid alt="User avatar"/>
-		</div>
-		<div id="config">
-				<div class="buttons_container">
-					<div class="conf_selected" id="avatarupload_button" @click="changeConfigMode($event, 'avatarupload')">Avatar Upload</div>
-					<div id="twofa_button" @click="changeConfigMode($event, 'twofa')">2FA configuration</div>
-				</div>
-				<div v-if="config_mode == 'twofa'">
-					<TwoFASwitch v-model:TwoFA="TwoFA"/>
-				</div>
-				<div v-if="config_mode == 'avatarupload'">
-					<AvatarUpload/>
-				</div>
-		</div>
-	</div>
-	<div id="info_and_match_history">
-		<div id="info">
-			<div class="header">
-				<h2>{{ displayName }}</h2>
-				<UserStatus :status="status"/>
-			</div>
-			<div class="info_body" style="display: flex;">
-			<div class="basic_info">
-				<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
-				<div v-if="!displayNameEditMode"><p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayName }}</p>
-				<button class="edit_displayname" @click="displayNameEditMode = true">Edit Display name</button></div>
-				<form v-else id="changeDisplayNameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
-				<input name="changeDisplayNameInput" v-model="displayNameInput"><br/>
-				<button class="edit_displayname" type="button" v-on:click="changeDisplayName()">Update</button>
-				<button class="cancel_displayname" @click="displayNameEditMode = false; displayNameInput = displayName; displayNameErrorMessage = '';">Cancel</button></form>
-			</div>
-			<div class="score_info">
-				<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
-				<p><i class="fas fa-caret-right"></i> <b>Wins</b> : <span style="color:#27AE60;"><b>{{ wins }}</b></span></p>
-				<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
-			</div>
-			</div>
-		</div>
-		<div id="match_history">
-			<MatchHistory/>
-		</div>
-	</div>
-</div>
-</template>
-
 <script lang="ts">
 
 /* This is the account view. It displays several informations about the user, that we fetch from the backend.
@@ -204,12 +155,67 @@ export default defineComponent({
 })
 </script>
 
+<template>
+<div id="container">
+	<div id="avatar_and_config">
+		<div id="avatar-display" v-if="$store.state.avatar">
+			<img class="avatar" :src="$store.state.avatar" fluid alt="User avatar"/>
+		</div>
+		<div id="config">
+				<div class="buttons_container">
+					<div class="conf_selected" id="avatarupload_button" @click="changeConfigMode($event, 'avatarupload')">Avatar Upload</div>
+					<div id="twofa_button" @click="changeConfigMode($event, 'twofa')">2FA configuration</div>
+				</div>
+				<div v-if="config_mode == 'twofa'">
+					<TwoFASwitch v-model:TwoFA="TwoFA"/>
+				</div>
+				<div v-if="config_mode == 'avatarupload'">
+					<AvatarUpload/>
+				</div>
+		</div>
+	</div>
+	<div id="info_and_match_history">
+		<div id="info">
+			<div class="header">
+				<h2>{{ displayName }}</h2>
+				<UserStatus :status="status"/>
+			</div>
+			<div class="info_body" style="display: flex;">
+			<div class="basic_info">
+				<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
+				<div v-if="!displayNameEditMode"><p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayName }}</p>
+				<button class="edit_displayname" @click="displayNameEditMode = true">Edit Display name</button></div>
+				<form v-else id="changeDisplayNameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
+				<input name="changeDisplayNameInput" v-model="displayNameInput" @keypress.enter="changeDisplayName"><br/>
+				<button class="edit_displayname" type="button" v-on:click="changeDisplayName()">Update</button>
+				<button class="cancel_displayname" @click="displayNameEditMode = false; displayNameInput = displayName; displayNameErrorMessage = '';">Cancel</button></form>
+			</div>
+			<div class="score_info">
+				<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
+				<p><i class="fas fa-caret-right"></i> <b>Wins</b> : <span style="color:#27AE60;"><b>{{ wins }}</b></span></p>
+				<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
+			</div>
+			</div>
+		</div>
+		<div id="match_history">
+			<MatchHistory/>
+		</div>
+	</div>
+</div>
+</template>
+
 <style scoped>
 
 #container
 {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+    align-items: center;
 	background-color: white;
 	height: 100%;
+    padding: 2rem;
+    width: 100%;
 }
 
 .buttons_container
@@ -217,6 +223,7 @@ export default defineComponent({
 	display: flex;
 	flex-wrap: wrap;
 	align-self: center;
+	justify-content: center;
 }
 
 .buttons_container > div
@@ -249,13 +256,13 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	width: 35%;
-	height: 82vh;
+	max-width: 100%;
+	/* min-width: 20rem; */
 }
 
 #avatar-display
 {
 	background-color: white;
-	height: 35%;
 }
 
 #config
@@ -263,7 +270,6 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	height: 65%;
 	padding: 1rem;
 	margin: 1rem 0;
 	background-color: white;
@@ -278,6 +284,9 @@ export default defineComponent({
 {
 	width: 250px;
 	height: 250px;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
 	border-radius: 100%;
 }
 
@@ -291,22 +300,21 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	width: 55%;
-	height: 82vh;
+	max-width: 100%;
+	/* min-width: 25rem; */
 }
 
 #info
 {
-	height: 35%;
 	background-color: white;
-
 }
 
 #info .header
 {
 	display: flex;
 	align-items: center;
-	justify-content: space-evenly;
-	width: 50%;
+	justify-content: center;
+	width: 100%;
 }
 
 #info .info_body {
@@ -315,12 +323,12 @@ export default defineComponent({
 
 #info .basic_info {
 	text-align: center;
-	width: 50%;
+	width: 100%;
 }
 
 #info .score_info {
 	text-align: center;
-	width: 50%;
+	width: 100%;
 }
 
 input[name="changeDisplayNameInput"]
@@ -366,9 +374,21 @@ input[name="changeDisplayNameInput"]
 
 #match_history
 {
-	height: 65%;
+	height: 100%;
 	background-color: white;
-	padding: 1rem;
 	margin: 1rem 0;
+}
+
+@media screen and (max-width: 800px)
+{
+	#container
+	{
+		flex-direction: column;
+	}
+
+	#container > div
+	{
+		width: 100%;
+	}
 }
 </style>

@@ -1,18 +1,21 @@
 <template>
 	<div id="avatarDiv" style="text-align: center;">
 			<p>Upload an avatar by clicking on the button below :</p>
-			<form id="avatar-form" @submit.prevent="submitForm">
+			<form id="avatar-form" :class="{show_preview: showPreview}" @submit.prevent="submitForm">
 				<label for="avatar" class="custom-file-upload">
 					<i class="fas fa-file-upload"></i>
 					Choose avatar
 				</label>
 				<input type="file" name="avatar" class="form-control-file" id="avatar" @change="onFileChange">
-				<br/><br/>
-				<img v-bind:src="imagePreview" width="100" height="100" v-show="showPreview"/>
-				<br/><br/>
+
+				<div class="image_container">
+					<img v-bind:src="imagePreview" width="100" height="100" v-show="showPreview"/>
+				</div>
+
 				<label for="submit-avatar" class="custom-submit" v-if="picture">
 					Confirm
 				</label>
+
 				<input type="submit" id="submit-avatar" />
 			</form>
 	</div>
@@ -129,7 +132,8 @@ input[type="submit"] {
 	display: none;
 }
 
-.custom-file-upload {
+.custom-file-upload
+{
 	border: 1px solid #ccc;
 	display: inline-block;
 	padding: 6px 12px;
@@ -152,6 +156,45 @@ input[type="submit"] {
 	border-color: #39d88f;
 	color: #39d88f;
 	background-color: white;
+}
+
+form
+{
+	max-width: 10rem;
+    margin: 0 auto;
+}
+
+form > *
+{
+	display: none;
+	margin: 0.5rem 0;
+}
+
+form > .custom-file-upload
+{
+	display: block;
+}
+
+form.show_preview > *
+{
+	display: block;
+}
+
+form.show_preview > input
+{
+	display: none;
+}
+
+.image_container
+{
+	width: 100px;
+	height: 100px;
+	margin: 0 auto;
+}
+
+.image_container img
+{
+	max-width: 100%;
 }
 
 </style>

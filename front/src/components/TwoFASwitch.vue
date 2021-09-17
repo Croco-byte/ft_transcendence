@@ -107,7 +107,7 @@ export default defineComponent({
 }
 
 #TwoFASwitch {
-	height: 5rem;
+	height: auto;
 }
 
 input {
@@ -126,6 +126,7 @@ input {
 	cursor: pointer;
 	border: solid 1px #39d88f;
 	transition: all 0.25s;
+	margin: 0.5rem auto;
 }
 
 .twoFAbuttonOn:hover {

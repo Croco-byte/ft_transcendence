@@ -185,16 +185,16 @@ export default defineComponent({
 				</div>
 			</div>
 			<div class="paginationMenu" v-if="matches.length > 0">
-				<p class="pagination">
+				<div class="pagination">
 					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="getHistory(historyMeta.currentPage - 1)">Previous</button>
-					<span class="paginationSpan">
+					<div class="paginationSpan">
 						<form id="goToHistoryPage">
 							<input class="goToHistoryPageInput" name="goToHistoryPageInput" v-model.number="historyMeta.currentPage" v-on:input="goToHistoryPage">
 						</form>
-					</span>
-					<span class="paginationSpan"> /{{ historyMeta.totalPages }}</span>
+					</div>
+					<p class="paginationSpan"> /{{ historyMeta.totalPages }}</p>
 					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="getHistory(historyMeta.currentPage + 1)">Next</button>
-				</p>
+				</div>
 		</div>
 		</div>
 	</div>
@@ -209,7 +209,6 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	/* border: solid 1px rgb(50, 50, 50); */
-	padding: 1rem;
 	background-color: white;
 }
 
@@ -217,8 +216,9 @@ export default defineComponent({
 {
 	display: flex;
 	align-items: center;
-	justify-content: space-evenly;
-	width: 50%;
+	justify-content: center;
+	text-align: center;
+	width: 100%;
 }
 
 .history_header
@@ -235,16 +235,27 @@ export default defineComponent({
 
 .paginationMenu
 {
-	width: 50%;
+	width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
 	margin: 0 auto;
 }
 
 .pagination
 {
-	display: inline-block;
-	height: 3rem;
 	width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
 	text-align: center;
+}
+
+.pagination > *
+{
+	margin: 0 0.25rem;
 }
 
 .paginationButtonPrev
@@ -261,7 +272,7 @@ export default defineComponent({
 
 .paginationSpan
 {
-	display: inline-block;
+	display: block;
 }
 
 .goToHistoryPageInput
@@ -346,6 +357,17 @@ export default defineComponent({
 	max-width: 4.5rem;
 	max-height: 100%;
 	border-radius: 100%;
+}
+
+@media screen and (max-width: 550px)
+{
+	.win_history_item img,
+	.loose_history_item img,
+	.win_history_item .time,
+	.loose_history_item .time
+	{
+		display: none;
+	}
 }
 
 </style>

@@ -138,7 +138,7 @@ export default defineComponent({
 		align-items: center;
 		justify-content: center;
 		position: fixed;
-		top: 50%;
+		top: 50vh;
 		left: 6.5rem;
 		width: 2rem;
 		background: white;
