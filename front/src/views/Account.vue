@@ -206,6 +206,12 @@ export default defineComponent({
 
 <style scoped>
 
+#container
+{
+	background-color: white;
+	height: 100%;
+}
+
 .buttons_container
 {
 	display: flex;

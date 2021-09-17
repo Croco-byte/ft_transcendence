@@ -17,11 +17,12 @@
 .fullPage {
 	/* background-image: url('https://en-marche.fr/assets/images/ecole-42-en-marche-emmanuel-macron-niel-code-dev-french-tech.jpg?q=70&cache=15d88f6e63eaa73b665c&fm=pjpg&s=3127360a86ae16887bbc61182836c450'); */
 	background-size: cover;
-	height: 80vh;
-	width: 100vw;
+	height: 100%;
+	width: 100%;
 	position: absolute;
 	display: flex;
 	align-items: flex-start;
+	background: white;
 }
 
 .fullPage:after {

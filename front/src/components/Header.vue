@@ -1,19 +1,26 @@
 <template>
-	<header id="header">
-		<NavLink url="/" text="Ft_transcendence" class="brand"/>
+	<header id="header" class="visible">
+		<!-- <NavLink url="/" text="Ft_transcendence" class="brand"/> -->
 		<div class="links_container" :class="{active: mode == 'links'}">
-			<NavLink url="/" text="Home"/>
-			<NavLink url="/friends" text="Friends"/>
-			<NavLink url="/chat" text="Chat"/>
-			<NavLink url="/game" text="Game"/>
+			<router-link to="/">
+				<img src="/svg/home.svg" alt="Home"/>
+			</router-link>
+			<router-link to="/friends">
+				<img src="/svg/friends.svg" alt="Friends"/>
+			</router-link>
+			<router-link to="/chat">
+				<img src="/svg/chat.svg" alt="Chat"/>
+			</router-link>
+			<router-link to="/game">
+				<img src="/svg/game.svg" alt="Game"/>
+			</router-link>
+
 			<router-link to="/account" id="profile_div" v-if="$store.state.status.loggedIn === true">
-				<img width="100" height="100" :src="$store.state.avatar" style="border-radius: 50%; max-width: 100%; max-height: 100%;"/>
+				<img src="/svg/profile.svg" alt="Profile"/>
 			</router-link>
 		</div>
-		<div class="links_toggle" @click="changeMode()">
-			<span></span>
-			<span></span>
-			<span></span>
+		<div class="links_toggle" @click="changeVisibility()">
+			<i class="fas fa-chevron-left"></i>
 		</div>
 	</header>
 </template>
@@ -25,29 +32,31 @@
 */
 
 import { defineComponent } from 'vue';
-import NavLink from './NavLink.vue';
 import userService from '../services/user.service';
-import { RouteLocation } from 'vue-router';
 
 export default defineComponent({
 	name: 'Header',
-	components:
-	{
-		NavLink,
-	},
 
-	data() : {mode: string}
+	data()
 	{
 		return {
 			mode : 'page',
+			timer: -1,
 		}
 	},
 
 	methods:
 	{
-		changeMode(mode: string)
+		changeMode()
 		{
 			this.mode = (this.mode == 'links' ? 'page' : 'links');
+		},
+
+		changeVisibility()
+		{
+			let header = document.getElementsByTagName("header")[0];
+			document.getElementsByClassName("router_view")[0].classList.toggle("header_mode");
+			header.classList.toggle("visible");
 		}
 	},
 
@@ -66,7 +75,7 @@ export default defineComponent({
 	},
 	watch:
 	{
-		$route: function(new_route: RouteLocation)
+		$route: function()
 		{
 			this.mode = 'page';
 		}
@@ -77,10 +86,24 @@ export default defineComponent({
 <style>
 	header
 	{
+		position: fixed;
+		top: 0;
+		left: 0;
 		display: flex;
-		justify-content: space-between;
-		width: 100%;
+		flex-direction: column;
+		justify-content: center;
+		z-index: 99999;
+		background-color: white;
+		height: 100vh;
+		width: 6.5rem;
 		padding: 0.5rem 1rem;
+		box-shadow: 5px 0px 15px 0px rgb(0 0 0 / 50%);
+		transition: all 0.25s;
+	}
+
+	header:not(.visible)
+	{
+		transform: translateX(-6.5rem);
 	}
 
 	header a
@@ -91,6 +114,7 @@ export default defineComponent({
 	.links_container
 	{
 		display: flex;
+		flex-direction: column;
 	}
 
 	.links_container a
@@ -98,72 +122,53 @@ export default defineComponent({
 		display: flex;
 		align-items: center;
 		font-size: 1.2rem;
-		padding: 0.5rem 2rem;
+		padding: 0.5rem 1rem;
+		margin: 0.5rem 0;
 	}
 
-	#profile_div
+	.links_container a img
 	{
 		display: block;
-		width: 3rem;
-		height: 3rem;
-		border: solid;
-		border-radius: 100%;
-		margin: 0.5rem 2rem;
-		padding: 0;
+		width: 2.5rem;
 	}
 
 	.links_toggle
 	{
-		display: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: fixed;
+		top: 50%;
+		left: 6.5rem;
+		width: 2rem;
+		background: white;
+		height: 5rem;
+		transform: translateY(-50%);
+		border-top-right-radius: 1rem;
+		border-bottom-right-radius: 1rem;
+		box-shadow: 5px 0px 15px 0px rgb(0 0 0 / 50%);
+		cursor: pointer;
 	}
 
-	@media screen and (max-width: 900px)
+	header:not(.visible) .links_toggle
 	{
-		.links_toggle
-		{
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			cursor: pointer;
-		}
+		background: rgba(255, 255, 255, 0.3);
+	}
 
-		.links_toggle span
-		{
-			width: 2rem;
-			height: 0.125rem;
-			background-color: black;
-			margin: 0.2rem
-		}
+	header:not(.visible) .links_toggle:hover
+	{
+		background: white;
+	}
 
-		.links_container
-		{
-			position: fixed;
-			top: 0;
-			left: 0;
-			flex-direction: column;
-			transform: translateX(-100%);
-			transition: all 0.25s ease-out;
-			z-index: 999;
-			width: 20rem;
-			max-width: 80%;
-			height: 100%;
-		}
+	.links_toggle i
+	{
+		font-size: 1.5rem;
+		transform-origin: center center;
+		transition: all 0.25s;
+	}
 
-		.links_container.active
-		{
-			background: white;
-			top: 0;
-			left: 0;
-			text-align: center;
-			justify-content: center;
-			align-items: center;
-			box-shadow: 10px 0px 15px 5px rgba(0,0,0,0.5);
-			transform: translateX(0);
-		}
-
-		.links_container a
-		{
-			margin: 1rem 0;
-		}
+	header:not(.visible) .links_toggle i
+	{
+		transform: rotateZ(-180deg);
 	}
 </style>

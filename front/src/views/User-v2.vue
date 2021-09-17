@@ -151,6 +151,8 @@ export default defineComponent({
 {
 	margin: 2rem auto;
 	padding: 1rem;
+	background-color: white;
+	height: 100%;
 }
 
 .head

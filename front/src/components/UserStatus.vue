@@ -1,13 +1,13 @@
 <template>
-	<p>
-		<span v-if="status === 'online'" class="online">online</span>
-		<span v-if="status === 'offline'" class="offline">offline</span>
-		<span v-if="status === 'in-queue'" class="in-queue">in queue</span>
+	<div class="user_status">
+		<p v-if="status === 'online'" class="online">online</p>
+		<p v-if="status === 'offline'" class="offline">offline</p>
+		<p v-if="status === 'in-queue'" class="in-queue">in queue</p>
 		<span v-if="status === 'in-game'">
 			<span class="in-game">in game</span>
 			<button>watch</button>
 		</span>
-	</p>
+	</div>
 </template>
 
 <script>

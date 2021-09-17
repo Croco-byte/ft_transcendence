@@ -259,7 +259,7 @@ export default defineComponent({
 
 <template>
 	<div class="friend_request_div">
-		<div class="flex j-sb">
+		<div class="flex-column j-sb">
 			<h2>Requests</h2>
 			<div class="buttons_container">
 				<div class="selected" id="received_button" @click="changeMode($event, 'received')">Received</div>
@@ -421,6 +421,7 @@ h2
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
+	margin: 1rem 0;
 }
 
 .friend_item
@@ -464,14 +465,15 @@ h2
 	align-items: center;
 	padding: 1rem 0;
 	overflow: hidden;
+	width: 5rem;
+	height: 5rem;
 }
 
 .friend_item img
 {
-	width: 4rem;
-	height: 4rem;
-	max-width: 4.5rem;
+	max-width: 100%;
 	max-height: 100%;
+	height: 100%;
 	border-radius: 100%;
 }
 
@@ -513,6 +515,41 @@ h2
 {
 	color: white;
 	background-color: red;
+}
+
+@media screen and (max-width: 850px)
+{
+	h2
+	{
+		width: 100%;
+		text-align: center;
+	}
+
+	.buttons_container
+	{
+		justify-content: center;
+	}
+
+	.friend_item
+	{
+		min-height: 3rem;
+		height: 3rem;
+	}
+
+	.friend_item img
+	{
+		width: 2rem;
+		height: 2rem;
+	}
+}
+
+@media screen and (max-width: 500px)
+{
+	.user_status,
+	.friend_item .image
+	{
+		display: none;
+	}
 }
 
 </style>
