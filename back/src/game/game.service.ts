@@ -77,16 +77,14 @@ export class GameService
 	 */
 	async attributeRoom(userDbId: number, playerId: string, setupChosen?: Setup) : Promise<Room>
 	{
+		this.logger.log(`user ${userDbId}: setup: ${setupChosen.level}`);
+
 		const user: User = await this.usersService.findUserById(userDbId);
 
-		if (user.roomId != 'none' && user.status === 'spectating') {
-			const roomToSpectate = this.rooms.find(el => el.name === user.roomId);
-			roomToSpectate.nbPeopleConnected++;
-			
-			return roomToSpectate;
-		}
+		if (user.roomId != 'none' && user.status === 'spectating')
+			return this.rooms.find(el => el.name === user.roomId);
 		
-		const roomToFill: Room = this.rooms.find(el => el.nbPeopleConnected === 1 && 
+		const roomToFill: Room = this.rooms.find(el => el.player2Id === '' && 
 				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
 		if (roomToFill) 
@@ -107,7 +105,6 @@ export class GameService
 	 */
 	playerJoinRoom(roomToFill: Room, setupChosen: Setup, userDbId: number, playerId: string) : Room
 	{
-		roomToFill.nbPeopleConnected++;
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
@@ -132,7 +129,6 @@ export class GameService
 			user2DbId: 0,
 			player1Id: playerId, 
 			player2Id: '', 
-			nbPeopleConnected: 1,
 			game: this.resetGame(setupChosen)
 		});
 
@@ -184,12 +180,12 @@ export class GameService
 	{
 		if ((room.game.ball.x - room.game.ball.radius) < 0) {
 			room.game.p2Score++;
-			room.game.ball = this.resetBall(room.game.ball.dir * -1);
+			room.game.ball = this.resetBall(1);
 		}
 
 		else if ((room.game.ball.x + room.game.ball.radius) > room.game.width) {
 			room.game.p1Score++;
-			room.game.ball = this.resetBall(room.game.ball.dir * -1);
+			room.game.ball = this.resetBall(-1);
 		}
 
 		else {
@@ -477,12 +473,15 @@ export class GameService
 	 */
 	resetGame(setup: Setup, dir = 1, _p1score = 0, _p2score = 0) : Game
 	{
-		if (setup.level === this.MEDIUM)
+		if (setup.level === this.EASY)
+			this.setOptions('easy');
+		else if (setup.level === this.MEDIUM)
 			this.setOptions('medium');
-		else if (setup.level === this.HARD)
+		else
 			this.setOptions('hard');
 
 		return {
+			isStarted: false,
 			width: this.GAME_WIDTH,
 			height: this.GAME_HEIGHT,
 			p1Score: _p1score,

@@ -87,6 +87,13 @@ export default defineComponent({
 			}
 		},
 
+		startingSpectate() : void
+		{
+			this.RenderGameOption = false;
+			this.RenderGamePlay = true;
+			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', {});
+		},
+
 		actualizeGameScreen(room: Room) : void
 		{
 			
@@ -101,8 +108,8 @@ export default defineComponent({
 		{
 			console.log('gameEnded listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
+			this.endGameInfo = endGameInfo;
 			this.RenderGamePlay = false;
 			this.RenderGameEnd = true;
 		},
@@ -111,8 +118,8 @@ export default defineComponent({
 		{
 			console.log('opponentLeft listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
+			this.endGameInfo = endGameInfo;
 			this.RenderGamePlay = false;
 			this.isStarting = false;
 			this.RenderGameJoin = false;
@@ -166,6 +173,10 @@ export default defineComponent({
 
 			this.socket.on('startingGame', (inGame: boolean) => {
 				this.startingGame(inGame);
+			});
+
+			this.socket.on('launchSpectate', () => {
+				this.startingSpectate();
 			});
 
 			this.socket.on('actualizeGameScreen', (room: Room) => {

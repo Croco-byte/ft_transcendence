@@ -44,7 +44,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { 
+				client.emit('unauthorized', {}); 
+				return; 
+			}
 			
 			client.data = { userDbId: user.id, userStatus: user.status };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
@@ -57,6 +60,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		if (client.data.userStatus === 'spectating') {
 			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
 			client.join(room.name);
+			client.emit('launchSpectate');
 		}
 	}
 
@@ -72,7 +76,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 		
-		if (room && client.data.wasInGame) {
+		if (room && room.game.isStarted) {
 			clearInterval(room.intervalId);
 			this.gameService.updateScores(this.wss, room, client.id);
 		}
@@ -115,8 +119,10 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
 
 			// To prevent to launch the game if one player left during starting game screen
-			if (this.gameService.findRoomByPlayerId(client.id))
+			if (this.gameService.findRoomByPlayerId(client.id)) {
+				room.game.isStarted = true;
 				this.wss.to(room.name).emit('startingGame', true);
+			}
 		}
 	}
 
@@ -162,7 +168,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
 	{
-		client.data.wasInGame = wasInGame;
 		client.disconnect();
 	}
 };
