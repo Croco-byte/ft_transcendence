@@ -1,4 +1,4 @@
-import { Controller, Req, Logger, Get, Post, Patch, Delete, Query, Param, Body, UseGuards, Request, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Controller, Req, Logger, Get, Post, Patch, Delete, Query, Param, Body, UseGuards, Request, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Channel } from './channel.entity';
 import ChannelService from './channel.service';
 import StringUtils from 'src/utils/string';
@@ -8,6 +8,7 @@ import JwtTwoFactorGuard from 'src/auth/jwt-two-factor-auth.guard';
 import { request } from 'express';
 import { User } from 'src/users/users.entity';
 import MessageService from 'src/messages/message.service';
+import { CreateChannelDto, EditTypeDto } from './dto/channel.dto';
 
 @Controller('channels')
 @UseGuards(JwtTwoFactorGuard)
@@ -31,25 +32,33 @@ export class ChannelController
 	}
 
 	@Post()
-	async createChannel(@Request() req, @Body() body)
+	async createChannel(@Request() req, @Body() body: CreateChannelDto)
 	{
 		let channel : Channel;
 		channel = new Channel;
 
 		let user = await this.userService.findById(req.user.id)
 
-		channel.type = 'group';
+		channel.type = 'public'
 		channel.name = body.name;
-		channel.requirePassword = true;
-		channel.password = 'abcdef';
+		channel.requirePassword = false;
+		channel.password = '';
 		channel.creationDate = new Date();
-		channel.isDirect = false;
+		channel.isDirect = body.isDirect;
 		channel.modifiedDate = new Date();
 		channel.lastMessage = null;
 		channel.users = [user];
 		channel.administrators = [];
 		channel.owner = user;
 
+		if (channel.isDirect)
+		{
+			let to = await this.userService.findByUsername(body.to_user);
+			if (!to)
+				throw new NotFoundException("User " + body.to_user + " not found !");
+			channel.users.push(to);
+			channel.administrators = channel.users;
+		}
 		channel = await this.channelService.insert(channel);
 
 		this.websocketGateway.joinChannel(channel, user);
@@ -66,7 +75,6 @@ export class ChannelController
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 
 		let ret: Object[];
-		// let channels = user.channels;
 		let channels = await this.channelService.findAll();
 		ret = new Array();
 
@@ -78,7 +86,98 @@ export class ChannelController
 					name: channels[i].name,
 					lastMessage: channels[i].lastMessage,
 					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
-					userRole: this.channelService.getUserRole(channels[i], user)
+					userRole: this.channelService.getUserRole(channels[i], user),
+					isJoined: this.channelService.isInChannel(channels[i], user),
+					requirePassword: channels[i].requirePassword
+				}
+			);
+		}
+		return ret;
+	}
+
+	@Get("public")
+	async getPublicChannels(@Req() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new UnauthorizedException("You are not authorized to perform this action.");
+
+		let ret: Object[];
+		let channels = await this.channelService.findAllPublicChannels();
+		ret = new Array();
+
+		for (let i = 0; i < channels.length; i++)
+		{
+			ret.push(
+				{
+					id: channels[i].id,
+					name: channels[i].name,
+					lastMessage: channels[i].lastMessage,
+					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
+					userRole: this.channelService.getUserRole(channels[i], user),
+					isJoined: this.channelService.isInChannel(channels[i], user),
+					requirePassword: channels[i].requirePassword,
+					isDirect: false
+				}
+			);
+		}
+		return ret;
+	}
+
+	@Get("joined")
+	async getJoinedChannels(@Req() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new UnauthorizedException("You are not authorized to perform this action.");
+
+		let ret: Object[];
+		let channels = await this.channelService.findAllJoinedChannels(user);
+		ret = new Array();
+
+		for (let i = 0; i < channels.length; i++)
+		{
+			ret.push(
+				{
+					id: channels[i].id,
+					name: channels[i].name,
+					lastMessage: channels[i].lastMessage,
+					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
+					userRole: this.channelService.getUserRole(channels[i], user),
+					isJoined: true,
+					requirePassword: channels[i].requirePassword,
+					isDirect: false
+				}
+			);
+		}
+		return ret;
+	}
+
+	@Get("direct")
+	async getDirects(@Req() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new UnauthorizedException("You are not authorized to perform this action.");
+
+		let ret: Object[];
+		let channels = await this.channelService.findAllDirectChannels(user);
+		ret = new Array();
+
+		for (let i = 0; i < channels.length; i++)
+		{
+			let name = "";
+			let second_user = channels[i].users.filter(u => u.id != user.id)[0];
+			ret.push(
+				{
+					id: channels[i].id,
+					name: second_user.username,
+					lastMessage: channels[i].lastMessage,
+					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
+					userRole: this.channelService.getUserRole(channels[i], user),
+					isJoined: true,
+					requirePassword: false,
+					isDirect: true
 				}
 			);
 		}
@@ -123,24 +222,22 @@ export class ChannelController
 	@Post(":channelID/members")
 	async addMember(@Param('channelID') channelID: string, @Body() body, @Request() req)
 	{
-		let curr_user: User;
-		curr_user = await this.userService.findById(req.user.id);
-		let channel = await this.channelService.findOne(channelID).then(async (channel) =>
-		{
-			if (!this.channelService.isAdmin(channel, curr_user))
-				throw new UnauthorizedException("You must be an administrator to perform this action");
-			let username = body.username;
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new NotFoundException("User not found");
+		let channel = await this.channelService.findOne(channelID);
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+			
+		if (channel.requirePassword && !body.password)
+			throw new BadRequestException("A password is required to join this channel");
 		
-			let new_user = await this.userService.findByUsername(username);
-			if (!new_user)
-				throw new NotFoundException("User " + username + " not found");
+		if (channel.requirePassword && body.password != channel.password)
+			throw new UnauthorizedException("Invalid Password for channel '" + channel.name + "'");
 
-			this.channelService.addUser(channel, new_user);
-
-			this.logger.log("Add user '" + new_user.username + "' to channel '" + channel.name + "'.");
-			this.websocketGateway.addMember("channel_" + channel.id, curr_user.username + " has added " + new_user.username + " to this channel !", channel);
-			return {message: "User " + username + " added successfully"};
-		});
+		this.channelService.addUser(channel, user, false);
+		this.websocketGateway.joinChannel(channel, user);
+		this.websocketGateway.addMember("channel_" + channel.id, user.username + " join this channel !", channel);
 	}
 
 	@Get(":channelID/members")
@@ -301,6 +398,8 @@ export class ChannelController
 
 		if (!channel)
 			throw new NotFoundException("Channel not found");
+		if (!this.channelService.isInChannel(channel, user))
+			throw new NotFoundException("You must join this channel !")
 		if (await this.channelService.isBanned(channel, user))
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 		if (this.channelService.isPendingUser(channel, user))
@@ -403,9 +502,39 @@ export class ChannelController
 			throw new UnauthorizedException();
 		if (!channel)
 			throw new NotFoundException("Channel not found");
-		if (channel.users.findIndex((u) => u.id == user.id) == -1)
+		if (!this.channelService.isInChannel(channel, user))
 			throw new NotFoundException("User not in this channel");
 		await this.channelService.removeUser(channel, user);
+		this.websocketGateway.leaveChannel(channel, user);
 		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", user.username + " leave channel " + channel.name, channel);
+	}
+
+	@Get("/:channelID/invitation")
+	async generateLink(@Param("channelID") channelID: string, @Request() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new NotFoundException("User not found");
+		let channel = await this.channelService.findOne(channelID);
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		if (!this.channelService.isInChannel(channel, user))
+			throw new UnauthorizedException("User not in this channel");
+		let link = await this.channelService.generateInvitation(channel, user);
+		return {link: "/invitations/" + link}
+	}
+
+	@Patch(":channelID/type")
+	async editType(@Param("channelID") channelID: string, @Body() body: EditTypeDto, @Request() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		if (!user)
+			throw new NotFoundException("User not found");
+		let channel = await this.channelService.findOne(channelID);
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		if (!this.channelService.isOwner(channel, user))
+			throw new UnauthorizedException("You must be the owner of this channel to perform this action");
+		await this.channelService.setChannelType(channel, body.type);
 	}
 }

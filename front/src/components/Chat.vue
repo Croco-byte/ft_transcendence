@@ -30,13 +30,16 @@ export default defineComponent(
 				has_new_message: false,
 				members: [],
 				administrators: [],
-				user_role: 'MEMBER'
+				user_role: 'MEMBER',
+				isJoined: false,
+				type: "public"
 			} as ChannelInterface,
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
 			user_id: -1,
-			show_channels_list: false
+			show_channels_list: false,
+			filter: "public"
 		}
 	},
 
@@ -55,13 +58,47 @@ export default defineComponent(
 			return (str.toString().split('T')[0])
 		},
 
-		switchChat(event: DOMEventInterface<HTMLInputElement>): void
+		clickOnChannel(event: DOMEventInterface<HTMLInputElement>): void
 		{
 			let id: number;
 			id = parseInt($(event.currentTarget).attr('data-id') as string);
 			$('.chat_item.selected').removeClass('selected');
 			$(event.currentTarget).addClass('selected');
 
+			let channel = this.channels[id];
+			if (channel.isJoined)
+				this.switchChat(id);
+			else
+			{
+				if (window.confirm("Do you want to join this channel ?"))
+				{
+					let password: string | null = null;
+					if (channel.requirePassword)
+						password = window.prompt("Password of '" + channel.name + "'");
+					axios.post(this.serverURL + '/channels/' + channel.id + '/members', {password: password}, {headers: authHeader()})
+					.then(() =>
+					{
+						this.loadChannelsList();
+						this.switchChat(id);
+					})
+					.catch(error =>
+					{
+						createToast({
+								title: 'Error',
+								description: error.response.data.message
+							},
+							{
+								position: 'top-right',
+								type: 'danger',
+								transition: 'slide'
+							})
+					})
+				}
+			}
+		},
+
+		switchChat(id: number): void
+		{
 			this.channel = this.channels[id];
 			this.channels[id].has_new_message = false;
 
@@ -101,8 +138,12 @@ export default defineComponent(
 			{
 				// Axios send to nestjs the name
 				this.mode = 'normal';
-				createToast({
-						title: 'Error',
+
+				axios.post(this.serverURL + '/channels', {name: name, isDirect: false}, {headers: authHeader()})
+				.then(() =>
+				{
+					createToast({
+						title: 'Create channel',
 						description: "Create channel named '" + name + "'"
 					},
 					{
@@ -110,10 +151,6 @@ export default defineComponent(
 						type: 'success',
 						transition: 'slide'
 					})
-
-				axios.post(this.serverURL + '/channels', {name: name}, {headers: authHeader()})
-				.then(() =>
-				{
 					this.loadChannelsList();
 				})
 				.catch(error =>
@@ -150,6 +187,7 @@ export default defineComponent(
 			{
 				this.channel.members = res.data.users;
 				this.channel.administrators = res.data.administrators;
+				this.channel.type = res.data.type;
 			})
 			.catch(error =>
 			{
@@ -184,8 +222,7 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-			})
-			;
+			});
 		},
 
 		async addAdmin(): Promise<void>
@@ -338,7 +375,7 @@ export default defineComponent(
 			.then(() =>
 			{
 				createToast({
-						title: 'Error',
+						title: 'Password modified',
 						description: "Password modified successfully"
 					},
 					{
@@ -397,7 +434,7 @@ export default defineComponent(
 
 		async loadChannelsList(): Promise<void>
 		{
-			axios.get(this.serverURL + "/channels", { headers: authHeader() }).then((res) =>
+			axios.get(this.serverURL + "/channels/" + this.filter, { headers: authHeader() }).then((res) =>
 			{
 				console.log(res.data);
 				this.channels = res.data;
@@ -437,7 +474,9 @@ export default defineComponent(
 					has_new_message: false,
 					members: [],
 					administrators: [],
-					user_role: "MEMBER"
+					user_role: "MEMBER",
+					isJoined: false,
+					type: "public"
 				} as ChannelInterface;
 
 				let index = this.channels.findIndex(c => c.id == leave_id);
@@ -446,12 +485,12 @@ export default defineComponent(
 					this.channels.splice(index, 1);
 
 				createToast({
-					title: 'Error',
+					title: 'Success',
 					description: "You leave channel '" + ex_name + "'"
 				},
 				{
 					position: 'top-right',
-					type: 'danger',
+					type: 'success',
 					transition: 'slide'
 				})
 			})
@@ -467,6 +506,7 @@ export default defineComponent(
 						transition: 'slide'
 					})
 			});
+			this.mode = 'normal';
 		},
 
 		async authentifyUser()
@@ -477,7 +517,7 @@ export default defineComponent(
 				this.changeMode("normal");
 				this.loadMessages();
 				createToast({
-						title: 'Error',
+						title: 'Join channel',
 						description: "You have now access to this channel !"
 					},
 					{
@@ -504,6 +544,83 @@ export default defineComponent(
 		{
 			return message.user_id == this.user_id;
 		},
+
+		changeChannelType()
+		{
+			let type: "public" | "private";
+			let isPublic = $("#change_type_input").prop('checked');
+			type = (isPublic ? "public" : "private");
+			axios.patch(this.serverURL + "/channels/" + this.channel.id + "/type", {type: type}, {headers: authHeader()}).then(() =>
+			{
+				createToast({
+						title: this.channel.name,
+						description: "Channel is now " + type + "."
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+				this.channel.type = type;
+			})
+			.catch((error) =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			})
+		},
+
+		generateInvitation()
+		{
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/invitation", {headers: authHeader()})
+			.then(res =>
+			{
+				navigator.clipboard.writeText(res.data.link).then(() =>
+				{
+					createToast({
+						title: 'Invitation',
+						description: 'The invitation link has been copied in the clipboard'
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+				})
+				.catch(() =>
+				{
+					alert("You invitation link is :\r\n" + res.data.link);
+				})
+			})
+			.catch(error =>
+			{
+				console.log(error);
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			})
+		},
+
+		setFilter(event: DOMEventInterface<HTMLInputElement>, new_filter: string)
+		{
+			this.filter = new_filter;
+			$('.channel_filter.selected').removeClass("selected");
+			$(event.currentTarget).addClass("selected");
+			this.loadChannelsList();
+		}
 	},
 
 	created(): void
@@ -573,8 +690,19 @@ export default defineComponent(
 		<div class="chat_container">
 			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel' || mode == 'channel_list'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list" :class="{active: mode == 'channel_list'}">
+				<div class="channels_filter_container">
+					<div class="channel_filter selected" @click="setFilter($event, 'public')">
+						Public
+					</div>
+					<div class="channel_filter" @click="setFilter($event, 'joined')">
+						Joined
+					</div>
+					<div class="channel_filter" @click="setFilter($event, 'direct')">
+						Direct
+					</div>
+				</div>
 				<div class="list">
-					<div @click="switchChat" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
+					<div @click="clickOnChannel" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
 						<div class="flex j-sb">
 							<p class="title">{{ chan.name }}</p>
 							<p class="date">{{ chan.modifiedDate }}</p>
@@ -600,7 +728,7 @@ export default defineComponent(
 							<span></span>
 						</p>
 						<p id="chat_title">{{ channel.name }}</p>
-						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')"></p>
+						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')" v-if="channel.id != -1"></p>
 					</div>
 					<div class="view">
 						<div v-for="message in channel.messages" :key="message" class="message" :class="{ me: isMe(message)}">
@@ -611,7 +739,7 @@ export default defineComponent(
 					<div class="message_bar" v-if="channel.id != -1">
 						<input id="msg_input" type="text" v-bind:placeholder="placeholder" v-on:keyup.enter="sendMessage"/>
 						<button id="send_button" v-on:click="sendMessage">Envoyer</button>
-						<p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch"></p>
+						<p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch" v-if="channel.isDirect"></p>
 					</div>
 				</div>
 			</div>
@@ -624,7 +752,7 @@ export default defineComponent(
 			
 			<div class="channel_info_container" v-if="mode == 'channel_info' && channel.id != -1">
 				<p>Info</p>
-				<section class="active">
+				<section class="active" v-if="!channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Name
 						<i class="arrow fas fa-chevron-left"></i>
@@ -635,7 +763,22 @@ export default defineComponent(
 							<button class="save_channel_config_button" v-on:click="updateChannelName">Save</button>
 						</div>
 						<div v-else>
-							<p>{{ channel.name }}</p>
+							<p class="m0">{{ channel.name }}</p>
+						</div>
+					</div>
+				</section>
+				<section v-if="channel.user_role == 'OWNER' && !channel.isDirect">
+					<p class="title" v-on:click="expandInfoSection">
+						Type ({{ channel.type }})
+						<i class="arrow fas fa-chevron-left"></i>
+					</p>
+					<div class="content">
+						<div class="switch_container">
+							Public
+							<label class="switch">
+								<input type="checkbox" id="change_type_input" :checked="channel.type == 'public'" @change="changeChannelType">
+								<span class="slider round"></span>
+							</label>
 						</div>
 					</div>
 				</section>
@@ -647,22 +790,22 @@ export default defineComponent(
 					<div class="content">
 						<div class="flex j-sb member" v-for="member in channel.members" v-bind:key="member.id">
 							<p>
-								{{ member.username }}
+								<a :href="'/user/' + member.id"> {{ member.username }}</a>
 							</p>
-							<div>
+							<div v-if="!channel.isDirect">
 								<p v-if="member.isMuted == false" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.username)"></p>
 								<p v-else class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(member.username)"></p>
 								<p v-if="member.isBanned == false" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(member.username)"></p>
 								<p v-else class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(member.username)"></p>
 							</div>
 						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_member')" v-if="channel.user_role != 'MEMBER'">
+						<!-- <p id="add_member_button" v-on:click="changeMode('add_member')" v-if="channel.user_role != 'MEMBER' && chan">
 							<i class="fas fa-plus-square"></i>
 							Add member
-						</p>
+						</p> -->
 					</div>
 				</section>
-				<section>
+				<section v-if="!channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Administrators
 						<i class="arrow fas fa-chevron-left"></i>
@@ -682,7 +825,7 @@ export default defineComponent(
 						</p>
 					</div>
 				</section>
-				<section v-if="channel.user_role == 'OWNER'">
+				<section v-if="channel.user_role == 'OWNER' && !channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
 						<i class="arrow fas fa-chevron-left"></i>
@@ -696,6 +839,10 @@ export default defineComponent(
 						<button class="save_channel_config_button" v-on:click="updateChannelPassword" v-if="channel.requirePassword">Save</button>
 					</div>
 				</section>
+				<div class="generate_invitation_button" @click="generateInvitation" v-if="!channel.isDirect">
+					Get invitation
+					<input type="hidden" id="invitation_link_input"/>
+				</div>
 				<div class="leave_button" @click="leaveChannel">
 					Leave {{ channel.name }}
 				</div>
@@ -1038,6 +1185,9 @@ export default defineComponent(
 		margin: 0rem 1rem;
 		margin-right: auto;
 		cursor: pointer;
+		color: black;
+		height: fit-content;
+		align-self: center;
 	}
 
 	.input_popup
@@ -1225,13 +1375,15 @@ export default defineComponent(
 		padding: 0.5rem 1rem;
 		text-align: center;
 		cursor: pointer;
+		border: solid 1px transparent;
+		transition: all 0.25s;
 	}
 
 	.leave_button:hover
 	{
 		background-color: transparent;
 		color: red;
-		border: solid 1px red;
+		border-color: red;
 	}
 
 	.toggle_chat_list_button
@@ -1301,6 +1453,119 @@ export default defineComponent(
 		{
 			width: 100%;
 		}
+	}
+
+	.switch {
+	position: relative;
+	display: inline-block;
+	width: 3rem;
+	height: 1.5rem;
+	}
+
+	.switch input { 
+	opacity: 0;
+	width: 0;
+	height: 0;
+	}
+
+	.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	-webkit-transition: .4s;
+	transition: .4s;
+	}
+
+	.slider:before {
+    position: absolute;
+    content: "";
+    height: 1.25rem;
+    width: 1.25rem;
+    left: 0.125rem;
+    bottom: 0.125rem;
+    background-color: white;
+    transition: .4s;
+	}
+
+	input:checked + .slider {
+	background-color: #2196F3;
+	}
+
+	input:focus + .slider {
+	box-shadow: 0 0 1px #2196F3;
+	}
+
+	input:checked + .slider:before {
+	-webkit-transform: translateX(1.5rem);
+	-ms-transform: translateX(1.5rem);
+	transform: translateX(1.5rem);
+	}
+
+	/* Rounded sliders */
+	.slider.round {
+	border-radius: 34px;
+	}
+
+	.slider.round:before {
+	border-radius: 50%;
+	}
+
+	.switch_container
+	{
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.generate_invitation_button
+	{
+		width: 100%;
+		background-color: #00a1ff;
+		color: white;
+		padding: 0.5rem 1rem;
+		text-align: center;
+		cursor: pointer;
+		margin: 1rem 0;
+		border: solid 1px transparent;
+		transition: all 0.25s;
+	}
+
+	.generate_invitation_button:hover
+	{
+		background-color: transparent;
+		color: #00a1ff;
+		border-color: #00a1ff;
+	}
+
+	.m0
+	{
+		margin: 0;
+	}
+
+	.channels_filter_container
+	{
+		margin: 1rem 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.channel_filter
+	{
+		padding: 0.25rem 1rem;
+		border: solid 1px #01c4ff;
+		cursor: pointer;
+	}
+
+	.channel_filter.selected
+	{
+		background: #01c4ff;
+		color: white;
 	}
 
 </style>

@@ -1,7 +1,8 @@
 import { User } from 'src/users/users.entity';
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne, OneToMany, JoinColumn, JoinTable, BaseEntity, ManyToMany, ManyToOne } from 'typeorm';
-import { Channel_muted_user } from 'src/channel_muted_users/channel_muted_user.entity';
+import { Channel_muted_user } from 'src/channels/channel_muted_users/channel_muted_user.entity';
 import { Message } from 'src/messages/message.entity';
+import { InvitationLink } from './invitation_links/invitation_link.entity';
 
 @Entity('Channel')
 class Channel extends BaseEntity
@@ -10,7 +11,7 @@ class Channel extends BaseEntity
 	id: number;
 
 	@Column()
-	type: string;
+	type: "public" | "private";
 
 	@Column()
 	name: string;
@@ -43,12 +44,6 @@ class Channel extends BaseEntity
 
 	@ManyToOne(() => User, (user: User) => user.own_channels)
 	owner: User;
-	
-	// @OneToMany(() => Channel_banned_user, banned => banned.channel)
-	// bannedUsers: Channel_banned_user[];
-
-	// @OneToMany(() => Channel_muted_user, muted => muted.channel)
-	// mutedUsers: Channel_muted_user[];
 
 	@OneToMany(() => Message, msg => msg.channel)
 	messages: Message[];
@@ -59,6 +54,9 @@ class Channel extends BaseEntity
 	@ManyToMany(()=> User, user => user.pending_channels)
 	@JoinTable({name: "pending_channels_users"})
 	pending_users: User[];
+
+	@OneToMany(() => InvitationLink, link => link.channel)
+	invitation_links: InvitationLink[];
 
 	toJSON()
 	{

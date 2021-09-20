@@ -8,5 +8,8 @@ export default interface ChannelInterface
 	has_new_message: boolean,
 	members: [],
 	administrators: [],
-	user_role: string
+	user_role: string,
+	isJoined: boolean,
+	type: "public" | "private",
+	isDirect: boolean
 };

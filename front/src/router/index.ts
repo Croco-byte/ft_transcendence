@@ -61,6 +61,12 @@ const routes = [
 		name: "Ranking",
 		component: () => import('../views/Ranking.vue'),
 		beforeEnter: ifAuthenticated
+	},
+	{
+		path: '/invitations/:id',
+		name: "Invitation",
+		component: () => import('../views/Invitation.vue'),
+		beforeEnter: ifAuthenticated
 	}
 ]
 

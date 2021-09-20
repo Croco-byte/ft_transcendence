@@ -490,7 +490,7 @@ export class UsersService {
 
 	async findById(id: string): Promise<User>
 	{
-		return await this.usersRepository.findOne({relations: ["channels"], where: [{id: id}]});
+		return await this.usersRepository.findOne({relations: ["channels", "blocked", "pending_channels"], where: [{id: id}]});
 	}
 	
 	async delete(id: string): Promise<void>
