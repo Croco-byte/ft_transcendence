@@ -1,9 +1,9 @@
 <template>
 	<div id="game">
 		<GameOption v-if="RenderGameOption" @setupChosen="setupChosen($event)"/>
-		<GameJoin v-if="RenderGameJoin" :isStarting="isStarting" :backColor="backColor" ></GameJoin>
-		<GamePlay v-if="RenderGamePlay" :isSpectating="isSpectating" v-model:room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
-		<GameEnd v-if="RenderGameEnd" :isSpectating="isSpectating" :endGameInfo="endGameInfo" @playAgain="playAgain($event)"></GameEnd>
+		<GameJoin v-if="RenderGameJoin" :isPrivate="isPrivate" :isStarting="isStarting"></GameJoin>
+		<GamePlay v-if="RenderGamePlay" :isSpectating="isSpectating" :room="room" @gameId="updateGameId($event)" @playerEvent="updatePosition($event)"/>
+		<GameEnd v-if="RenderGameEnd" :isPrivate="isPrivate" :isSpectating="isSpectating" :endGameInfo="endGameInfo" @playPrivateAgain="playPrivateAgain($event)" @playAgain="playAgain($event)"></GameEnd>
 	</div>
 </template>
 
@@ -16,8 +16,10 @@ import GamePlay from './game/GamePlay.vue'
 import GameJoin from './game/GameJoin.vue'
 import GameEnd from './game/GameEnd.vue'
 import io from 'socket.io-client'
-import authHeader from '../services/auth-header';
 import { Room, EndGameInfo } from '../types/game.interface'
+import router from '../router/index';
+import axios from '../axios-instance';
+import authHeader from '../services/auth-header';
 
 export default defineComponent({
 	
@@ -33,10 +35,11 @@ export default defineComponent({
 			RenderGameJoin: false as boolean,
 			RenderGamePlay: false,
 			RenderGameEnd: false as boolean,
+			isPrivate: false as boolean,
 			isStarting: false as boolean,
 			isSpectating: false as boolean,
-			backColor: 'orange' as string,
 			gameID: 0 as number,
+			serverURL: "http://" + window.location.hostname + ":3000" as string,
 		}
 	},
 
@@ -54,11 +57,34 @@ export default defineComponent({
 			this.isStarting = true;
 		},
 
+		async launchChallengeAgain(obj: any)
+		{
+			const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + obj.userId, {},
+				{headers: authHeader()});
+				
+			this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
+				userId: obj.userId,
+				friendId: obj.friendId,
+				newRoomId: newRoomId,
+			});
+			
+			router.push(({name: 'Game', params: { 
+				RenderGameOption: 'false',
+				RenderGameJoin: 'true',
+			}}));
+		},
+
 		renderOption() : void
 		{
 			this.RenderGameOption = true;
 		},
-		
+
+		waitInPrivateQueue() : void
+		{
+			this.socket.emit('privateGame');
+			this.isPrivate = true;
+		},
+
 		waitingForPlayer() : void
 		{
 			console.log('waitingForPlayer listener event');
@@ -102,7 +128,6 @@ export default defineComponent({
 
 			if (this.isStarting && this.isSpectating) {
 				this.RenderGamePlay = true;
-				// this.isStarting = false;
 			}
 		},
 
@@ -154,6 +179,18 @@ export default defineComponent({
 			this.isStarting = false;
 			this.isSpectating = false;
 		},
+
+		async playPrivateAgain(obj: any) : Promise<void>
+		{	
+			this.RenderGameEnd = false;
+			this.isStarting = false;
+			this.isSpectating = false;
+
+			await this.launchChallengeAgain(obj);
+
+			this.socket.emit('privateGame');
+			this.isPrivate = true;
+		}
 	},
 
 	created() 
@@ -176,6 +213,10 @@ export default defineComponent({
 
 			this.socket.on('renderOption', () => {
 				this.renderOption();
+			});
+
+			this.socket.on('waitInPrivateQueue', () => {
+				this.waitInPrivateQueue();
 			});
 
 			this.socket.on('waitingForPlayer', () => {

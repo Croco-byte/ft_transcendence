@@ -100,7 +100,17 @@ export class GameService
 		if (roomToFill) 
 			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
-			return this.createNewRoom(setupChosen, userDbId, playerId);
+			return this.createNewRoom(setupChosen, userDbId, playerId, playerId);
+	}
+
+	attributePrivateRoom(userDbId: number, playerId: string, privateRoomId: string) : Room
+	{
+		const roomToFill: Room = this.rooms.find(el => el.name === privateRoomId);
+
+		if (roomToFill) 
+			return this.playerJoinRoom(roomToFill, this.resetSetup(), userDbId, playerId);
+		else
+			return this.createNewRoom(this.resetSetup(), userDbId, privateRoomId, playerId);
 	}
 
 	/**
@@ -130,11 +140,11 @@ export class GameService
 	 * @param userDbId Player 1 database id.
 	 * @param playerId Player 1 socket id.
 	 */
-	createNewRoom(setupChosen: Setup, userDbId: number, playerId: string) : Room
+	createNewRoom(setupChosen: Setup, userDbId: number, roomName: string, playerId: string) : Room
 	{
 		this.rooms.push({ 
 			intervalId: undefined,
-			name: playerId, 
+			name: roomName, 
 			user1DbId: userDbId,
 			user2DbId: 0,
 			player1Id: playerId, 
@@ -546,12 +556,20 @@ export class GameService
 	 * @param setupChosen Setup chosen by player one.
 	 * @return A Setup object with default configuration.
 	 */
-	private resetSetup(setupChosen: Setup) : Setup
+	private resetSetup(setupChosen?: Setup) : Setup
 	{
+		if (setupChosen) {
+			return {
+				level: setupChosen.level,
+				score: setupChosen.score,
+				paddleColor: setupChosen.paddleColor,
+			}
+		}
+
 		return {
-			level: setupChosen.level,
-			score: setupChosen.score,
-			paddleColor: setupChosen.paddleColor,
+			level: 1,
+			score: 5,
+			paddleColor: 'white',
 		}
 	}
 

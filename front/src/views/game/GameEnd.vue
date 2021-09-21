@@ -164,14 +164,21 @@ import { EndGameInfo } from '../../types/game.interface'
 import { User } from '../../types/user.interface'
 import UserService from '../../services/user.service'
 import authService from '../../services/auth.service'
+import router from '../../router/index';
+import axios from '../../axios-instance';
+import authHeader from '../../services/auth-header';
 
 export default defineComponent ({
 	
 	name: 'GameEnd',
-	emits: ["playAgain"],
+	emits: ["playAgain", "playPrivateAgain"],
 	
 	props: {
 		isSpectating: {
+			required: true,
+			type: Boolean,
+		},
+		isPrivate: {
 			required: true,
 			type: Boolean,
 		},
@@ -189,10 +196,58 @@ export default defineComponent ({
 	},
 
 	methods: {
-		playingAgain() : void
+		async playingAgain()
 		{
-			this.$emit('playAgain');
+			if (!this.isPrivate)
+				this.$emit('playAgain');
+			else {
+				let userId = 0;
+				let friendId = 0;
+				const res = await UserService.getCurrUserId();
+				
+				if (res.data.id === this.endGameInfo.room.user1DbId) {
+					userId = this.endGameInfo.room.user1DbId;
+					friendId = this.endGameInfo.room.user2DbId;
+				}
+				else {
+					userId = this.endGameInfo.room.user2DbId;
+					friendId = this.endGameInfo.room.user1DbId;
+				}
+
+				this.$emit('playPrivateAgain', { userId, friendId });
+			}
 		},
+
+		// async launchChallengeAgain()
+		// {
+		// 	let userId = 0;
+		// 	let friendId = 0;
+		// 	const res = await UserService.getCurrUserId();
+			
+			
+		// 	if (res.data.id === this.endGameInfo.room.user1DbId) {
+		// 		userId = this.endGameInfo.room.user1DbId;
+		// 		friendId = this.endGameInfo.room.user2DbId;
+		// 	}
+		// 	else {
+		// 		userId = this.endGameInfo.room.user2DbId;
+		// 		friendId = this.endGameInfo.room.user1DbId;
+		// 	}
+				
+		// 	const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + userId, {},
+		// 		{headers: authHeader()});
+				
+		// 	this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
+		// 		userId: userId,
+		// 		friendId: friendId,
+		// 		newRoomId: newRoomId,
+		// 	});
+			
+		// 	router.push(({name: 'Game', params: { 
+		// 		RenderGameOption: 'false',
+		// 		RenderGameJoin: 'true',
+		// 	}}));
+		// },
 
 		async loadAvatar(playerDbId: string) : Promise<void>
 		{

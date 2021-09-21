@@ -49,7 +49,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			
 			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
 
-			client.data = { userDbId: user.id, userStatus: user.status };
+			client.data = { userDbId: user.id, userStatus: user.status, roomId: user.roomId };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
 		catch(e) {
@@ -64,9 +64,11 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
 		}
-		else {
+		else if (client.data.roomId === 'none') {
 			client.emit('renderOption');
 		}
+		else
+			client.emit('waitInPrivateQueue');
 	}
 
 	/**
@@ -114,6 +116,28 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() setupChosen: Setup) : Promise<void>
 	{
 		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
+		client.join(room.name);
+
+		if (room.player2Id === '')
+			client.emit('waitingForPlayer');
+		
+		else if (room.player2Id != '') {
+			this.wss.to(room.name).emit('startingGame', false);
+			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
+
+			// To prevent to launch the game if one player left during starting game screen
+			if (this.gameService.findRoomByPlayerId(client.id)) {
+				room.game.isStarted = true;
+				this.wss.to(room.name).emit('startingGame', true);
+			}
+		}
+	}
+
+	@SubscribeMessage('privateGame')
+	async handlePrivateGame(@ConnectedSocket() client: Socket) : Promise<void>
+	{
+		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, client.data.roomId);
+
 		client.join(room.name);
 
 		if (room.player2Id === '')
