@@ -50,6 +50,7 @@ services:
       - webnet
     environment:
       POSTGRES_PASSWORD: password
+      PGPASSWORD: password
       POSTGRES_USER: root
       POSTGRES_DB: ft_transcendence
       PG_DATA: /var/lib/postgresql/data
@@ -57,6 +58,7 @@ services:
       - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db_test_scripts/:/db_test_scripts/
 
   front:
     container_name: front

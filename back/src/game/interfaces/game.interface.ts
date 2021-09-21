@@ -9,12 +9,12 @@ export interface Room
 	user2DbId: number;
 	player1Id: string;
 	player2Id: string;
-	nbPeopleConnected: number;
 	game: Game;
 }
 
 export interface Game
 {
+	isStarted: boolean;
 	width: number;
 	height: number;
 	p1Score: number;

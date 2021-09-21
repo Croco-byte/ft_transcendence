@@ -2,45 +2,53 @@
 	<div v-if="userNotFound" style="text-align: center;">
 		<h2>{{ userNotFound }}</h2>
 	</div>
-	<div v-else-if="isDataLoaded" style="text-align: center;">
-		<h2>Profile page of {{ displayName }}</h2>
-		<img :src="avatar" fluid alt="User avatar" width="200" height="200"/>
-		<p>Display name chosen by user : {{ displayName }}</p>
+	<div v-else-if="isDataLoaded" class="profile_page_container" >
+		<div class="avatar">
+			<img :src="avatar" fluid alt="User avatar"/>
+		</div>
+		<div class="header">
+			<div>
+				<h2><i class="fas fa-user"></i> Profile page of {{ displayname }}</h2>
+				<div v-if="friendRequestStatus === 'accepted'">
+					<UserStatus :status="status" :friendId="userId" :userId="currUserId"/>
+					<button class="Unfriend" v-on:click="unfriendUser">Unfriend</button>
+				</div>
+					<div v-if="friendRequestStatus === 'not-sent'">
+					<button class="Send" type="button" v-on:click="sendFriendRequest">Send friend request</button>
+				</div>
+				<div v-if="friendRequestStatus === 'pending'">
+					<button class="Send" type="button" disabled>Send friend request</button>
+					<p>You already have sent a friend request to this user, which is pending</p>
+				</div>
+				<div v-if="friendRequestStatus === 'declined'">
+					<button class="Send" type="button" disabled>Send friend request</button>
+					<p>This friend request has been declined. Only the other user can send you a friend request now</p>
+				</div>
+				<div v-if="friendRequestStatus === 'declined-by-me'">
+					<button class="Send" type="button" v-on:click="sendFriendRequest">Send friend request</button>
+				</div>
+				<div v-if="friendRequestStatus === 'waiting-for-current-user-response'">
+				<button  class="Send" type="button" disabled>Send friend request</button>
+					<p>This user has already sent you a friend request</p>
+				</div>
+				<br/>
+				<div class="basic_info">
+					<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
+					<p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayname }}</p>
+				</div>
+				<br/>
+				
+			</div>
+				<div class="stats">
+					<h2><i class="fas fa-align-justify"></i> Player's stats</h2>
+					<div class="score_info">
+						<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
+						<p><i class="fas fa-caret-right"></i> <b>Wins</b> : <span style="color:#27AE60;"><b>{{ wins }}</b></span></p>
+						<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
+					</div>
+				</div>
+		</div>
 		
-		<div v-if="friendRequestStatus === 'accepted'">
-			<UserStatus :status="status"/>
-		</div>
-		<div v-else>
-			<p>[Debug] Can't see user status, because he isn't your friend </p>
-		</div>
-
-		<div v-if="friendRequestStatus">
-			<div v-if="friendRequestStatus === 'not-sent'">
-			<button type="button" v-on:click="sendFriendRequest">Send friend request</button>
-			</div>
-			<div v-if="friendRequestStatus === 'pending'">
-			<button type="button" disabled>Send friend request</button>
-			<p>You already have sent a friend request to this user, which is pending</p>
-			</div>
-			<div v-if="friendRequestStatus === 'declined'">
-			<button type="button" disabled>Send friend request</button>
-			<p>This friend request has been declined. Only the other user can send you a friend request now</p>
-			</div>
-			<div v-if="friendRequestStatus === 'declined-by-me'">
-			<button type="button" v-on:click="sendFriendRequest">Send friend request</button>
-			<p>You have already declined a friend request coming from this user. Only you can re-send this user a friend request</p>
-			</div>
-			<div v-if="friendRequestStatus === 'accepted'">
-			<button type="button" disabled>Send friend request</button>
-			<p>This friend request has been accepted : you're already friends !</p>
-			<button v-on:click="unfriendUser">Unfriend</button>
-			</div>
-			<div v-if="friendRequestStatus === 'waiting-for-current-user-response'">
-			<button type="button" disabled>Send friend request</button>
-			<p>This user has already sent you a friend request</p>
-			</div>
-		</div>
-
 	</div>
 
 </template>
@@ -67,9 +75,13 @@ interface UserViewData
 {
 	currUserId: number;
 	userId: number;
-	displayName: string;
+	name: string;
+	displayname: string;
 	status: string;
 	avatar: string;
+	score: number;
+	wins: number;
+	loses: number;
 	userNotFound: string;
 	friendRequestStatus: string;
 }
@@ -83,9 +95,13 @@ export default defineComponent({
 		return {
 			currUserId: -1,
 			userId: -1,
-			displayName: '',
+			name: '',
+			displayname: '',
 			status: '',
 			avatar: '',
+			score: 0,
+			wins: 0,
+			loses: 0,
 
 			userNotFound: '',
 
@@ -95,7 +111,7 @@ export default defineComponent({
 
 	computed: {
 		isDataLoaded(): boolean {
-			if (this.displayName && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
+			if (this.displayname && this.avatar && this.friendRequestStatus && this.userId !== -1 && this.currUserId !== -1) return true;
 			return false;
 		}
 	},
@@ -159,8 +175,12 @@ export default defineComponent({
 
 		UserService.getUserInfo(this.$route.params.id).then(
 			response => {
-				this.displayName = response.data.displayName;
+				this.name = response.data.username;
+				this.displayname = response.data.displayname;
 				this.status = response.data.status;
+				this.score = response.data.score;
+				this.wins = response.data.wins;
+				this.loses = response.data.loses;
 				UserService.getUserAvatar(response.data.avatar).then(
 					response => {
 						const urlCreator = window.URL || window.webkitURL;
@@ -197,30 +217,74 @@ export default defineComponent({
 </script>
 
 <style scoped>
-	.green-dot {
-		height: 25px;
-		width: 25px;
-		background-color: green;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
 
-	.red-dot {
-		height: 25px;
-		width: 25px;
-		background-color: red;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+.profile_page_container
+{
+	width: 50%;
+	margin: auto;
+	display: flex;
+	justify-content: space-evenly;
+}
 
-	.orange-dot {
-		height: 25px;
-		width: 25px;
-		background-color: orange;
-		border-radius: 50%;
-		display: inline-block;
-		margin-top: 5px;
-	}
+
+.header
+{
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+}
+
+.avatar img
+{
+	width: 250px;
+	height: 250px;
+	border-radius: 100%;
+}
+
+.Send
+{
+	background: #39D88F;
+    color: white;
+    border: none;
+    outline: none;
+    padding: 0.25rem 1rem;
+	margin: 0 1rem;
+	cursor: pointer;
+	border: solid 1px white;
+	transition: all 0.25s;
+}
+
+.Send:enabled:hover
+{
+	background: white;
+	border-color: #39D88F;
+	color: #39D88F;
+}
+
+.Send:disabled
+{
+	background-color: grey;
+	cursor: not-allowed;
+}
+
+.Unfriend
+{
+	padding: 0.25rem 1rem;
+	background-color: #c40707;
+	color: white;
+	border-radius: 2rem;
+	margin-right: 1rem;
+	cursor: pointer;
+	border: solid 1px #c40707;
+	transition: all 0.25s;
+}
+
+.Unfriend:hover
+{
+	border-color: #c40707;
+	color: #c40707;
+	background-color: white;
+}
+
+
 </style>

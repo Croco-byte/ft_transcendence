@@ -39,7 +39,8 @@ export class AuthService {
 				this.logger.log("We don\'t have the user " + infos.username + ". Creating it in database.");
 				const newUser = User.create();
 				newUser.username = infos.username;
-				newUser.displayName = infos.username;
+				newUser.displayname = infos.username;
+				if (newUser.username === this.configService.get<string>('WEBSITE_OWNER')) newUser.is_admin = "owner";
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });

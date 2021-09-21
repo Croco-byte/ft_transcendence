@@ -3,6 +3,7 @@ import { Controller, Post, Get, Put, UseGuards, Param, Req, Res, Body, NotFoundE
 import { paginate, Pagination } from "nestjs-typeorm-paginate";
 import { from, map, Observable } from "rxjs";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
+import JwtTwoFactorAdminGuard from "src/auth/jwt-two-factor-admin-auth-guard";
 import { FriendRequest, FriendRequestStatus } from "./friend-request.interface";
 import { UserStatus, User_Status } from "./status.interface";
 import { User } from "./users.entity";
@@ -94,11 +95,11 @@ export class UserController {
 	}
 // 
 	/* Allows to change the current user display name */
-	@Post('displayName')
+	@Post('displayname')
 	@UseGuards(JwtTwoFactorGuard)
-	changeUserDisplayName(@Body('displayName') newDisplayName: string, @Req() req): Promise<string> {
+	changeUserdisplayname(@Body('displayname') newdisplayname: string, @Req() req): Promise<string> {
 		try {
-			return this.userService.changeUserDisplayName(req.user.id, newDisplayName);
+			return this.userService.changeUserdisplayname(req.user.id, newdisplayname);
 		} catch (e) {
 			throw e;
 		}
@@ -138,12 +139,12 @@ export class UserController {
 		@Query('limit') limit: number = 10,
 		@Query('page') page: number = 1,
 		@Query('username') username: string
-		): Observable<Pagination<User>> {
+		): Promise<Pagination<User>> | Observable<Pagination<User>> {
 		limit = limit > 100 ? 100 : limit;
 		if (username == null) {
 			return this.userService.paginateUsers({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' });
 		} else {
-			return this.userService.paginateUsersFilterByDisplayName({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
+			return this.userService.paginateUsersFilterBydisplayname({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/users' }, username);
 		}
 	}
 
@@ -290,4 +291,58 @@ export class UserController {
 		if (!friendRequestId) throw new BadRequestException();
 		return this.userService.respondToFriendRequest(friendRequestId, responseStatus.status);
 	}
+
+
+	/* ==== Endpoints related to website administration  ==== */
+
+	@Get('/administration/blocked_users')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async getWebsiteBlockedUsers(@Query('limit') limit: number = 10, @Query('page') page: number = 1): Promise<Pagination<User>> {
+		return this.userService.getWebsiteBlockedUsersPaginated({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/administration/blocked_users' })
+	}
+
+	@Post('/administration/block_user')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async blockWebsiteUser(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		const user = await this.userService.findUserById(data.targetUserId);
+		if (user.is_admin !== "owner" && data.targetUserId !== req.user.id) return this.userService.blockWebsiteUser(data.targetUserId);
+		else if (data.targetUserId === req.user.id) throw new ForbiddenException("You can't block yourself !");
+		else throw new ForbiddenException("You can't block the website owner !");
+	}
+
+	@Post('/administration/unblock_user')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async unblockWebsiteUser(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		return this.userService.unblockWebsiteUser(data.targetUserId);
+	}
+
+	@Get('/administration/owner')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async getWebsiteOwner(): Promise<User> {
+		return await this.userService.getWebsiteOwner();
+	}
+
+	@Get('/administration/moderators')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	getWebsiteModerators( @Query('limit') limit: number = 10, @Query('page') page: number = 1,): Promise<Pagination<User>> {
+		return this.userService.getWebsiteModerators({ page: Number(page), limit: Number(limit), route: 'http://127.0.0.1:3000/user/administration/moderators' });
+	}
+
+	@Post('/administration/make_moderator')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async makeWebsiteModerator(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		const user = await this.userService.findUserById(data.targetUserId);
+		if (user.is_admin !== "owner") return this.userService.makeUserModerator(data.targetUserId);
+		else throw new ForbiddenException("You can't make the website owner a moderator");
+	}
+
+	@Post('/administration/make_regular')
+	@UseGuards(JwtTwoFactorAdminGuard)
+	async makeuserRegular(@Body() data: {targetUserId: number}, @Req() req): Promise<void> {
+		const user = await this.userService.findUserById(data.targetUserId);
+		if (user.is_admin !== "owner") return this.userService.makeUserRegular(data.targetUserId);
+		else throw new ForbiddenException("You can't make the website owner a regular user");
+	}
+
+
 }

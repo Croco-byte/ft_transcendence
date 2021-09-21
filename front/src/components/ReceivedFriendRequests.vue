@@ -5,7 +5,7 @@
 		<ul>
 			<li v-for="request in receivedRequests" :key="request.id">
 				<p>
-					From: <router-link v-bind:to="'/user/' + request.creator.id" style="text-decoration: underlined;">{{ request.creator.displayName }}</router-link>
+					From: <router-link v-bind:to="'/user/' + request.creator.id" style="text-decoration: underlined;">{{ request.creator.displayname }}</router-link>
 				</p>
 				<UserStatus :status="request.creator.status"/>
 				<p>
@@ -86,7 +86,7 @@ export default defineComponent({
 	methods: {
 		
 		/* This method uses the UserService to get the list of the received friend requests, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user that sent the request ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user that sent the request ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getFriendRequestsFromRecipients: function(page = 1): void {

@@ -29,9 +29,9 @@ export default defineComponent({
 			socket: null as any,
 			room: null as any,
 			endGameInfo: null as any,
-			RenderGameOption: true as boolean,
+			RenderGameOption: true,
 			RenderGameJoin: false as boolean,
-			RenderGamePlay: false as boolean,
+			RenderGamePlay: false,
 			RenderGameEnd: false as boolean,
 			isStarting: false as boolean,
 			isSpectating: false as boolean,
@@ -49,10 +49,14 @@ export default defineComponent({
 		launchSpectate() : void
 		{
 			console.log('launchSpectate listener event');
-			this.$store.state.websockets.connectionStatusSocket.emit('getSpectating', {});
 			this.RenderGameOption = false;
-			this.RenderGamePlay = true;
 			this.isSpectating = true;
+			this.isStarting = true;
+		},
+
+		renderOption() : void
+		{
+			this.RenderGameOption = true;
 		},
 		
 		waitingForPlayer() : void
@@ -95,15 +99,21 @@ export default defineComponent({
 				this.RenderGameJoin = false
 				this.RenderGamePlay = true;
 			}
+
+			if (this.isStarting && this.isSpectating) {
+				this.RenderGamePlay = true;
+				// this.isStarting = false;
+			}
 		},
 
 		gameEnded(endGameInfo: EndGameInfo) : void
 		{
 			console.log('gameEnded listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
+			this.endGameInfo = endGameInfo;
 			this.RenderGamePlay = false;
+			this.RenderGameJoin = false;
 			this.RenderGameEnd = true;
 		},
 
@@ -111,10 +121,9 @@ export default defineComponent({
 		{
 			console.log('opponentLeft listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-			this.endGameInfo = endGameInfo;
 			cancelAnimationFrame(this.gameID);
+			this.endGameInfo = endGameInfo;
 			this.RenderGamePlay = false;
-			this.isStarting = false;
 			this.RenderGameJoin = false;
 			this.RenderGameEnd = true;
 		},
@@ -143,18 +152,31 @@ export default defineComponent({
 			this.RenderGameEnd = false;
 			this.RenderGameOption = true;
 			this.isStarting = false;
+			this.isSpectating = false;
 		},
 	},
 
 	created() 
 	{
+		if (this.$route.params.RenderGamePlay === 'true'){
+			this.isSpectating = true;
+			this.isStarting = true;
+		}
+
+		if (this.$route.params.RenderGameOption === 'false')
+			this.RenderGameOption = false;
+		
 		this.socket = io('http://localhost:3000/game', 
 				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 
 		if (this.socket) {
-			this.socket.on('unauthorized', () => {
-				this.$store.commit('disconnectUser', { message: "[DEBUG from websockets] Session expired" });
+			this.socket.on('unauthorized', (data: {message: string }) => {
+				this.$store.commit('disconnectUser', { message: data.message });
 			})
+
+			this.socket.on('renderOption', () => {
+				this.renderOption();
+			});
 
 			this.socket.on('waitingForPlayer', () => {
 				this.waitingForPlayer();
@@ -166,6 +188,10 @@ export default defineComponent({
 
 			this.socket.on('startingGame', (inGame: boolean) => {
 				this.startingGame(inGame);
+			});
+
+			this.socket.on('launchSpectate', () => {
+				this.launchSpectate();
 			});
 
 			this.socket.on('actualizeGameScreen', (room: Room) => {

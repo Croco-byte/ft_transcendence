@@ -27,17 +27,17 @@ if (user) {
 	statusSocket.on('multipleConnectionsOnSameUser', async function(data) {
 		const result = await UserService.getCurrUserId();
 		if (data.userId == result.data.id) {
-			store.commit('disconnectUser', { message: "Multiple connexions detected for this user. Please log in again" });
+			store.commit('disconnectUser', { message: "Multiple connexions for this user. Please log in again" });
 		}
 	});
-	statusSocket.on('unauthorized', function() {
-		store.commit('disconnectUser', { message: "Session expired !" });
+	statusSocket.on('unauthorized', function(data: { message: string }) {
+		store.commit('disconnectUser', { message: data.message });
 	});
 	statusSocket.on('serverDown', function() {
 		store.commit('disconnectUser', { message: "Serveur is down or was rebooted. Please wait a bit before logging in again."})
 	});
-	friendSocket.on('unauthorized', function() {
-		store.commit('disconnectUser', { message: "Session expired !" });
+	friendSocket.on('unauthorized', function(data: { message: string }) {
+		store.commit('disconnectUser', { message: data.message });
 	});
 	initialState = { status: { loggedIn: true }, user: user, avatar: '', websockets: { connectionStatusSocket: statusSocket, friendRequestsSocket: friendSocket } };
 

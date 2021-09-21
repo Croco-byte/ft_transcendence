@@ -61,5 +61,11 @@ recreate	:
 				docker-compose -f docker-compose.yml up --no-start
 				docker-compose -f docker-compose.yml start
 				docker-compose logs -f back front postgres
-							
+
+test		:
+				docker-compose -f docker-compose.yml start
+				docker-compose exec postgres "/db_test_scripts/test_setup.sh"
+				docker-compose logs -f back front postgres
+				
+
 .PHONY		:	run resintall install stop remove

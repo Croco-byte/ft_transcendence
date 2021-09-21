@@ -3,7 +3,7 @@ export interface User
 	id: number;
 	username: string;
 	status: string;
-	displayName: string;
+	displayname: string;
 	avatar?: string;
 	score?: number;
 }

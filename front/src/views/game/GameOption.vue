@@ -164,12 +164,13 @@ export default defineComponent({
 
 		resetOption() {
 			this.opt.level = 1;
-			this.opt.score = 1;
+			this.opt.score = 5;
 			this.opt.paddleColor = 'white';
 		}
 	},
 
 	mounted() {
+		this.resetOption();
 		console.log('option mounted');
 	}
 	

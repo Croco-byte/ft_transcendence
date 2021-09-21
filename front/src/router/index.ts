@@ -47,7 +47,7 @@ const routes = [
 	{
 		path: '/user/:id',
 		name: 'User',
-		component: () => import('../views/User-v2.vue'),
+		component: () => import('../views/User.vue'),
 		beforeEnter: ifAuthenticated
 	},
 	{
@@ -60,6 +60,12 @@ const routes = [
 		path: '/ranking',
 		name: "Ranking",
 		component: () => import('../views/Ranking.vue'),
+		beforeEnter: ifAuthenticated
+	},
+	{
+		path: '/admin',
+		name: 'Admin',
+		component: () => import('../views/Admin.vue'),
 		beforeEnter: ifAuthenticated
 	}
 ]

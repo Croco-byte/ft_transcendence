@@ -46,7 +46,7 @@ export default defineComponent({
 	
 	methods: {
 		/* This method uses the UserService to get the list of the current user's leaderboardUsers, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getLeaderboardUsers: function(page = 1): void {
@@ -113,6 +113,7 @@ export default defineComponent({
 					</div>
 				</div>
 			</div>
+			<div class="test">
 			<div class="leaderboard_item" v-for="(leaderboarduser, index) in leaderboardUsers" :key="leaderboarduser.user.id">
 				<div class="userInfo"> 
 					<div class="rank">
@@ -122,7 +123,7 @@ export default defineComponent({
 						<img :src="avatars[index]"/>
 					</div>
 					<p class="username">
-						<a :href="'/user/' + leaderboarduser.user.id ">{{ leaderboarduser.user.displayName }}</a>
+						<a :href="'/user/' + leaderboarduser.user.id ">{{ leaderboarduser.user.displayname }}</a>
 					</p>
 				</div>
 				<div class="stat">
@@ -143,12 +144,13 @@ export default defineComponent({
 					<button class="paginationButtonPrev" :disabled="hidePreviousPageButton" v-on:click="getLeaderboardUsers(leaderboardMeta.currentPage - 1)">Previous</button>
 					<span class="paginationSpan">
 						<form id="goToleaderboardUsersPage">
-							<input type="number" class="goToleaderboardUsersPageInput" name="goToleaderboardUsersPageInput" v-model.number="leaderboardMeta.currentPage" v-on:input="goToleaderboardUsersPage">
+							<input class="goToleaderboardUsersPageInput" name="goToleaderboardUsersPageInput" v-model.number="leaderboardMeta.currentPage" v-on:input="goToleaderboardUsersPage">
 						</form>
 					</span>
 					<span class="paginationSpan"> /{{ leaderboardMeta.totalPages }}</span>
 					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="getLeaderboardUsers(leaderboardMeta.currentPage + 1)">Next</button>
 				</p>
+			</div>
 			</div>
 		</div>
 	</div>
@@ -159,6 +161,12 @@ export default defineComponent({
 #leaderboard
 {
 	margin: 0 auto;
+}
+
+.test
+{
+	border: solid;
+	border-color: #39D88F;
 }
 
 h2
@@ -172,12 +180,14 @@ h2
 
 .paginationMenu
 {
-	width: 50%;
-	margin: 0 auto;
+	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .pagination
 {
+	justify-content: center;
 	display: flex;
 	height: auto;
 	width: 100%;

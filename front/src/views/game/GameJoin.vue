@@ -33,6 +33,8 @@ export default defineComponent({
 
 	mounted()
 	{
+		console.log('gamejoin mounted');
+
 		if (this.isStarting) 
 			this.updateHtmlText('msg', 'Player found! Game will start soon.');
 

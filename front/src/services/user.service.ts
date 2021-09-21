@@ -4,6 +4,34 @@ import authHeader from './auth-header';
 const API_URL = "http://127.0.0.1:3000/"
 
 class UserService {
+	getWebsiteOwner() {
+		return axios.get(API_URL + 'user/administration/owner', { headers: authHeader() });
+	}
+
+	getWebsiteModerators(page: number) {
+		return axios.get(API_URL + 'user/administration/moderators?limit=3&page=' + page, { headers: authHeader() });
+	}
+
+	getWebsiteBlockedUsers(page: number) {
+		return axios.get(API_URL + 'user/administration/blocked_users?limit=3&page=' + page, { headers: authHeader() });
+	}
+
+	blockUserFromWebsite(userId: number) {
+		return axios.post(API_URL + 'user/administration/block_user', { targetUserId: userId }, { headers: authHeader() });
+	}
+
+	unblockUserFromWebsite(userId: number) {
+		return axios.post(API_URL + 'user/administration/unblock_user', { targetUserId: userId }, { headers: authHeader() });
+	}
+
+	makeModerator(userId: number) {
+		return axios.post(API_URL + 'user/administration/make_moderator', { targetUserId: userId }, { headers: authHeader() });
+	}
+
+	makeRegularUser(userId: number) {
+		return axios.post(API_URL + 'user/administration/make_regular', { targetUserId: userId }, { headers: authHeader() });
+	}
+	
 	getCurrUserId() {
 		return axios.get(API_URL + 'user', { headers: authHeader() });
 	}
@@ -69,11 +97,12 @@ class UserService {
 	}
 
 	searchUser(username, page = 1) {
+		if (username == null) return axios.get(API_URL + "user/users?limit=5&page=" + page, { headers: authHeader() });
 		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
 	}
 
-	changeDisplayName(newDisplayName) {
-		return axios.post(API_URL + 'user/displayName', { displayName: newDisplayName }, { headers: authHeader() });
+	changedisplayname(newdisplayname) {
+		return axios.post(API_URL + 'user/displayname', { displayname: newdisplayname }, { headers: authHeader() });
 	}
 
 	getLeaderboardUsers(page = 1) {

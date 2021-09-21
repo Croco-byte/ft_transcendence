@@ -75,7 +75,7 @@ export default defineComponent({
 	methods: {
 		
 		/* This method uses the UserService to get the list of the sent friend requests, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the target user ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the target user ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getFriendRequestsToRecipients: function(page = 1): void {
@@ -135,7 +135,7 @@ export default defineComponent({
 		},
 
 		/* This method uses the UserService to get the list of the received friend requests, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user that sent the request ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user that sent the request ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getFriendRequestsFromRecipients: function(page = 1): void {
@@ -276,7 +276,7 @@ export default defineComponent({
 					<img :src="avatarsReceived[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + request.creator.id ">{{ request.creator.displayName }}</a>
+					<a :href="'/user/' + request.creator.id ">{{ request.creator.displayname }}</a>
 				</p>
 				<div class="flex">
 					<div class="refuse_button" @click="declineFriendRequest(request.id)">
@@ -310,7 +310,7 @@ export default defineComponent({
 					<img :src="avatarsSent[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + request.receiver.id ">{{ request.receiver.displayName }}</a>
+					<a :href="'/user/' + request.receiver.id ">{{ request.receiver.displayname }}</a>
 				</p>
 				<div class="flex">
 					<div class="refuse_button" @click="cancelFriendRequest(request.creator.id, request.receiver.id)">
