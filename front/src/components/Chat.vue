@@ -32,7 +32,8 @@ export default defineComponent(
 				administrators: [],
 				user_role: 'MEMBER',
 				isJoined: false,
-				type: "public"
+				type: "public",
+				isDirect: false
 			} as ChannelInterface,
 			channels: [] as Array<ChannelInterface>,
 			serverURL: "http://" + window.location.hostname + ":3000" as string,
@@ -476,7 +477,8 @@ export default defineComponent(
 					administrators: [],
 					user_role: "MEMBER",
 					isJoined: false,
-					type: "public"
+					type: "public",
+					isDirect: false
 				} as ChannelInterface;
 
 				let index = this.channels.findIndex(c => c.id == leave_id);
