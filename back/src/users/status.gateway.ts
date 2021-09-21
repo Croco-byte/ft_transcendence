@@ -17,7 +17,8 @@ import { getConnection } from 'typeorm';
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
 export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
-	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
+	constructor(private readonly authService: AuthService, 
+		private readonly userService: UsersService) {}
 
 	async onModuleInit() {
 		await getConnection()
@@ -149,6 +150,13 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 		}
 	}
 
+	@SubscribeMessage('challengeSomebody')
+	async handleChallengeSomebody(@ConnectedSocket() client: Socket, @MessageBody() obj: any)
+	{
+		const user: User = await this.userService.findUserById(obj.userId);
+		obj.username = user.username;
+		this.wss.emit('acceptChallenge', obj);
+	}
 
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {

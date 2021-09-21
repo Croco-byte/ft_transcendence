@@ -7,16 +7,21 @@
 			<span class="in-game">in game</span>
 			<button @click="launchSpectating()">watch</button>
 		</span>
+		<span v-else-if="status === 'online' && friendId">
+			<button @click="launchChallenge()">challenge</button>
+		</span>
 	</div>
 </template>
 
-<script>
+<script lang="ts">
 	/* Small component that takes 1 property from the parent component, the status of the user. It then displays a green dot if the
 	** user is online, a yellow dot if he's in game, and a red dot if he's offline
 	*/
 
 import { defineComponent } from 'vue'
 import router from '../router/index';
+import axios from '../axios-instance';
+import authHeader from '../services/auth-header';
 
 export default defineComponent({
 	name: 'UserStatus',
@@ -35,6 +40,12 @@ export default defineComponent({
 		}
 	},
 
+	data() {
+		return {
+			serverURL: "http://" + window.location.hostname + ":3000" as string,
+		}
+	},
+
 	methods: {
 		launchSpectating()
 		{
@@ -47,8 +58,26 @@ export default defineComponent({
 				router.push(({name: 'Game', params: { 
 					RenderGameOption: 'false',
 					RenderGamePlay: 'true', 
-					}}));
+				}}));
 			});
+		},
+
+		async launchChallenge()
+		{
+			
+			const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + this.userId, {},
+				{headers: authHeader()});
+				
+			this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
+				userId: this.userId,
+				friendId: this.friendId,
+				newRoomId: newRoomId,
+			});
+			
+			router.push(({name: 'Game', params: { 
+				RenderGameOption: 'false',
+				RenderGameJoin: 'true',
+			}}));
 		},
 	},
 })

@@ -4,9 +4,11 @@ import { io } from 'socket.io-client';
 import authHeader from '../services/auth-header';
 import UserService from '../services/user.service';
 import router from '../router/index';
-import store from './index'
-import Swal from 'sweetalert2'
-
+import store from './index';
+import Swal from 'sweetalert2';
+import axios from '../axios-instance';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 export const mutations: MutationTree<RootState> = {
 	/* On logging success, we set the variables that indicate that the user is online ; we also set the websocket listeners. */
@@ -21,6 +23,32 @@ export const mutations: MutationTree<RootState> = {
 			}
 		})
 		state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
+
+		state.websockets.connectionStatusSocket.on('acceptChallenge', async (obj) => {
+			const result = await UserService.getCurrUserId();
+			if (obj.friendId === result.data.id) {
+
+			const r = confirm(`${obj.username} is challenging you!`);
+			if (r) {
+				createToast({
+					title: 'Joining the game',
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				});
+			}
+
+			await axios.post("http://" + window.location.hostname + ":3000" + '/game/joinChallenge/' 
+				+ obj.friendId, { newRoomId: obj.newRoomId }, {headers: authHeader()});
+			router.push(({name: 'Game', params: { 
+				RenderGameOption: 'false',
+				RenderGameJoin: 'true',
+			}}));
+			}
+		});
+		
 		state.websockets.connectionStatusSocket.on('unauthorized', function(data: { message: string }) {
 			store.commit('disconnectUser', { message: data.message });
 		});

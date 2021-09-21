@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MatchHistoryEntity } from '../users/match-history.entity';
 import { User } from 'src/users/users.entity';
+import { GameController } from './game.controller'
 
 @Module({
 	imports: [
@@ -15,6 +16,7 @@ import { User } from 'src/users/users.entity';
 		UsersModule, 
 		ConfigModule,
 		TypeOrmModule.forFeature([MatchHistoryEntity, User])],
+	controllers: [GameController],
 	providers: [
 		GameGateway, 
 		GameService],

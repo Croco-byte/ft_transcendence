@@ -56,6 +56,18 @@ export class GameService
 	public readonly FRAMERATE: number = 1000 / this.configService.get<number>('framerate');
 	public readonly TIME_MATCH_START: number = this.configService.get<number>('time_match_start');
 
+	generateRoomId() : string
+	{
+		const length: number = 12;
+		const charset: string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		let retVal: string = "";
+		
+		for (var i = 0, n = charset.length; i < length; ++i) {
+			retVal += charset.charAt(Math.floor(Math.random() * n));
+		}
+		return retVal;
+	}
+
 	/**
 	 * Finds which room the player belongs.
 	 * 
