@@ -17,18 +17,18 @@ export const mutations: MutationTree<RootState> = {
 		state.websockets.connectionStatusSocket.on('multipleConnectionsOnSameUser', async function (data) {
 			const result = await UserService.getCurrUserId();
 			if (data.userId == result.data.id) {
-				store.commit('disconnectUser', { message: "Multiple connexions detected for this user, or resetting after server went down. Please log in again" });
+				store.commit('disconnectUser', { message: "Multiple connexions detected for this user. Please log in again" });
 			}
 		})
 		state.websockets.friendRequestsSocket = io('http://localhost:3000/friendRequests', { query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
-		state.websockets.connectionStatusSocket.on('unauthorized', function() {
-			store.commit('disconnectUser', { message: "Session expired !" });
+		state.websockets.connectionStatusSocket.on('unauthorized', function(data: { message: string }) {
+			store.commit('disconnectUser', { message: data.message });
 		});
 		state.websockets.connectionStatusSocket.on('serverDown', function() {
 			store.commit('disconnectUser', { message: "Serveur is down or was rebooted. Please wait a bit before logging in again."})
 		});
-		state.websockets.friendRequestsSocket.on('unauthorized', function() {
-			store.commit('disconnectUser', { message: "Session expired !" });
+		state.websockets.friendRequestsSocket.on('unauthorized', function(data: { message: string }) {
+			store.commit('disconnectUser', { message: data.message });
 		});
 		router.push('/account');
 	},
@@ -51,6 +51,11 @@ export const mutations: MutationTree<RootState> = {
 		if (state.websockets.friendRequestsSocket) state.websockets.friendRequestsSocket.disconnect();
 		Swal.fire('Error', payload.message, 'error');
 		router.push(({name: 'Home', params: { message: payload.message }}));
+	},
+
+	notAdminRedirect() {
+		Swal.fire('Error', 'You are not authorized to access this resource', 'error');
+		router.push(({name: 'Home'}));
 	},
 
 	updateAvatar(state, avatar) {

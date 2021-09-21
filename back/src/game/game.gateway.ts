@@ -44,10 +44,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { 
-				client.emit('unauthorized', {}); 
-				return; 
-			}
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 			
 			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
 

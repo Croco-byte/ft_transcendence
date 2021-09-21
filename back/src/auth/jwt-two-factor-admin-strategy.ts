@@ -3,16 +3,8 @@ import { PassportStrategy } from "@nestjs/passport";
 import { HttpException, Injectable } from "@nestjs/common";
 import { User } from '../users/users.entity';
 
-/* This is the main AuthGuard that allows to ensure that the user is properly authenticated before accessing
-** resources in the backend. This Guard :
-** >> Decodes the JWT passed as a header of a request.
-** >> Extracts the user associated with the JWT from the database.
-** >> If this user doesn't have 2FA enabled, it allows access (the JWT was valid so no further check is needed).
-** >> If this user has 2FA enabled, it only allows access if the JWT has "isSecondFactorAuthenticated" set to true.
-*/
-
 @Injectable()
-export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-factor') {
+export class JwtTwoFactorAdminStrategy extends PassportStrategy(Strategy, 'jwt-two-factor-admin') {
 	constructor() {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -23,8 +15,9 @@ export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-fa
 
 	async validate(payload: any) {
 		const user = await User.findOne({ where: { id: payload.id } });
-		if (user.is_blocked) throw new HttpException("You are blocked from the website", 444);
-		
+		if (user && user.is_blocked) throw new HttpException("You are blocked from the website", 444);
+		if (user && user.is_admin !== "owner" && user.is_admin !== "moderator") throw new HttpException("You are not authorized to access this resource", 445);
+
 		if (user && !user.isTwoFactorAuthenticationEnabled) {
 			return { id: user.id, username: user.username, is_admin: user.is_admin };
 		}

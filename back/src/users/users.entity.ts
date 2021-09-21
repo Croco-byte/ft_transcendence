@@ -14,6 +14,12 @@ export class User extends BaseEntity
 	@Column()
 	username: string;
 
+	@Column({ default: "regular" })
+	is_admin: string;
+
+	@Column({ default: false })
+	is_blocked: boolean;
+
 	@Column({ default: "default" })
 	avatar: string;
 
@@ -43,7 +49,7 @@ export class User extends BaseEntity
 	twoFactorAuthenticationSecret?: string;
 
 	@Column({ default: "filler" })
-	displayName?: string;
+	displayname?: string;
 
 	@OneToMany(() => FriendRequestEntity, (friendRequestentity) => friendRequestentity.creator)
 	sentFriendRequests?: FriendRequestEntity[];

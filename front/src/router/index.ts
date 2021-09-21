@@ -61,6 +61,12 @@ const routes = [
 		name: "Ranking",
 		component: () => import('../views/Ranking.vue'),
 		beforeEnter: ifAuthenticated
+	},
+	{
+		path: '/admin',
+		name: 'Admin',
+		component: () => import('../views/Admin.vue'),
+		beforeEnter: ifAuthenticated
 	}
 ]
 

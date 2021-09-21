@@ -7,17 +7,17 @@
 			</form>
 			<div v-if="searchResults.length > 0">
 			<ul>
-				<li v-for="result in searchResults" :key="result.displayName">
-					<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayName }}</router-link>
+				<li v-for="result in searchResults" :key="result.displayname">
+					<router-link v-bind:to="'/user/' + result.id" style="text-decoration: underlined;">{{ result.displayname }}</router-link>
 					<br/>
 					<UserStatus :status="result.status" />
 				</li>
 			</ul>
 			<div id="paginationMenu" v-if="searchResults.length > 0">
 				<p style="display: flex; justify-content: space-around;">
-					<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage - 1)">Previous</button>
+					<button :disabled="hidePreviousPageButton" v-on:click="changeSearchPage(searchdisplayname, searchMeta.currentPage - 1)">Previous</button>
 					<span style="display: flex;">&nbsp;&nbsp;&nbsp;&nbsp;<form id="goToSearchPage"><input name="goToSearchPageInput" v-model.number="searchMeta.currentPage" v-on:input="goToSearchPage" style="width: 30px"></form><span style="padding-top: 5px;">/{{ searchMeta.totalPages }}</span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
-					<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchDisplayName, searchMeta.currentPage + 1)">Next</button>
+					<button :disabled="hideNextPageButton" v-on:click="changeSearchPage(searchdisplayname, searchMeta.currentPage + 1)">Next</button>
 				</p>
 			</div>
 		</div>
@@ -29,7 +29,7 @@
 
 <script lang="ts">
 
-/* This component allows to search for users by displayName. If no displayName is provided, all the users are returned.
+/* This component allows to search for users by displayname. If no displayname is provided, all the users are returned.
 ** The results are displayed paginated, just like the friend list and the friend requests.
 ** The search is case-insensitive. Typing "a" returns all usernames with a "a" in it. "au" all usernames with "au" in it. Etc...
 */
@@ -44,7 +44,7 @@ interface UserSearchComponentData
 {
 	searchResults: User[];
 	searchMeta: PaginationMeta;
-	searchDisplayName: string | null;
+	searchdisplayname: string | null;
 }
 
 export default defineComponent({
@@ -56,7 +56,7 @@ export default defineComponent({
 		return {
 			searchResults: [],
 			searchMeta: { totalItems: 0, itemCount: 0, itemsPerPage: 0, totalPages: 0, currentPage: 0 },
-			searchDisplayName: ''
+			searchdisplayname: ''
 		}
 	},
 
@@ -78,18 +78,18 @@ export default defineComponent({
   },
 
 	methods: {
-		/* This function uses the UserService to return the corresponding displayName when the user clicks on "Search". */
+		/* This function uses the UserService to return the corresponding displayname when the user clicks on "Search". */
 		searchUser: function(): void {
 			var ref = this;
 			let data: FormData = new FormData(document.getElementById("userSearchForm") as HTMLFormElement);
-			this.searchDisplayName = data.get('searchUserInput') as string | null;
-			if (this.searchDisplayName === null) this.searchDisplayName = '';
-			UserService.searchUser(this.searchDisplayName).then(
+			this.searchdisplayname = data.get('searchUserInput') as string | null;
+			if (this.searchdisplayname === null) this.searchdisplayname = '';
+			UserService.searchUser(this.searchdisplayname).then(
 				response => {
 					ref.searchResults = response.data.items;
 					ref.searchMeta = response.data.meta;
 				},
-				() => { ref.searchDisplayName = ''; console.log("Couldn't get search results from backend") }
+				() => { ref.searchdisplayname = ''; console.log("Couldn't get search results from backend") }
 			)
 		},
 
@@ -98,7 +98,7 @@ export default defineComponent({
 			let data: FormData = new FormData(document.getElementById("goToSearchPage") as HTMLFormElement);
 			const destinationPage: number | null = data.get('goToSearchPageInput') as number | null;
 			if (destinationPage !== null && !Number.isNaN(destinationPage) && destinationPage >= 1 && destinationPage <= this.searchMeta.totalPages) {
-				this.changeSearchPage(this.searchDisplayName, destinationPage);
+				this.changeSearchPage(this.searchdisplayname, destinationPage);
 			}
 		},
 
