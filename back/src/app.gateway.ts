@@ -58,6 +58,15 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		}
 	}
 
+	async kickMember(user: User, channel: Channel)
+	{
+		let socket = this.getSocketByUser(user);
+		if (socket)
+			socket.emit("kicked", "You have been kicked from channel '" + channel.name + "'");
+		else
+			this.logger.debug("User " + user.username + " not found in clients gateway. socket=" + socket);
+	}
+
 	async addMember(room: string, msg: string, channel: Channel)
 	{
 		let unauthaurizedUsers = channel.pending_users;
@@ -121,7 +130,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			client.join("channel_" + channel.id);
 		}
 
-		console.log("[Chat Gateway] User connected to chat gateway : " + client.id + "Total clients connected : " + Object.keys(this.clients).length);
+		console.log("[Chat Gateway] " + user.username + " connected to chat gateway : " + client.id + "Total clients connected : " + Object.keys(this.clients).length);
 	}
 
 	async leaveChannel(channel: Channel, user: User)
@@ -161,13 +170,28 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	getSocketByUser(search: User): Socket
 	{
-		for (let arr of this.clients.entries())
+		let keys = Object.keys(this.clients);
+
+		for (let key of keys)
 		{
-			let val = arr[1];
+			let val = this.clients[key];
 			let user = val[0];
 			if (user.id == search.id)
 				return val[1];
 		}
 		return null;
+
+		// let arr: [number, [User, Socket]];
+		// console.log(Object.keys(this.clients));
+		// for (arr of this.clients.entries())
+		// {
+		// 	this.logger.debug(arr[1][0].username);
+		// 	let val = arr[1];
+		// 	let user = val[0];
+		// 	console.log("Test %d == %d", user.id, search.id);
+		// 	if (user.id == search.id)
+		// 		return val[1];
+		// }
+		// return null;
 	}
 }

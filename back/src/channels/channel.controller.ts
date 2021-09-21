@@ -264,6 +264,8 @@ export class ChannelController
 		let user: User;
 		user = await this.userService.findById(req.user.id);
 
+		if (!user)
+			throw new NotFoundException("User not found");
 		return await this.channelService.findOne(channelID).then(async (channel) =>
 		{
 			let username = body.username;
@@ -273,11 +275,17 @@ export class ChannelController
 
 			return await this.userService.findByUsername(username).then((admin) =>
 			{
+				if (!this.channelService.isInChannel(channel, admin))
+					throw new NotFoundException("Member " + admin.username + " not found in this channel");
 				this.channelService.addAdmin(channel, admin);
 
 				this.logger.log("New admin (user : '" + admin.username + "') in channel " + channel.name);
 				return {message: "Administrator '" + admin.username + "' added successfully"};
 			});
+		})
+		.catch(() =>
+		{
+			throw new NotFoundException("Channel not found");
 		});
 	}
 
@@ -370,16 +378,19 @@ export class ChannelController
 		let channel: Channel;
 		channel = await this.channelService.findOne(data.channel);
 
-		// Change with the true user
-		let user: User;
-		user = await this.userService.findById(req.user.id);
+		let user = await this.userService.findById(req.user.id);
+
+		if (!channel)
+			throw new NotFoundException("Channel not found !");
+		if (!user)
+			throw new NotFoundException("User not found !");
+		if (!this.channelService.isInChannel(channel, user))
+			throw new UnauthorizedException("You must join this channel to perform this action !");
 		
 		if (await this.channelService.isMuted(channel, user)
 			|| await this.channelService.isBanned(channel, user)
 			|| this.channelService.isPendingUser(channel, user))
-		{
 			throw new UnauthorizedException("User cannot send message in this channel");
-		}
 		else
 		{
 			await this.messageService.add(channel, user, data.content).then(async (message) =>
@@ -507,6 +518,50 @@ export class ChannelController
 		await this.channelService.removeUser(channel, user);
 		this.websocketGateway.leaveChannel(channel, user);
 		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", user.username + " leave channel " + channel.name, channel);
+	}
+	
+	@Delete("/:channelID/members/:username")
+	async kickMember(@Param("channelID") channelID: string, @Param("username") username: string, @Request() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		let channel = await this.channelService.findOne(channelID);
+		if (!user)
+			throw new UnauthorizedException();
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		if (!this.channelService.isAdmin(channel, user) && !this.channelService.isOwner(channel, user))
+			throw new UnauthorizedException("You must be an administrator to perform this action.");
+		let kicked_user = await this.userService.findByUsername(username);
+		if (!kicked_user)
+			throw new NotFoundException("User not found");
+		if (!this.channelService.isInChannel(channel, kicked_user))
+			throw new NotFoundException("User not in this channel");
+		await this.channelService.removeUser(channel, kicked_user);
+		this.websocketGateway.kickMember(kicked_user, channel);
+		this.websocketGateway.leaveChannel(channel, kicked_user);
+		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", kicked_user.username + " leave channel " + channel.name, channel);
+	}
+
+	@Delete("/:channelID/admin/:username")
+	async kickAdmin(@Param("channelID") channelID: string, @Param("username") username: string, @Request() req)
+	{
+		let user = await this.userService.findById(req.user.id);
+		let channel = await this.channelService.findOne(channelID);
+		if (!user)
+			throw new UnauthorizedException();
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		if (!this.channelService.isOwner(channel, user))
+			throw new UnauthorizedException("You must be the owner to perform this action.");
+		let kickedAdmin = await this.userService.findByUsername(username);
+		if (!kickedAdmin)
+			throw new NotFoundException("User not found");
+		if (!this.channelService.isAdmin(channel, kickedAdmin))
+			throw new NotFoundException("User not in this channel");
+		await this.channelService.removeUser(channel, kickedAdmin);
+		this.websocketGateway.kickMember(kickedAdmin, channel);
+		this.websocketGateway.leaveChannel(channel, kickedAdmin);
+		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", kickedAdmin.username + " leave channel " + channel.name, channel);
 	}
 
 	@Get("/:channelID/invitation")

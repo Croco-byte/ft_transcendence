@@ -620,7 +620,55 @@ export default defineComponent(
 			$('.channel_filter.selected').removeClass("selected");
 			$(event.currentTarget).addClass("selected");
 			this.loadChannelsList();
-		}
+		},
+
+		kickMember(username: string): void
+		{
+			if (this.channel.user_role == "MEMBER")
+				return ;
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error)
+			})
+		},
+
+		kickAdmin(username: string): void
+		{
+			if (this.channel.user_role != "OWNER")
+				return ;
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error)
+			})
+		},
 	},
 
 	created(): void
@@ -679,7 +727,19 @@ export default defineComponent(
 						type: 'success',
 						transition: 'slide'
 					})
-		})
+		});
+		socket.on('kicked', (msg) =>
+		{
+			createToast({
+						title: 'KICKED',
+						description: msg
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+		});
 	},
 });
 
@@ -797,6 +857,7 @@ export default defineComponent(
 								<p v-else class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(member.username)"></p>
 								<p v-if="member.isBanned == false" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(member.username)"></p>
 								<p v-else class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(member.username)"></p>
+								<p v-if="channel.user_role != 'MEMBER'" class="fas fa-times kick_button action_button" @click="kickMember(member.username)"></p>
 							</div>
 						</div>
 						<!-- <p id="add_member_button" v-on:click="changeMode('add_member')" v-if="channel.user_role != 'MEMBER' && chan">
@@ -812,9 +873,8 @@ export default defineComponent(
 					</p>
 					<div class="content">
 						<div class="flex j-sb member" v-for="admin in channel.administrators" v-bind:key="admin.id">
-							<p>
-								{{ admin.username }}
-							</p>
+							<p>{{ admin.username }}</p>
+							<p v-if="channel.user_role == 'OWNER'" class="fas fa-times kick_button action_button" @click="kickAdmin(admin.username)"></p>
 						</div>
 						<div v-if="channel.administrators && channel.administrators.length == 0">
 							No administrators in this channel
@@ -1362,7 +1422,8 @@ export default defineComponent(
 	}
 
 	.channel_info_container .action_button.unmute_button,
-	.channel_info_container .action_button.unban_button
+	.channel_info_container .action_button.unban_button,
+	.channel_info_container .action_button.kick_button
 	{
 		color: red;
 	}
