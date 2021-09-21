@@ -29,6 +29,10 @@
 
 <style scoped>
 
+#setup {
+	margin-top: 5em;
+}
+
 p {
 	position: relative;
 	text-align: center;
