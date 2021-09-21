@@ -123,7 +123,7 @@ export default defineComponent({
 						<img :src="avatars[index]"/>
 					</div>
 					<p class="username">
-						<a :href="'/user/' + leaderboarduser.user.id ">{{ leaderboarduser.user.displayname }}</a>
+						<router-link :to="{ name: 'User', params: { id: leaderboarduser.user.id }}">{{ leaderboarduser.user.displayname }}</router-link>
 					</p>
 				</div>
 				<div class="stat">
