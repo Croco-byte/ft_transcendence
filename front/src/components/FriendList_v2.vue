@@ -203,7 +203,7 @@ export default defineComponent({
 					<span class="paginationSpan"> /{{ friendsMeta.totalPages }}</span>
 					<button class="paginationButtonNext" :disabled="hideNextPageButton" v-on:click="getFriends(friendsMeta.currentPage + 1)">Next</button>
 				</p>
-		</div>
+			</div>
 		</div>
 	</div>
 </template>

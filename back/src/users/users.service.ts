@@ -332,13 +332,12 @@ export class UsersService {
 	*/
 
 	/* Display all users, paginated */
-	paginateUsers(options: IPaginationOptions): Observable<Pagination<User>> {
-		return from(paginate(this.usersRepository, options)).pipe(
-			map((usersPageable: Pagination<User>) => {
-				usersPageable.items.forEach(function(v) { delete v.twoFactorAuthenticationSecret; delete v.isTwoFactorAuthenticationEnabled;});
-				return usersPageable;
-			}) 
-		)
+	async paginateUsers(options: IPaginationOptions): Promise<Pagination<User>> {
+		let ref = this;
+		const queryBuilder = this.usersRepository.createQueryBuilder('c');
+		queryBuilder.select(["c.id", "c.displayname", "c.avatar", "c.score", "c.wins", "c.loses", "c.is_admin", "c.is_blocked"]);
+		queryBuilder.orderBy('c.displayname', 'ASC');
+		return await paginate(queryBuilder, options);
 	}
 
 	async paginateUsersOrderByScore(options: IPaginationOptions): Promise<Pagination<UserWithRank>> {
@@ -466,7 +465,7 @@ export class UsersService {
 	}
 
 
-	/* ==== Functions allowing to interact with website owner and moderators */
+	/* ==== Functions related to website administration */
 
 	async getWebsiteOwner(): Promise<User> {
 		return await this.usersRepository.createQueryBuilder("user")
@@ -480,16 +479,18 @@ export class UsersService {
 		.getOne()
 	}
 
-	async getWebsiteModerators(): Promise<User[]> {
-		return await this.usersRepository.createQueryBuilder("user")
-		.select([
-			"user.id",
-			"user.username",
-			"user.displayname",
-			"user.avatar"
-		])
-		.where("is_admin = 'moderator'")
-		.getMany()
+	async getWebsiteModerators(options: IPaginationOptions): Promise<Pagination<User>> {
+		const queryBuilder = this.usersRepository.createQueryBuilder("c");
+		queryBuilder.select([ "c.id", "c.username", "c.displayname", "c.avatar" ]);
+		queryBuilder.where("is_admin = 'moderator'");
+		return await paginate(queryBuilder, options);
+	}
+
+	async getWebsiteBlockedUsersPaginated(options: IPaginationOptions): Promise<Pagination<User>> {
+		const queryBuilder = this.usersRepository.createQueryBuilder("c");
+		queryBuilder.select([ "c.id", "c.username", "c.displayname", "c.avatar" ]);
+		queryBuilder.where("is_blocked = true");
+		return await paginate(queryBuilder, options);
 	}
 
 	async makeUserModerator(userId: number): Promise<void> {
@@ -504,6 +505,22 @@ export class UsersService {
 		await this.usersRepository.createQueryBuilder()
 		.update(User)
 		.set({ is_admin: "regular" })
+		.where("id = :id", { id: userId })
+		.execute();
+	}
+
+	async blockWebsiteUser(userId: number): Promise<void> {
+		await this.usersRepository.createQueryBuilder()
+		.update(User)
+		.set({ is_blocked: true })
+		.where("id = :id", { id: userId })
+		.execute();
+	}
+
+	async unblockWebsiteUser(userId: number): Promise<void> {
+		await this.usersRepository.createQueryBuilder()
+		.update(User)
+		.set({ is_blocked: false })
 		.where("id = :id", { id: userId })
 		.execute();
 	}

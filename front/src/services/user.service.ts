@@ -8,8 +8,20 @@ class UserService {
 		return axios.get(API_URL + 'user/administration/owner', { headers: authHeader() });
 	}
 
-	getWebsiteModerators() {
-		return axios.get(API_URL + 'user/administration/moderators', { headers: authHeader() });
+	getWebsiteModerators(page: number) {
+		return axios.get(API_URL + 'user/administration/moderators?limit=3&page=' + page, { headers: authHeader() });
+	}
+
+	getWebsiteBlockedUsers(page: number) {
+		return axios.get(API_URL + 'user/administration/blocked_users?limit=3&page=' + page, { headers: authHeader() });
+	}
+
+	blockUserFromWebsite(userId: number) {
+		return axios.post(API_URL + 'user/administration/block_user', { targetUserId: userId }, { headers: authHeader() });
+	}
+
+	unblockUserFromWebsite(userId: number) {
+		return axios.post(API_URL + 'user/administration/unblock_user', { targetUserId: userId }, { headers: authHeader() });
 	}
 
 	makeModerator(userId: number) {
@@ -85,6 +97,7 @@ class UserService {
 	}
 
 	searchUser(username, page = 1) {
+		if (username == null) return axios.get(API_URL + "user/users?limit=5&page=" + page, { headers: authHeader() });
 		return axios.get(API_URL + "user/users?limit=5&page=" + page + "&username=" + username, { headers: authHeader() });
 	}
 

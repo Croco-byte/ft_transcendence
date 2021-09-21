@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Logger, OnModuleDestroy, UseGuards } from '@nestjs/common';
+import { Logger, OnModuleDestroy, OnModuleInit, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
@@ -15,10 +15,18 @@ import { getConnection } from 'typeorm';
 */
 
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
-export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
 	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
-	
+
+	async onModuleInit() {
+		await getConnection()
+					.createQueryBuilder()
+					.update(User)
+					.set({ status: "offline" })
+					.execute();
+	}
+
 	async onModuleDestroy() {
 		await getConnection()
 					.createQueryBuilder()
@@ -45,7 +53,8 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 
 	async handleConnection(client: Socket, args: any[]) {
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-		if (!user) { client.emit('unauthorized', {}); return; }
+		if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+		if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 			
 		try {
 			console.log("[Status Gateway] Client connected to gateway : " + user.id);
@@ -67,7 +76,8 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	@SubscribeMessage('getOnline')
 	async handleOnline(client: Socket, data: any): Promise<void> {
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-		if (!user) { client.emit('unauthorized', {}); return; }
+		if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+		if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 		
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'online');
@@ -81,7 +91,8 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	@SubscribeMessage('getOffline')
 	async handleOffline(client: Socket, data: any): Promise<void> {
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-		if (!user) { client.emit('unauthorized', {}); return; }
+		if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+		if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'offline');
@@ -120,7 +131,8 @@ export class StatusGateway implements OnModuleDestroy, OnGatewayInit, OnGatewayC
 	@SubscribeMessage('getSpectating')
 	async handleSpectating(client: Socket, data: any): Promise<void> {
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-		if (!user) { client.emit('unauthorized', {}); return; }
+		if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+		if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 		
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'spectating');

@@ -12,4 +12,23 @@ instance.interceptors.response.use(function (response) {
 	return Promise.reject(error);
   });
 
+instance.interceptors.response.use(function (response) {
+    return response;
+  }, function (error) {
+		if (error && error.response.status === 444) {
+			store.commit('disconnectUser', { message: "You are blocked from the website" });
+		}
+	return Promise.reject(error);
+  });
+
+  instance.interceptors.response.use(function (response) {
+    return response;
+  }, function (error) {
+		if (error && error.response.status === 445) {
+			store.commit('notAdminRedirect');
+		}
+	return Promise.reject(error);
+  });
+
+
 export default instance;

@@ -149,8 +149,8 @@ export default defineComponent({
 				{ query: { token: `${authHeader().Authorization.split(' ')[1]}` } });
 
 		if (this.socket) {
-			this.socket.on('unauthorized', () => {
-				this.$store.commit('disconnectUser', { message: "[DEBUG from websockets] Session expired" });
+			this.socket.on('unauthorized', (data: {message: string }) => {
+				this.$store.commit('disconnectUser', { message: data.message });
 			})
 
 			this.socket.on('waitingForPlayer', () => {

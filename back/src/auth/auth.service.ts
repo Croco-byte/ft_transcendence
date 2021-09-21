@@ -40,7 +40,7 @@ export class AuthService {
 				const newUser = User.create();
 				newUser.username = infos.username;
 				newUser.displayname = infos.username;
-				if (newUser.username === "qroland") newUser.is_admin = "owner";
+				if (newUser.username === this.configService.get<string>('WEBSITE_OWNER')) newUser.is_admin = "owner";
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });

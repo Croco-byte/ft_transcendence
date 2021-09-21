@@ -73,7 +73,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	async handleConnection(client: Socket, ...args: any[])
 	{
 		const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-		if (!user) { client.emit('unauthorized', {}); return; }
+		if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+		if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 		// Récupérer les channels ou l user est présent et les joins
 		this.clients[client.id] = [user, client];
 

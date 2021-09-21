@@ -19,9 +19,14 @@
 	</div>
 	<div id="info_and_match_history">
 		<div id="info">
+			<div class="header_wrapper">
 			<div class="header">
 				<h2>{{ displayname }}</h2>
 				<UserStatus :status="status"/>
+			</div>
+			<div v-if="admin">
+					<button @click="goToAdminPage"><i class="fas fa-users-cog"></i> Admin Panel</button>
+			</div>
 			</div>
 			<div class="info_body" style="display: flex;">
 			<div class="basic_info">
@@ -71,6 +76,7 @@ interface AccountViewData
 {
 	id: number;
 	name: string;
+	admin: boolean;
 	displayname: string;
 	displaynameEditMode: boolean;
 	displaynameInput: string;
@@ -95,6 +101,7 @@ export default defineComponent({
 		return {
 			id: 0,
 			name: '',
+			admin: false,
 			displayname: '',
 			displaynameEditMode: false,
 			displaynameInput: '',
@@ -143,6 +150,11 @@ export default defineComponent({
 			this.config_mode = mode;
 		},
 
+		goToAdminPage(): void
+		{
+			this.$router.push('admin');
+		},
+
 		confirmationNotification(message: string)
 		{
 			createToast({
@@ -178,6 +190,7 @@ export default defineComponent({
 		UserService.getCurrUserInfo().then(
 			response => {
 				this.name = response.data.username;
+				this.admin = (response.data.is_admin === "owner" || response.data.is_admin === "moderator") ? true : false;
 				this.displayname = this.displaynameInput = response.data.displayname;
 				this.TwoFA = response.data.isTwoFactorAuthenticationEnabled;
 				this.id = response.data.id;
@@ -293,6 +306,32 @@ export default defineComponent({
 	height: 35%;
 	background-color: white;
 
+}
+
+#info .header_wrapper
+{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 90%;
+}
+
+.header_wrapper button
+{
+	background-color: red;
+	border: solid;
+	color: white;
+	padding: 15px 32px;
+	font-size: 16px;
+	cursor: pointer;
+	transition-duration: 0.4s;
+}
+
+.header_wrapper button:hover
+{
+	border-color: red;
+	color: red;
+	background-color: white;
 }
 
 #info .header

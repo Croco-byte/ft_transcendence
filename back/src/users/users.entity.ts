@@ -15,7 +15,10 @@ export class User extends BaseEntity
 	username: string;
 
 	@Column({ default: "regular" })
-	is_admin: string
+	is_admin: string;
+
+	@Column({ default: false })
+	is_blocked: boolean;
 
 	@Column({ default: "default" })
 	avatar: string;
