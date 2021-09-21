@@ -229,9 +229,10 @@ export default defineComponent({
 	background-color: #E6EFF2;
 }
 
-.game
+#game
 {
-	overflow-y: auto;
+	min-width: 800px;
+	/* overflow-y: auto; */
 }
 
 </style>

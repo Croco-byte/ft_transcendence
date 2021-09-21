@@ -33,13 +33,15 @@ p {
 	position: relative;
 	text-align: center;
 	font-style: normal;
-	font-weight: normal;
-	font-size: 2.5vw;
+	font-weight: bold;
+	font-size: 2em;
+	margin-bottom: 0.3em;
+	letter-spacing: 0.2em;
 	color: black;
 }
 
 button {
-	border-radius: 10%;
+	/* border-radius: 10%; */
 	border: none;
 }
 
@@ -66,7 +68,7 @@ button.diffActive, button.scoreActive {
 	margin-left: 2%;
 	margin-right: 2%;
 	padding: 1%;
-	font-size: 1.5vw;
+	font-size: 1em;
 }
 
 .color button {
@@ -111,7 +113,7 @@ button.diffActive, button.scoreActive {
 	background-color: #A9DFBF;
 	border-radius: 10px;
 	padding: 14px 40px;
-	font-size: 2vw;
+	font-size: 1.5em;
 }
 
 </style>

@@ -4,7 +4,7 @@
 			<p id="msg">Waiting for another player...</p>
 		</div>
 		<div class="image">
-			<img class='gif' src="https://i.pinimg.com/originals/d7/65/ca/d765cadd577d6901922c2bfcd8419015.gif ">
+			<img class='gif' src="/front/public/pongWait.gif">
 		</div>
 	</div>
 </template>
