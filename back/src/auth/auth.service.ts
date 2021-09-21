@@ -89,4 +89,13 @@ export class AuthService {
 			return null;
 		}
 	}
+
+	async registerUserBasicAuth(username: string, password: string) {
+		const existing = await User.findOne({ where : [
+			{ username: username },
+			{ displayname: username}
+		]});
+		if (existing) throw new ForbiddenException("Username is already taken.");
+		
+	}
 }
