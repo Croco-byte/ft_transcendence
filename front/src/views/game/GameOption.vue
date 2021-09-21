@@ -1,27 +1,40 @@
 <template>
 <div id ="setup">
 	<p>DIFFICULTY</p>
-	<div class="level posbuttons hoverAnim">
-		<button @click="setLevel(1)">EASY</button>
-		<button @click="setLevel(2)">MEDIUM</button>
-		<button @click="setLevel(3)">HARD</button>
+	<div class="level">
+		<button :class="select.level1 ? 'selected' : 'notselected'" @click="setLevel(1)">EASY</button>
+		<button :class="select.level2 ? 'selected' : 'notselected'" @click="setLevel(2)">MEDIUM</button>
+		<button :class="select.level3 ? 'selected' : 'notselected'" @click="setLevel(3)">HARD</button>
 	</div>
 	<p>MAX POINT</p>
-	<div class="score posbuttons hoverAnim">
-		<button :class="{ scoreSelected : scoreActive }" @click="setScore(5)">5</button>
-		<button :class="{ scoreSelected : scoreActive }" @click="setScore(10)">10</button>
-		<button :class="{ scoreSelected : scoreActive }" @click="setScore(15)">15</button>
+	<div class="score">
+		<button :class="select.score1 ? 'selected' : 'notselected'" @click="setScore(5)">5</button>
+		<button :class="select.score2 ? 'selected' : 'notselected'" @click="setScore(10)">10</button>
+		<button :class="select.score3 ? 'selected' : 'notselected'" @click="setScore(15)">15</button>
 	</div>
 	<p>PAD COLOR</p>
-	<div class="color posbuttons">
+	<div class="color">
 		<button class="white" @click="setPadColor('white')"></button>
 		<button class="yellow" @click="setPadColor('yellow')"></button>
 		<button class="blue" @click="setPadColor('blue')"></button>
 		<button class="red" @click="setPadColor('red')"></button>
 		<button class="green" @click="setPadColor('green')"></button>
 	</div>
-	<div class="start posbuttons">
+	<div class="start">
 		<button @click="startGame()">START GAME</button>
+	</div>
+
+	<div class="rules">
+		<h1 class="title">RULES</h1>
+		<h2>Which pong master are you ?</h2>
+		<p>The ball speed increases and the paddle lenght gets smaller with the levels</p>
+		<p>Go EASY learner - Go MEDIUM conqueror -  Go HARD ball master</p>
+		<br/>
+		<h2>How hard you want to crush your opponent ?</h2>
+		<p>Be gentle with 5 points - Be vicious with 10 points - Be fierce with 15 points </p>
+		<br/>
+		<h2>You can express your individuality</h2>
+		<p>Choose the color that fits you well my dear</p>
 	</div>
 </div>
 
@@ -45,27 +58,24 @@ p {
 }
 
 button {
-	/* border-radius: 10%; */
 	border: none;
 }
 
-.posbuttons {
+.level, .score, .color, .start {
 	display: flex;
 	justify-content: center;
 }
 
-.hoverAnim button {
-	color: white;
-	background-color: #808B96 ;
-	transition-duration: 0.4s;
-}
-
-.hoverAnim button:hover {
+.selected {
 	background-color: #A9DFBF;
 }
 
-button.diffActive, button.scoreActive {
-	background-color: lightblue;
+.notselected {
+	background-color: #808B96;
+}
+
+.level button:hover, .score button:hover {
+	background-color: #A9DFBF;
 }
 
 .level button, .score button {
@@ -73,6 +83,8 @@ button.diffActive, button.scoreActive {
 	margin-right: 2%;
 	padding: 1%;
 	font-size: 1em;
+	color: white;
+	transition-duration: 0.4s;
 }
 
 .color button {
@@ -107,9 +119,9 @@ button.diffActive, button.scoreActive {
 }
 
 .start {
+	/* background-color: blue; */
 	position: relative;
 	top: 50px;
-
 }
 
 .start button {
@@ -119,6 +131,30 @@ button.diffActive, button.scoreActive {
 	padding: 14px 40px;
 	font-size: 1.5em;
 }
+
+.rules {
+	position: relative;
+	top: 6rem;
+	/* background-color: chartreuse; */
+}
+
+.title, .rules p {
+	font-size: 1rem;
+	text-align: center;
+}
+
+.rules h2 {
+	margin-bottom: 1rem;
+	font-size: 1.5rem;
+	text-align: center;
+}
+
+.rules h1 {
+	font-size: 1.8rem;
+	text-align: center;
+}
+
+
 
 </style>
 
@@ -134,25 +170,30 @@ export default defineComponent({
 
 	data() {
 		return {
-			scoreActive: false as boolean,
-			diffActive: false as boolean,
 			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
+			select: { level1: false, level2: false, level3: false, score1: false, score2: false, score3: false } as any
 		}
 	},
 
 	methods: {
 		setLevel(value: number) {
 			if (value != undefined) {
+				this.select.level1 = value === 1 ? true : false;
+				this.select.level2 = value === 2 ? true : false;
+				this.select.level3 = value === 3 ? true : false;
+
 				this.opt.level = value;
-				this.diffActive = true;
 			}
 			console.log(`level: ${this.opt.level}`);
 		},
 
 		setScore(value: number) {
 			if (value != undefined) {
+				this.select.score1 = value === 5 ? true : false;
+				this.select.score2 = value === 10 ? true : false;
+				this.select.score3 = value === 15 ? true : false;
+
 				this.opt.score = value;
-				this.scoreActive = true;
 			}
 			console.log(`score: ${this.opt.score}`);
 		},
@@ -178,6 +219,8 @@ export default defineComponent({
 	mounted() {
 		this.resetOption();
 		console.log('option mounted');
+		this.select.level1 = true;
+		this.select.score1 = true;
 	}
 	
 })
