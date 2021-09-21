@@ -155,6 +155,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 		if (data.currUserId !== client.data.userId) {
 			await this.userService.changeUserStatus(data.currUserId, "offline");
 			await this.userService.changeUserStatus(client.data.userId, "offline");
+			console.log("Detected a change in the JWT of the user (the user ID of the JWT isn't the same as the one the user connected to the gataway with). Bouncing new user.")
 			this.wss.emit('multipleConnectionsOnSameUser', { userId: data.currUserId })
 			client.disconnect();
 		}

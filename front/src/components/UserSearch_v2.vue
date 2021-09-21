@@ -174,7 +174,7 @@ export default defineComponent({
 					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + result.id ">{{ result.displayname }}</a>
+					<router-link :to="{ name: 'User', params: { id: result.id }}">{{ result.displayname }}</router-link>
 				</p>
 				<div class="add_friend_button" @click="sendFriendRequest(result.id)">
 					Add

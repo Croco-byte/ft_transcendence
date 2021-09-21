@@ -276,7 +276,7 @@ export default defineComponent({
 					<img :src="avatarsReceived[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + request.creator.id ">{{ request.creator.displayname }}</a>
+					<router-link :to="{ name: 'User', params: { id: request.creator.id }}">{{ request.creator.displayname }}</router-link>
 				</p>
 				<div class="flex">
 					<div class="refuse_button" @click="declineFriendRequest(request.id)">
@@ -310,7 +310,7 @@ export default defineComponent({
 					<img :src="avatarsSent[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + request.receiver.id ">{{ request.receiver.displayname }}</a>
+					<router-link :to="{ name: 'User', params: { id: request.receiver.id }}">{{ request.receiver.displayname }}</router-link>
 				</p>
 				<div class="flex">
 					<div class="refuse_button" @click="cancelFriendRequest(request.creator.id, request.receiver.id)">
