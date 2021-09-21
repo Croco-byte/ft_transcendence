@@ -1,11 +1,10 @@
 <template>
-<div id = "setup">
-	<!-- v-bind class ne marche pas -->
+<div id ="setup">
 	<p>DIFFICULTY</p>
 	<div class="level posbuttons hoverAnim">
-		<button :class="{ levelSelected : diffActive }" @click="setLevel(1)">EASY</button>
-		<button :class="{ levelSelected : diffActive }" @click="setLevel(2)">MEDIUM</button>
-		<button :class="{ levelSelected : diffActive }" @click="setLevel(3)">HARD</button>
+		<button @click="setLevel(1)">EASY</button>
+		<button @click="setLevel(2)">MEDIUM</button>
+		<button @click="setLevel(3)">HARD</button>
 	</div>
 	<p>MAX POINT</p>
 	<div class="score posbuttons hoverAnim">
@@ -21,7 +20,7 @@
 		<button class="red" @click="setPadColor('red')"></button>
 		<button class="green" @click="setPadColor('green')"></button>
 	</div>
-	<div class="start posbuttons hoverAnim">
+	<div class="start posbuttons">
 		<button @click="startGame()">START GAME</button>
 	</div>
 </div>
@@ -33,7 +32,6 @@
 p {
 	position: relative;
 	text-align: center;
-	font-family: Roboto;
 	font-style: normal;
 	font-weight: normal;
 	font-size: 2.5vw;
@@ -41,7 +39,7 @@ p {
 }
 
 button {
-	border-radius: 4px;
+	border-radius: 10%;
 	border: none;
 }
 
@@ -51,11 +49,13 @@ button {
 }
 
 .hoverAnim button {
+	color: white;
+	background-color: #808B96 ;
 	transition-duration: 0.4s;
 }
 
 .hoverAnim button:hover {
-	background-color: lightblue;
+	background-color: #A9DFBF;
 }
 
 button.diffActive, button.scoreActive {
@@ -70,6 +70,7 @@ button.diffActive, button.scoreActive {
 }
 
 .color button {
+	border-radius: 5px;
 	padding: 1em;
 	margin-left: 1%;
 	margin-right: 1%;
@@ -80,7 +81,7 @@ button.diffActive, button.scoreActive {
 }
 
 .color button.yellow {
-	background-color: yellow;
+	background-color: #D4AC0D;
 }
 
 .color button.blue {
@@ -95,9 +96,22 @@ button.diffActive, button.scoreActive {
 	background-color: green;
 }
 
+.color button.white {
+	background-color: #FDFEFE;
+}
+
 .start {
 	position: relative;
-	top: 15px;
+	top: 50px;
+
+}
+
+.start button {
+	color: white;
+	background-color: #A9DFBF;
+	border-radius: 10px;
+	padding: 14px 40px;
+	font-size: 2vw;
 }
 
 </style>
@@ -150,12 +164,13 @@ export default defineComponent({
 
 		resetOption() {
 			this.opt.level = 1;
-			this.opt.score = 1;
+			this.opt.score = 5;
 			this.opt.paddleColor = 'white';
 		}
 	},
 
 	mounted() {
+		this.resetOption();
 		console.log('option mounted');
 	}
 	

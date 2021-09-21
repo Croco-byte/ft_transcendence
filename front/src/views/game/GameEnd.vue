@@ -10,10 +10,10 @@
 					<img :src="this.avatarPlayer1" width="200" height="200" alt="Player1Avatar">
 				</div>
 				<div class="gameStatus">
-					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Has disconnected from the game.</p>
+					<p class="loser fontStyle" v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">DISCONNECTED</p>
 					<p class="winner fontStyle" v-else-if="this.endGameInfo.room.game.p1Score >= this.endGameInfo.room.game.p2Score
-						|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Winner!</p>
-					<p class="loser fontStyle" v-else>Loser!</p>
+						|| this.endGameInfo.clientId === this.endGameInfo.room.player2Id">WINNER</p>
+					<p class="loser fontStyle" v-else>LOSER</p>
 				</div>
 			</div>
 		</div>
@@ -27,10 +27,10 @@
 					<img :src="avatarPlayer2" width="200" height="200" alt="Player2Avatar">
 				</div>
 				<div class="gameStatus">
-					<p v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">Has disconnected from the game.</p>
+					<p class="loser fontStyle" v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">DISCONNECTED</p>
 					<p class="winner fontStyle" v-else-if="this.endGameInfo.room.game.p2Score >= this.endGameInfo.room.game.p1Score
-						|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">Winner!</p>
-					<p class="loser fontStyle" v-else>Loser!</p>
+						|| this.endGameInfo.clientId === this.endGameInfo.room.player1Id">WINNER</p>
+					<p class="loser fontStyle" v-else>LOSER</p>
 				</div>
 			</div>
 		</div>
@@ -50,15 +50,11 @@
 </template>
 
 <style scoped>
-@font-face {
-	font-family: Bravary;
-	src: "./front/public/bravary/Bravary.ttf";
-}
-
 
 .fontStyle {
 	font-size: 3vw;
 	text-align: center;
+	color: #4F4F4F;
 }
 
 .init {
@@ -86,7 +82,7 @@
 
 .playerBorder {
 	border: 1px solid;
-	border-color: azure;
+	border-color: #4F4F4F;
 }
 
 img {
@@ -94,7 +90,7 @@ img {
 }
 
 .winner {
-	color: Yellow;
+	color: #28B463 ;
 }
 
 .loser {
@@ -109,7 +105,7 @@ img {
 }
 
 .scoreGame p {
-	color: azure;
+	color: #4F4F4F;
 	font-size: 4vw;
 }
 
@@ -225,6 +221,8 @@ export default defineComponent ({
 
 	mounted()
 	{
+		console.log('gameend mounted');
+
 		if (this.isSpectating) {
 			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
 			buttonPlayingAgain.innerHTML = "FINISH SPECTATING AND START A MATCH";

@@ -3,17 +3,18 @@ import { User } from "src/users/users.entity";
 /* eslint-disable prettier/prettier */
 export interface Room
 {
+	intervalId: NodeJS.Timer | undefined;
 	name: string;
 	user1DbId: number;
 	user2DbId: number;
 	player1Id: string;
 	player2Id: string;
-	nbPeopleConnected: number;
 	game: Game;
 }
 
 export interface Game
 {
+	isStarted: boolean;
 	width: number;
 	height: number;
 	p1Score: number;

@@ -10,8 +10,6 @@ import { defineComponent, PropType } from 'vue'
 import { Room, Ball, Player, Paddle, Game } from '../../types/game.interface'
 
 export default defineComponent({
-  // checker ball qui sort du bord de l'ecran
-
 	props: {
 		isSpectating: {
 			required: true,
@@ -194,6 +192,8 @@ export default defineComponent({
 	// ---------------------------------------- LIFECIRCLE HOOKS ----------------------
 	mounted()
 	{
+		console.log('game mounted');
+
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;
 		this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;

@@ -30,7 +30,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 
 	async handleConnection(client: Socket, args: any[]) {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 	
 			console.log("[FriendRequest Gateway] Client connected to gateway : " + client.id);
 	}
@@ -39,7 +40,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleAcceptFriendRequest(client: Socket, data: { friendRequestId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "accepted");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
@@ -53,7 +55,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleDeclineFriendRequest(client: Socket, data: { friendRequestId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 			const result = await this.userService.respondToFriendRequest(data.friendRequestId, "declined");
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
@@ -67,7 +70,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleSendFriendRequest(client: Socket, data: { receiverId: number }) {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 			
 			const result = await this.userService.sendFriendRequest(data.receiverId, user.id);
 			this.wss.emit('friendStatusChanged', { creatorId: result.creator.id, receiverId: result.receiver.id });
@@ -81,7 +85,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleUnfriendUser(client: Socket, data: { friendId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 			const result = await this.userService.unfriendUser(user.id, data.friendId);
 			this.wss.emit('friendStatusChanged', result);
@@ -95,7 +100,8 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 	async handleCancelFriendRequest(client: Socket, data: { receiverId: number }): Promise<void> {
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 			const result = await this.userService.cancelFriendRequest(user.id, data.receiverId);
 			this.wss.emit('friendStatusChanged', result);

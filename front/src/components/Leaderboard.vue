@@ -46,7 +46,7 @@ export default defineComponent({
 	
 	methods: {
 		/* This method uses the UserService to get the list of the current user's leaderboardUsers, for the specified page (default to 1, does nothing if the page number is invalid).
-		** The function retrieves all the accessible informations about the user ; we use it to display his displayName, and status.
+		** The function retrieves all the accessible informations about the user ; we use it to display his displayname, and status.
 		** If there is no more results for the specified page (someone unfriended for example), we display the previous page if there is one.
 		*/
 		getLeaderboardUsers: function(page = 1): void {
@@ -123,7 +123,7 @@ export default defineComponent({
 						<img :src="avatars[index]"/>
 					</div>
 					<p class="username">
-						<a :href="'/user/' + leaderboarduser.user.id ">{{ leaderboarduser.user.displayName }}</a>
+						<a :href="'/user/' + leaderboarduser.user.id ">{{ leaderboarduser.user.displayname }}</a>
 					</p>
 				</div>
 				<div class="stat">
@@ -273,7 +273,7 @@ h2
 	justify-content: space-around;
 	width: 100%;
 	height: 5rem;
-	background: #39D88F;
+	background: #73C6B6;
     color: white;
     border-top-left-radius: 1rem;
     border-top-right-radius: 1rem;

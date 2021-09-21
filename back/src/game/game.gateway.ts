@@ -26,7 +26,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		private readonly usersService: UsersService,
 		) {};
 	private logger: Logger = new Logger('GameGateway');
-	private intervalId: NodeJS.Timer;
 	
 	@WebSocketServer() wss: Socket;
 
@@ -45,19 +44,28 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	{
 		try {
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
-			if (!user) { client.emit('unauthorized', {}); return; }
+			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
+			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 			
+			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
+
 			client.data = { userDbId: user.id, userStatus: user.status };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
 		catch(e) {
-			this.logger.log('[Game Gateway] Unauthorized client trying to connect');
+			this.logger.log('Unauthorized client trying to connect');
 			client.disconnect();
 		}
 
 		if (client.data.userStatus === 'spectating') {
 			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
 			client.join(room.name);
+			client.emit('launchSpectate');
+
+			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
+		}
+		else {
+			client.emit('renderOption');
 		}
 	}
 
@@ -69,14 +77,13 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 */
 	async handleDisconnect(@ConnectedSocket() client: Socket): Promise<void>
 	{
-		console.log("[Game Gateway] Client connected to gateway : " + client.id);
+		console.log("[Game Gateway] Client disconnected from gateway : " + client.id);
 		
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
-		const user = await this.usersService.findUserById(client.data.userDbId)
-		clearInterval(this.intervalId);
-
-		if (room && client.data.wasInGame) {
-			await this.gameService.updateScores(this.wss, room, client.id);
+		
+		if (room && room.game.isStarted) {
+			clearInterval(room.intervalId);
+			this.gameService.updateScores(this.wss, room, client.id);
 		}
 		
 		else if (room && room.player2Id != '') {
@@ -87,8 +94,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		else if (room)
 			this.gameService.removeRoom(this.wss, room);
 
-		else
-			await this.usersService.updateRoomId(client.data.userDbId, 'none');
+		else 
+			this.usersService.updateRoomId(client.data.userDbId, 'none');
 	}
 
 	/**
@@ -109,34 +116,39 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
 		client.join(room.name);
 
-		this.logger.log(`room.player2Id = ${room.player2Id}`);
-
 		if (room.player2Id === '')
 			client.emit('waitingForPlayer');
 		
 		else if (room.player2Id != '') {
-
 			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
-			this.wss.to(room.name).emit('startingGame', true);
 
 			// To prevent to launch the game if one player left during starting game screen
-			if (this.gameService.findRoomByPlayerId(client.id))
-			{
-				await new Promise<void>((resolve) => {
-					this.intervalId = setInterval(async () => {
-		
-						this.wss.to(room.name).emit('actualizeGameScreen', room);
-		
-						if (this.gameService.updateGame(room)) {
-							clearInterval(this.intervalId);
-							resolve();
-						}
-					}, this.gameService.FRAMERATE);
-				});
-				
-				await this.gameService.updateScores(this.wss, room);
+			if (this.gameService.findRoomByPlayerId(client.id)) {
+				room.game.isStarted = true;
+				this.wss.to(room.name).emit('startingGame', true);
 			}
+		}
+	}
+
+	@SubscribeMessage('launchGame')
+	async handleLaunchGame(@ConnectedSocket() client: Socket) : Promise<void>
+	{
+		const room: Room = this.gameService.findRoomByPlayerId(client.id);
+
+		if (room && client.id === room.player1Id) {
+
+			this.usersService.updateRoomId(room.user1DbId, room.name);
+			this.usersService.updateRoomId(room.user2DbId, room.name);
+
+			room.intervalId = setInterval(async () => {
+				this.wss.to(room.name).emit('actualizeGameScreen', room);
+
+				if (this.gameService.updateGame(room)) {
+					clearInterval(room.intervalId);
+					this.gameService.updateScores(this.wss, room);
+				}
+			}, this.gameService.FRAMERATE);
 		}
 	}
 
@@ -161,7 +173,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('disconnectClient')
 	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
 	{
-		client.data.wasInGame = wasInGame;
 		client.disconnect();
 	}
 };

@@ -33,12 +33,12 @@ const routes = [
 		component: () => import('../views/Account.vue'),
 		beforeEnter: ifAuthenticated
 	},
-	{
-		path: '/chat',
-		name: 'Chat',
-		component: () => import('../components/Chat.vue'),
-		beforeEnter: ifAuthenticated
-	},
+	// {
+	// 	path: '/chat',
+	// 	name: 'Chat',
+	// 	component: () => import('../components/Chat.vue'),
+	// 	beforeEnter: ifAuthenticated
+	// },
 	{
 		path: '/twoFA',
 		name: 'TwoFA',
@@ -66,6 +66,12 @@ const routes = [
 		path: '/invitations/:id',
 		name: "Invitation",
 		component: () => import('../views/Invitation.vue'),
+		beforeEnter: ifAuthenticated
+	},
+	{
+		path: '/admin',
+		name: 'Admin',
+		component: () => import('../views/Admin.vue'),
 		beforeEnter: ifAuthenticated
 	}
 ]

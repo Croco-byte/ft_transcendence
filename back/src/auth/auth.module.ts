@@ -11,12 +11,13 @@ import { AuthService } from './auth.service';
 import { TwoFactorAuthenticationController } from './twoFactorAuthentication.controller';
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
 import { UsersModule } from 'src/users/users.module';
+import { JwtTwoFactorAdminStrategy } from './jwt-two-factor-admin-strategy';
 
 
 @Module({
 	imports: [HttpModule, JwtModule.register({ secret: 'sup3r_secret_JWT_s3cret_strIng' }), ConfigModule, PassportModule, UsersModule],
 	exports: [AuthService],
 	controllers: [AuthController, TwoFactorAuthenticationController],
-	providers: [AuthService, JwtStrategy, JwtTwoFactorStrategy, WsJwtGuard, TwoFactorAuthenticationService],
+	providers: [AuthService, JwtStrategy, JwtTwoFactorStrategy, JwtTwoFactorAdminStrategy, WsJwtGuard, TwoFactorAuthenticationService],
 })
 export class AuthModule {}
