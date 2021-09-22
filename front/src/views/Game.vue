@@ -270,9 +270,4 @@ export default defineComponent({
 	background-color: #E6EFF2;
 }
 
-.game
-{
-	overflow-y: auto;
-}
-
 </style>
