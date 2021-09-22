@@ -68,7 +68,7 @@ export default defineComponent(
 
 			let channel = this.channels[id];
 			if (channel.isJoined)
-				this.switchChat(id);
+				this.switchChat(channel.id);
 			else
 			{
 				if (window.confirm("Do you want to join this channel ?"))
@@ -80,7 +80,8 @@ export default defineComponent(
 					.then(() =>
 					{
 						this.loadChannelsList();
-						this.switchChat(id);
+						this.channels[id].isJoined = true;
+						this.switchChat(this.channels[id].id);
 					})
 					.catch(error =>
 					{
@@ -100,8 +101,13 @@ export default defineComponent(
 
 		switchChat(id: number): void
 		{
-			this.channel = this.channels[id];
-			this.channels[id].has_new_message = false;
+			let i = 0;
+			for (i = 0; i < this.channels.length; i++)
+				if (this.channels[i].id == id)
+					break ;
+
+			this.channel = this.channels[i];
+			this.channels[i].has_new_message = false;
 
 			this.loadMessages();
 		},
@@ -229,7 +235,32 @@ export default defineComponent(
 		async addAdmin(): Promise<void>
 		{
 			let username = $('#add_admin_input').val() as string;
-			await axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()});
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()})
+			.then((res) =>
+			{
+				this.mode = 'normal';
+				createToast({
+						title: 'Admin added',
+						description: res.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+			});
 		},
 
 		createMatch(): void
@@ -274,9 +305,53 @@ export default defineComponent(
 			})
 		},
 
+		muteAdmin(username: string): void
+		{
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username + '/mute', {}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error, error.response);
+			})
+		},
+
 		unmuteMember(username: string): void
 		{
 			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unmute', {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error)
+			})
+		},
+
+		unmuteAdmin(username: string): void
+		{
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username + '/unmute', {headers: authHeader()})
 			.then(() =>
 			{
 				this.loadChannelInfo();
@@ -320,9 +395,55 @@ export default defineComponent(
 			})
 		},
 
+		banAdmin(username: string): void
+		{
+			if (this.channel.user_role == "MEMBER")
+				return ;
+			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username + '/ban', {}, {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error)
+			})
+		},
+
 		unbanMember(username: string): void
 		{
 			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/members/' + username + '/unban', {headers: authHeader()})
+			.then(() =>
+			{
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				console.log(error)
+			})
+		},
+
+		unbanAdmin(username: string): void
+		{
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username + '/unban', {headers: authHeader()})
 			.then(() =>
 			{
 				this.loadChannelInfo();
@@ -433,30 +554,52 @@ export default defineComponent(
 			})
 		},
 
-		async loadChannelsList(): Promise<void>
+		async loadChannelsList()
 		{
-			axios.get(this.serverURL + "/channels/" + this.filter, { headers: authHeader() }).then((res) =>
+			return new Promise((resolve, reject) =>
 			{
-				console.log(res.data);
-				this.channels = res.data;
+				axios.get(this.serverURL + "/channels/" + this.filter, { headers: authHeader() }).then((res) =>
+				{
+					this.channels = res.data;
+					resolve(this.channels);
+				})
+				.catch(err =>
+				{
+					createToast({
+							title: 'Error',
+							description: err.response.message
+						},
+						{
+							position: 'top-right',
+							type: 'danger',
+							transition: 'slide'
+						})
+					reject();
+				});
 			})
-			.catch(err =>
-			{
-				createToast({
-						title: 'Error',
-						description: err.response.message
-					},
-					{
-						position: 'top-right',
-						type: 'danger',
-						transition: 'slide'
-					})
-			});
 		},
 
 		getUserLink(user_id: number)
 		{
 			return "/user/" + user_id;
+		},
+
+		async restoreChatView()
+		{
+			this.channel = {
+				id: -1,
+				name: '',
+				requirePassword: false,
+				password: '',
+				messages: [],
+				has_new_message: false,
+				members: [],
+				administrators: [],
+				user_role: "MEMBER",
+				isJoined: false,
+				type: "public",
+				isDirect: false
+			} as ChannelInterface;
 		},
 
 		async leaveChannel()
@@ -466,21 +609,7 @@ export default defineComponent(
 			{
 				let ex_name = this.channel.name;
 				this.loadChannelsList();
-				this.channel = {
-					id: -1,
-					name: '',
-					requirePassword: false,
-					password: '',
-					messages: [],
-					has_new_message: false,
-					members: [],
-					administrators: [],
-					user_role: "MEMBER",
-					isJoined: false,
-					type: "public",
-					isDirect: false
-				} as ChannelInterface;
-
+				this.restoreChatView();
 				let index = this.channels.findIndex(c => c.id == leave_id);
 
 				if (index != -1)
@@ -616,11 +745,11 @@ export default defineComponent(
 			})
 		},
 
-		setFilter(event: DOMEventInterface<HTMLInputElement>, new_filter: string)
+		setFilter(new_filter: string)
 		{
 			this.filter = new_filter;
 			$('.channel_filter.selected').removeClass("selected");
-			$(event.currentTarget).addClass("selected");
+			$('.channel_filter#' + new_filter).addClass("selected");
 			this.loadChannelsList();
 		},
 
@@ -686,6 +815,15 @@ export default defineComponent(
 
 	mounted(): void
 	{
+		if (this.$route.params.direct_id)
+		{
+			this.setFilter("direct");
+			let id = parseInt(this.$route.params.direct_id as string) as number;
+			this.loadChannelsList().then(() =>
+			{
+				this.switchChat(id);
+			})
+		}
 		let socket = this.socket as Socket;
 		socket.on('message', (data: MessageInterface) =>
 		{
@@ -732,9 +870,12 @@ export default defineComponent(
 		});
 		socket.on('kicked', (msg) =>
 		{
+			if (this.channel.id == msg.channel_id)
+				this.restoreChatView();
+			this.loadChannelsList();
 			createToast({
 						title: 'KICKED',
-						description: msg
+						description: msg.msg
 					},
 					{
 						position: 'top-right',
@@ -753,13 +894,13 @@ export default defineComponent(
 			<div class="blur" v-if="mode == 'create_channel' || mode == 'add_member' || mode == 'channel_info' || mode == 'add_admin' || mode == 'authentify_user_in_channel' || mode == 'channel_list'" v-on:click="changeMode('normal')"></div>
 			<div class="chat_list" :class="{active: mode == 'channel_list'}">
 				<div class="channels_filter_container">
-					<div class="channel_filter selected" @click="setFilter($event, 'public')">
+					<div class="channel_filter selected" id="public" @click="setFilter('public')">
 						Public
 					</div>
-					<div class="channel_filter" @click="setFilter($event, 'joined')">
+					<div class="channel_filter" id="joined" @click="setFilter('joined')">
 						Joined
 					</div>
-					<div class="channel_filter" @click="setFilter($event, 'direct')">
+					<div class="channel_filter" id="direct" @click="setFilter('direct')">
 						Direct
 					</div>
 				</div>
@@ -790,11 +931,11 @@ export default defineComponent(
 							<span></span>
 						</p>
 						<p id="chat_title">{{ channel.name }}</p>
-						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')" v-if="channel.id != -1"></p>
+						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')" v-if="channel.id != -1 && !channel.isDirect"></p>
 					</div>
 					<div class="view">
 						<div v-for="message in channel.messages" :key="message" class="message" :class="{ me: isMe(message)}">
-							<a class="username" :href="getUserLink(message.user_id)">{{ message.user }}</a>
+							<router-link class="username" :to="getUserLink(message.user_id)">{{ message.user }}</router-link>
 							<p class="content">{{ message.content }}</p>
 						</div>
 					</div>
@@ -852,7 +993,7 @@ export default defineComponent(
 					<div class="content">
 						<div class="flex j-sb member" v-for="member in channel.members" v-bind:key="member.id">
 							<p>
-								<a :href="'/user/' + member.id"> {{ member.username }}</a>
+								<router-link :to="'/user/' + member.id"> {{ member.username }}</router-link>
 							</p>
 							<div v-if="!channel.isDirect">
 								<p v-if="member.isMuted == false" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.username)"></p>
@@ -875,7 +1016,13 @@ export default defineComponent(
 					</p>
 					<div class="content">
 						<div class="flex j-sb member" v-for="admin in channel.administrators" v-bind:key="admin.id">
-							<p>{{ admin.username }}</p>
+							<p>
+								<router-link :to="'/user/' + admin.id"> {{ admin.username }}</router-link>
+							</p>
+							<p v-if="admin.isMuted == false && channel.user_role == 'OWNER'" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(admin.username)"></p>
+							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(admin.username)"></p>
+							<p v-if="admin.isBanned == false && channel.user_role == 'OWNER'" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(admin.username)"></p>
+							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(admin.username)"></p>
 							<p v-if="channel.user_role == 'OWNER'" class="fas fa-times kick_button action_button" @click="kickAdmin(admin.username)"></p>
 						</div>
 						<div v-if="channel.administrators && channel.administrators.length == 0">

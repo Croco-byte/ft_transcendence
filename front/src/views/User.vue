@@ -39,18 +39,20 @@
 				<br/>
 				
 			</div>
-				<div class="stats">
-					<h2><i class="fas fa-align-justify"></i> Player's stats</h2>
-					<div class="score_info">
-						<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
-						<p><i class="fas fa-caret-right"></i> <b>Wins</b> : <span style="color:#27AE60;"><b>{{ wins }}</b></span></p>
-						<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
-					</div>
+			<div class="stats">
+				<h2><i class="fas fa-align-justify"></i> Player's stats</h2>
+				<div class="score_info">
+					<p><i class="fas fa-caret-right"></i> <b>Score</b> : <i class="fas fa-trophy"></i> {{ score }}</p>
+					<p><i class="fas fa-caret-right"></i> <b>Wins</b> : <span style="color:#27AE60;"><b>{{ wins }}</b></span></p>
+					<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
 				</div>
+			</div>
+			<div class="direct_button" @click="redirectToDM">
+				Direct Message
+				<router-link :to="'/chat/' + direct_id" id="direct_link"></router-link>
+			</div>
 		</div>
-		
 	</div>
-
 </template>
 
 
@@ -70,6 +72,9 @@ import { UserStatusChangeData } from '../types/user.interface';
 import { FriendStatusChangeData } from '../types/friends.interface';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
+import axios from 'axios';
+import authHeader from '../services/auth-header';
+import $ from 'jquery';
 
 interface UserViewData
 {
@@ -84,6 +89,7 @@ interface UserViewData
 	loses: number;
 	userNotFound: string;
 	friendRequestStatus: string;
+	direct_id: string;
 }
 
 export default defineComponent({
@@ -102,10 +108,9 @@ export default defineComponent({
 			score: 0,
 			wins: 0,
 			loses: 0,
-
 			userNotFound: '',
-
-			friendRequestStatus: ''
+			friendRequestStatus: '',
+			direct_id: ""
 		}
 	},
 
@@ -164,8 +169,28 @@ export default defineComponent({
 				type: 'danger',
 				transition: 'slide'
 			})
-		}
+		},
 
+		async redirectToDM()
+		{
+			axios.post("http://localhost:3000/channels", {name: this.name, isDirect: true, to_user: this.name}, {headers: authHeader()})
+			.then(res =>
+			{
+				this.$router.push({ name: 'Chat', params: { direct_id: res.data.id } })
+			})
+			.catch(error =>
+			{
+				createToast({
+				title: 'Error',
+				description: error.response.data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			})
+		}
 	},
 
 	async created(): Promise<void> {
@@ -294,5 +319,27 @@ export default defineComponent({
 	background-color: white;
 }
 
+.direct_button
+{
+    padding: 0.5rem 2rem;
+    background: #00adff;
+    color: white;
+    font-weight: 600;
+	border: solid 1px transparent;
+	cursor: pointer;
+	transition: all 0.25s;
+}
+
+.direct_button:hover
+{
+	background: transparent;
+	color: #00adff;
+	border-color: #00adff;
+}
+
+.direct_button a
+{
+	display: none;
+}
 
 </style>

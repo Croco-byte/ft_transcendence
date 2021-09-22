@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { tmpdir } from "os";
 import ChannelBannedUserService from "./channel_banned_users/channel_banned_user.service";
@@ -12,6 +12,7 @@ import { Connection, getConnection, getRepository, Repository } from "typeorm";
 import {Channel} from './channel.entity';
 import { InvitationLink } from "./invitation_links/invitation_link.entity";
 import { InvitationService } from "./invitation_links/invitation.service";
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export default class ChannelService
@@ -64,6 +65,16 @@ export default class ChannelService
 	{
 		return await this.repository.findOne({relations: this.relations, where: [{id: id}]});
 	}
+
+	async directExists(user_1: User, user_2: User): Promise<Channel>
+	{
+		let name = user_1.username + "_" + user_2.username;
+		let name_2 = user_2.username + "_" + user_1.username;
+		let channel = await this.repository.createQueryBuilder("channel")
+			.where("name = :name or name = :name_2", {name: name, name_2: name_2})
+			.getOne();
+		return channel
+	}
 	
 	async delete(id: string): Promise<void>
 	{
@@ -92,9 +103,17 @@ export default class ChannelService
 
 	async addPassword(channel: Channel, password: string)
 	{
-		channel.requirePassword = true;
-		channel.password = password;
-		this.repository.save(channel);
+		bcrypt.hash(password, 10, (err, hash) =>
+		{
+			channel.requirePassword = true;
+			channel.password = hash;
+			this.repository.save(channel);
+		});
+	}
+
+	async check_password(channel: Channel, password: string)
+	{
+		return await bcrypt.compare(password, channel.password)
 	}
 
 	async removePassword(channel: Channel)

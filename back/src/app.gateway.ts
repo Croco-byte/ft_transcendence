@@ -62,7 +62,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 	{
 		let socket = this.getSocketByUser(user);
 		if (socket)
-			socket.emit("kicked", "You have been kicked from channel '" + channel.name + "'");
+			socket.emit("kicked", {channel_id: channel.id, msg:"You have been kicked from channel '" + channel.name + "'"});
 		else
 			this.logger.debug("User " + user.username + " not found in clients gateway. socket=" + socket);
 	}
