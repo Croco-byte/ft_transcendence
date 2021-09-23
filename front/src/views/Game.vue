@@ -9,7 +9,7 @@
 
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, watch } from 'vue'
 import { Setup } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
@@ -20,6 +20,8 @@ import { Room, EndGameInfo } from '../types/game.interface'
 import router from '../router/index';
 import axios from '../axios-instance';
 import authHeader from '../services/auth-header';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 export default defineComponent({
 	
@@ -71,6 +73,8 @@ export default defineComponent({
 			router.push(({name: 'Game', params: { 
 				RenderGameOption: 'false',
 				RenderGameJoin: 'true',
+				status: 'private',
+				random: this.GameService.generateRandomStr(),
 			}}));
 		},
 
@@ -83,6 +87,18 @@ export default defineComponent({
 		{
 			this.socket.emit('privateGame');
 			this.isPrivate = true;
+			this.RenderGameOption = false;
+			this.RenderGameJoin = true;
+
+			createToast({
+				title: '',
+				description: 'Default options. You can\'t choose options in private game.',
+			},
+			{
+				position: 'top-right',
+				type: 'warning',
+				transition: 'slide'
+			});
 		},
 
 		waitingForPlayer() : void
@@ -246,6 +262,8 @@ export default defineComponent({
 			this.socket.on('opponentLeft', (endGameInfo: EndGameInfo) => {
 				this.opponentLeft(endGameInfo);
 			});
+
+			// this.socket.emit('renderFirstScreen');
 		}
 	},
 
@@ -258,6 +276,18 @@ export default defineComponent({
 		const wasInGame = this.RenderGamePlay ? true : false;
 		this.socket.emit('disconnectClient', wasInGame);
 		
+		next();
+	},
+
+	beforeRouteUpdate (to, from , next)
+	{
+		console.log(this.$route.params);
+		console.log(this.$route.params.caca);
+		console.log(this.$route.params.RenderGameOption);
+		console.log(this.$route.params.RenderGameJoin);
+		console.log('beforerouteupdate');
+		console.log(to);
+		// this.socket.emit('renderFirstScreen');
 		next();
 	}
 })

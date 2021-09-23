@@ -43,12 +43,12 @@ export default defineComponent({
 			this.updateHtmlText('msg', 'Waiting for your friend to accept the match...');
 
 		if (this.isStarting) {
-			this.isPrivate ?	this.updateHtmlText('msg', 'Your friend accepted! Game will start soon.') :
+			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
 								this.updateHtmlText('msg', 'Player found! Game will start soon.');
 		}
 
 		watch(() => this.isStarting, () => {
-			this.isPrivate ?	this.updateHtmlText('msg', 'Your friend accepted! Game will start soon.') :
+			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
 								this.updateHtmlText('msg', 'Player found! Game will start soon.');
 		})
 	},

@@ -227,37 +227,6 @@ export default defineComponent ({
 			}
 		},
 
-		// async launchChallengeAgain()
-		// {
-		// 	let userId = 0;
-		// 	let friendId = 0;
-		// 	const res = await UserService.getCurrUserId();
-			
-			
-		// 	if (res.data.id === this.endGameInfo.room.user1DbId) {
-		// 		userId = this.endGameInfo.room.user1DbId;
-		// 		friendId = this.endGameInfo.room.user2DbId;
-		// 	}
-		// 	else {
-		// 		userId = this.endGameInfo.room.user2DbId;
-		// 		friendId = this.endGameInfo.room.user1DbId;
-		// 	}
-				
-		// 	const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + userId, {},
-		// 		{headers: authHeader()});
-				
-		// 	this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
-		// 		userId: userId,
-		// 		friendId: friendId,
-		// 		newRoomId: newRoomId,
-		// 	});
-			
-		// 	router.push(({name: 'Game', params: { 
-		// 		RenderGameOption: 'false',
-		// 		RenderGameJoin: 'true',
-		// 	}}));
-		// },
-
 		async loadAvatar(playerDbId: string) : Promise<void>
 		{
 			const user: any = await UserService.getUserInfo(playerDbId);
@@ -272,13 +241,6 @@ export default defineComponent ({
 	},
 
 	async created() {
-		console.log(`player1 ID : ${this.endGameInfo.room.player1Id}`);
-		console.log(`player2 ID : ${this.endGameInfo.room.player2Id}`);
-		console.log(`player1 DBID : ${this.endGameInfo.room.user1DbId.toString()}`);
-		console.log(`player2 DBID : ${this.endGameInfo.room.user2DbId.toString()}`);
-		console.log(`player1 username : ${this.endGameInfo.p1DbInfo.username}`);
-		console.log(`player2 username : ${this.endGameInfo.p2DbInfo.username}`);
-
 		this.loadAvatar(this.endGameInfo.room.user1DbId.toString());
 		this.loadAvatar(this.endGameInfo.room.user2DbId.toString());
 	},

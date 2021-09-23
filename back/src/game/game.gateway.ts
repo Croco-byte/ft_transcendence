@@ -47,10 +47,13 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
 			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 			
-			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
+			this.logger.log(`user.id = ${user.id} user.status = ${user.status}`);
 
 			client.data = { userDbId: user.id, userStatus: user.status, roomId: user.roomId };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
+			console.log(`JUSTE APRES CONNEXION client.data.userDbId = ${client.data.userDbId}`);
+
+			
 		} 
 		catch(e) {
 			this.logger.log('Unauthorized client trying to connect');
@@ -65,10 +68,13 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
 		}
 		else if (client.data.roomId === 'none') {
+			this.logger.log(`GAME NORMAL`)
 			client.emit('renderOption');
 		}
-		else
+		else {
+			this.logger.log(`GAME PRIVATE`)
 			client.emit('waitInPrivateQueue');
+		}
 	}
 
 	/**
@@ -84,20 +90,25 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 		
 		if (room && room.game.isStarted) {
+			this.logger.log('CASE 1');
 			clearInterval(room.intervalId);
 			this.gameService.updateScores(this.wss, room, client.id);
 		}
 		
 		else if (room && room.player2Id != '') {
+			this.logger.log('CASE 2');
 			this.wss.to(room.name).emit('resetMatchmaking');
 			this.gameService.removeRoom(this.wss, room);
 		}
 		
-		else if (room)
+		else if (room) {
+			this.logger.log('CASE 3');
 			this.gameService.removeRoom(this.wss, room);
-
-		else 
+		}
+		else {
+			this.logger.log('CASE 4');
 			this.usersService.updateRoomId(client.data.userDbId, 'none');
+		}
 	}
 
 	/**
@@ -134,9 +145,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	}
 
 	@SubscribeMessage('privateGame')
-	async handlePrivateGame(@ConnectedSocket() client: Socket) : Promise<void>
+	async handlePrivateGame(@ConnectedSocket() client: Socket, @MessageBody() privateRoomId: string) : Promise<void>
 	{
-		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, client.data.roomId);
+		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, privateRoomId);
 
 		client.join(room.name);
 

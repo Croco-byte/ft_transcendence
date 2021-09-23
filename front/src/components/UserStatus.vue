@@ -22,6 +22,7 @@ import { defineComponent } from 'vue'
 import router from '../router/index';
 import axios from '../axios-instance';
 import authHeader from '../services/auth-header';
+import GameService from '../services/game.service'
 
 export default defineComponent({
 	name: 'UserStatus',
@@ -57,7 +58,9 @@ export default defineComponent({
 			this.$store.state.websockets.connectionStatusSocket.on('goToSpectateView',() => {
 				router.push(({name: 'Game', params: { 
 					RenderGameOption: 'false',
-					RenderGamePlay: 'true', 
+					RenderGamePlay: 'true',
+					status: 'spectate',
+					random: this.GameService.generateRandomStr(),
 				}}));
 			});
 		},
@@ -77,6 +80,8 @@ export default defineComponent({
 			router.push(({name: 'Game', params: { 
 				RenderGameOption: 'false',
 				RenderGameJoin: 'true',
+				status: 'private',
+				random: this.GameService.generateRandomStr(),
 			}}));
 		},
 	},
