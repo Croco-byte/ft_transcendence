@@ -1,7 +1,7 @@
 <template>
 <div class="container">
 <div class="website_admin">
-    <h2>Website administration</h2>
+    <h1>Website administration</h1>
 	<div class="owner">
 		<h2>Owner</h2>
 		<p><i class="fas fa-crown"></i> <a :href="'/user/' + owner.id ">{{ owner.displayname }}</a></p>
@@ -91,6 +91,7 @@
 </div>
 <div class="channels_admin">
 	<h2>Manage channels</h2>
+	<AdminChannel/>
 </div>
 </div>
 </template>
@@ -104,6 +105,7 @@ import UserStatus from '../components/UserStatus.vue';
 import UserService from '../services/user.service';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
+import AdminChannel from '../components/AdminChannel.vue';
 
 
 interface AdminViewData
@@ -120,8 +122,10 @@ interface AdminViewData
 
 export default defineComponent ({
 	name: 'Admin',
-
-
+	components:
+	{
+		AdminChannel
+	},
 	data(): AdminViewData {
 		return {
             owner: {id: 0, username: '', displayname: '', status: ''},
@@ -365,26 +369,30 @@ h2
 {
 	background-color: white;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-around;
-	height: 80vh;
 }
 
-.website_admin
+.container > div
 {
-	width: 33%;
+	margin: 1rem;
 }
+
 
 .owner
 {
 	text-align: center;
-	height: 20%;
 	overflow-y: auto;
 }
 
 .mods
 {
-	height: 35%;
 	overflow-y: auto;
+}
+
+.mods div
+{
+	text-align: center;
 }
 
 .mods .mods_items
@@ -414,19 +422,16 @@ h2
 .blocked_users
 {
 	text-align: center;
-	height: 35%;
 }
 
 .users_admin
 {
 	text-align: center;
-	width: 33%;
 }
 
 .channels_admin
 {
 	text-align: center;
-	width: 33%;
 }
 
 .paginationMenu
@@ -488,11 +493,15 @@ h2
 	flex-wrap: nowrap;
 	align-items: center;
 	justify-content: space-between;
-	width: 100%;
 	height: 5rem;
 	border: solid 1px #39D88F;
 	background: white;
-	margin: 0.25rem 0;
+	margin: 0.25rem 1rem;
+}
+
+.users_item > *
+{
+	margin: 0 1rem;
 }
 
 .users_item .displayname

@@ -14,7 +14,7 @@ export class InvitationService
 
 	async getLink(id: string): Promise<InvitationLink>
 	{
-		return await this.repository.findOne({ relations: ["channel"], where: { path: id }});
+		return await this.repository.findOne({ relations: ["channel", "channel.users"], where: { path: id }});
 	}
 
 	async removeLink(link: InvitationLink)

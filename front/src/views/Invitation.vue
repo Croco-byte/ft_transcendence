@@ -30,7 +30,7 @@ export default defineComponent({
 								type: 'success',
 								transition: 'slide'
 							});
-				window.setTimeout(() => { window.location.pathname = "/chat" }, 3000)
+				window.setTimeout(() => { this.$router.push("/chat") }, 3000)
 			})
 			.catch(error =>
 			{

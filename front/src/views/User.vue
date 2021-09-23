@@ -47,10 +47,16 @@
 					<p><i class="fas fa-caret-right"></i> <b>Losses</b> : <span style="color:#FF0000;"><b>{{ loses }}</b></span></p>
 				</div>
 			</div>
-			<div class="direct_button" @click="redirectToDM">
-				Direct Message
-				<router-link :to="'/chat/' + direct_id" id="direct_link"></router-link>
-			</div>
+		</div>
+		<div class="direct_button" @click="redirectToDM" v-if="!isBlocked">
+			Direct Message
+			<router-link :to="'/chat/' + direct_id" id="direct_link"></router-link>
+		</div>
+		<div class="block_button" @click="block" v-if="!isBlocked">
+			Block
+		</div>
+		<div class="unblock_button" @click="unblock" v-if="isBlocked">
+			Unblock
 		</div>
 	</div>
 </template>
@@ -74,7 +80,6 @@ import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
 import axios from 'axios';
 import authHeader from '../services/auth-header';
-import $ from 'jquery';
 
 interface UserViewData
 {
@@ -90,6 +95,7 @@ interface UserViewData
 	userNotFound: string;
 	friendRequestStatus: string;
 	direct_id: string;
+	isBlocked: boolean;
 }
 
 export default defineComponent({
@@ -110,7 +116,8 @@ export default defineComponent({
 			loses: 0,
 			userNotFound: '',
 			friendRequestStatus: '',
-			direct_id: ""
+			direct_id: "",
+			isBlocked: false
 		}
 	},
 
@@ -190,6 +197,70 @@ export default defineComponent({
 					transition: 'slide'
 				})
 			})
+		},
+
+		async block()
+		{
+			axios.post("http://localhost:3000/user/" + this.userId + '/block', {}, {headers: authHeader()})
+			.then(res =>
+			{
+				createToast(
+				{
+					title: 'Blocked',
+					description: res.data.message
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				});
+				this.isBlocked = true;
+			})
+			.catch((error) =>
+			{
+				createToast(
+				{
+					title: 'Error',
+					description: error.response.data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			})
+		},
+
+		async unblock()
+		{
+			axios.post("http://localhost:3000/user/" + this.userId + '/unblock', {}, {headers: authHeader()})
+			.then(res =>
+			{
+				createToast(
+				{
+					title: 'Unblocked',
+					description: res.data.message
+				},
+				{
+					position: 'top-right',
+					type: 'success',
+					transition: 'slide'
+				});
+				this.isBlocked = false;
+			})
+			.catch((error) =>
+			{
+				createToast(
+				{
+					title: 'Error',
+					description: error.response.data.message
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				})
+			})
 		}
 	},
 
@@ -206,6 +277,7 @@ export default defineComponent({
 				this.score = response.data.score;
 				this.wins = response.data.wins;
 				this.loses = response.data.loses;
+				this.isBlocked = response.data.isBlocked;
 				UserService.getUserAvatar(response.data.avatar).then(
 					response => {
 						const urlCreator = window.URL || window.webkitURL;
@@ -321,6 +393,7 @@ export default defineComponent({
 
 .direct_button
 {
+	margin: 0.5rem 1rem;
     padding: 0.5rem 2rem;
     background: #00adff;
     color: white;
@@ -340,6 +413,27 @@ export default defineComponent({
 .direct_button a
 {
 	display: none;
+}
+
+.block_button,
+.unblock_button
+{
+	margin: 0.5rem 1rem;
+	padding: 0.5rem 2rem;
+    background: #ff3300e0;
+    color: white;
+    font-weight: 600;
+	border: solid 1px transparent;
+	cursor: pointer;
+	transition: all 0.25s;
+}
+
+.block_button:hover,
+.unblock_button:hover
+{
+	background: transparent;
+	color: #ff3300e0;
+	border-color: #ff3300e0;
 }
 
 </style>

@@ -11,6 +11,7 @@ import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginat
 import { UserStatus, User_Status } from './status.interface';
 import { unlink } from 'fs';
 import { Logger } from '@nestjs/common'
+import ChannelService from 'src/channels/channel.service';
 
 @Injectable()
 export class UsersService {
@@ -49,7 +50,7 @@ export class UsersService {
 
 	/* Returns all public informations about the user (everything but 2FA status and secret) */
 	async findUserById(id: number): Promise<User> {
-		const user = await this.usersRepository.findOne({ where: { id: id } });
+		const user = await this.usersRepository.findOne({ where: { id: id }, relations: ["blocked"]});
 		if (!user) {
 			throw new NotFoundException();
 		}
@@ -153,7 +154,8 @@ export class UsersService {
 		return "not-blocked";
 	}
 
-	async blockUser(currUserId: number, blockedUserId: number) {
+	async blockUser(currUserId: number, blockedUserId: number)
+	{
 		if (currUserId === blockedUserId) throw new ForbiddenException("You can't block yourself !");
 		const currUser: User = await this.usersRepository.findOne({
 			relations: ['blocked'],
@@ -164,13 +166,16 @@ export class UsersService {
 			where: { id: blockedUserId }
 		});
 		let userAlreadyBlocked = await this.isUserAlreadyBlocked(currUser, blockedUser);
-		if (userAlreadyBlocked === "not-blocked") {
+		if (userAlreadyBlocked === "not-blocked")
+		{
 			return await getConnection()
 					.createQueryBuilder()
 					.relation(User, "blocked")
 					.of(currUser)
 					.add(blockedUser);
-		} else {
+		}
+		else
+		{
 			throw new ForbiddenException("You already blocked this user, or this user already blocked you");
 		}
 	}

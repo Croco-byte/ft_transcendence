@@ -15,7 +15,7 @@ import ChannelMutedUserService from 'src/channels/channel_muted_users/channel_mu
 import ChannelBannedUserService from './channel_banned_users/channel_banned_user.service';
 import ChannelBannedUserRepository from './channel_banned_users/channel_banned_user.repository';
 import { ChannelBannedUserModule } from './channel_banned_users/channel_banned_user.module';
-import { AppGateway } from 'src/app.gateway';
+import { AppGateway } from 'src/channels/channel.gateway';
 import { AuthModule } from 'src/auth/auth.module';
 import UserRepository from 'src/users/user.repository';
 import { User } from 'src/users/users.entity';

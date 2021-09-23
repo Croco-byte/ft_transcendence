@@ -40,4 +40,9 @@ export default class ChannelBannedUserService
 		let tmp = await this.repository.find({relations: ["channel", "user"], where: {channel: channel, user: user}});
 		return await this.repository.remove(tmp);
 	}
+
+	async removeAllFromChannel(channel: Channel): Promise<Channel>
+	{
+		return await this.repository.delete({channel: channel});
+	}
 }

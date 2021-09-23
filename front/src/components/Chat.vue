@@ -232,13 +232,14 @@ export default defineComponent(
 			});
 		},
 
-		async addAdmin(): Promise<void>
+		async addAdmin(username: string): Promise<void>
 		{
-			let username = $('#add_admin_input').val() as string;
+			if (this.channel.user_role == "MEMBER")
+				return ;
+			// let username = $('#add_admin_input').val() as string;
 			axios.post(this.serverURL + '/channels/' + this.channel.id + '/admin', {username: username}, {headers: authHeader()})
 			.then((res) =>
 			{
-				this.mode = 'normal';
 				createToast({
 						title: 'Admin added',
 						description: res.data.message
@@ -247,7 +248,41 @@ export default defineComponent(
 						position: 'top-right',
 						type: 'success',
 						transition: 'slide'
+					});
+				this.loadChannelInfo();
+			})
+			.catch(error =>
+			{
+				createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
 					})
+			});
+		},
+
+		async deleteAdmin(username: string): Promise<void>
+		{
+			if (this.channel.user_role == "MEMBER")
+				return ;
+			// let username = $('#add_admin_input').val() as string;
+			axios.delete(this.serverURL + '/channels/' + this.channel.id + '/admin/' + username, {headers: authHeader()})
+			.then((res) =>
+			{
+				createToast({
+						title: 'Admin removed',
+						description: res.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'success',
+						transition: 'slide'
+					})
+				this.loadChannelInfo()
 			})
 			.catch(error =>
 			{
@@ -275,8 +310,19 @@ export default defineComponent(
 		{
 			let message = $('#msg_input').val() as string;
 			if (message && message.length > 0)
-				await axios.post(this.serverURL + "/channels/" + this.channel.id + "/messages", {channel: this.channel.id, content: message}, {headers: authHeader()});
-				//this.socket.emit('message', {channel: this.channel.id, user: this.username, content: message});
+				axios.post(this.serverURL + "/channels/" + this.channel.id + "/messages", {channel: this.channel.id, content: message}, {headers: authHeader()})
+				.catch(error =>
+				{
+					createToast({
+						title: 'Error',
+						description: error.response.data.message
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+				});
 			
 			$('#msg_input').val('');
 		},
@@ -530,12 +576,12 @@ export default defineComponent(
 				this.loadChannelsList();
 				this.channel.name = new_name;
 				createToast({
-						title: 'Error',
+						title: 'Success',
 						description: "Channel name changed to '" + new_name + "' !"
 					},
 					{
 						position: 'top-right',
-						type: 'danger',
+						type: 'success',
 						transition: 'slide'
 					})
 			})
@@ -713,7 +759,8 @@ export default defineComponent(
 			axios.get(this.serverURL + "/channels/" + this.channel.id + "/invitation", {headers: authHeader()})
 			.then(res =>
 			{
-				navigator.clipboard.writeText(res.data.link).then(() =>
+				let link = window.location.host + res.data.link;
+				navigator.clipboard.writeText(link).then(() =>
 				{
 					createToast({
 						title: 'Invitation',
@@ -883,7 +930,43 @@ export default defineComponent(
 						transition: 'slide'
 					})
 		});
+		socket.on("channel_created", () =>
+		{
+			if (this.filter == "public")
+				this.loadChannelsList()
+		})
+		socket.on("channel_destroyed", (msg) =>
+		{
+			let id = msg.channel_id;
+			if (id == this.channel.id)
+				this.restoreChatView();
+
+			for (let i = 0; i < this.channels.length; i++)
+			{
+				let channel = this.channels[i];
+				if (channel.id == id)
+				{
+					this.channels.splice(i, 1);
+					createToast(
+					{
+						title: 'Channel destroyed',
+						description: msg.msg
+					},
+					{
+						position: 'top-right',
+						type: 'danger',
+						transition: 'slide'
+					})
+					return ;
+				}
+			}
+		})
 	},
+	unmounted()
+	{
+		let socket = this.socket as Socket;
+		socket.disconnect();
+	}
 });
 
 </script>
@@ -930,7 +1013,9 @@ export default defineComponent(
 							<span></span>
 							<span></span>
 						</p>
-						<p id="chat_title">{{ channel.name }}</p>
+						<p id="chat_title">
+							{{ channel.name }}
+						</p>
 						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')" v-if="channel.id != -1 && !channel.isDirect"></p>
 					</div>
 					<div class="view">
@@ -1000,16 +1085,14 @@ export default defineComponent(
 								<p v-else class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(member.username)"></p>
 								<p v-if="member.isBanned == false" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(member.username)"></p>
 								<p v-else class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(member.username)"></p>
+								<p v-if="!member.isAdmin" class="fas fa-user-shield set_admin_button action_button" v-on:click="addAdmin(member.username)"></p>
+								<p v-if="member.isAdmin" class="fas fa-user-shield delete_admin_button action_button" v-on:click="deleteAdmin(member.username)"></p>
 								<p v-if="channel.user_role != 'MEMBER'" class="fas fa-times kick_button action_button" @click="kickMember(member.username)"></p>
 							</div>
 						</div>
-						<!-- <p id="add_member_button" v-on:click="changeMode('add_member')" v-if="channel.user_role != 'MEMBER' && chan">
-							<i class="fas fa-plus-square"></i>
-							Add member
-						</p> -->
 					</div>
 				</section>
-				<section v-if="!channel.isDirect">
+				<!-- <section v-if="!channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Administrators
 						<i class="arrow fas fa-chevron-left"></i>
@@ -1023,7 +1106,7 @@ export default defineComponent(
 							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(admin.username)"></p>
 							<p v-if="admin.isBanned == false && channel.user_role == 'OWNER'" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(admin.username)"></p>
 							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(admin.username)"></p>
-							<p v-if="channel.user_role == 'OWNER'" class="fas fa-times kick_button action_button" @click="kickAdmin(admin.username)"></p>
+							<p v-if="channel.user_role == 'OWNER'" class="fas fa-times kick_button action_button" @click="kickMember(admin.username)"></p>
 						</div>
 						<div v-if="channel.administrators && channel.administrators.length == 0">
 							No administrators in this channel
@@ -1033,7 +1116,7 @@ export default defineComponent(
 							Add an administrator
 						</p>
 					</div>
-				</section>
+				</section> -->
 				<section v-if="channel.user_role == 'OWNER' && !channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
@@ -1063,7 +1146,7 @@ export default defineComponent(
 				</button>
 			</div>
 			<div class="input_popup" id="add_admin_popup" v-if="mode == 'add_admin'">
-				<input type="text" placeholder="New admin's username" id="add_admin_input"/>
+				<input type="text" placeholder="New admin's username" id="add_admin_input" @keypress.enter="addAdmin"/>
 				<button id="add_admin" @click="addAdmin">
 					<i class="fas fa-arrow-right"></i>
 				</button>
@@ -1575,6 +1658,11 @@ export default defineComponent(
 	.channel_info_container .action_button.kick_button
 	{
 		color: red;
+	}
+
+	.delete_admin_button
+	{
+		color: rgb(0, 110, 255);
 	}
 
 	.leave_button

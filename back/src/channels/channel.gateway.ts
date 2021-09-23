@@ -9,14 +9,14 @@ import {
 	from '@nestjs/websockets';
 import { Injectable, Logger, Query, Request, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import ChannelService from './channels/channel.service';
-import { Channel } from './channels/channel.entity';
-import { User } from './users/users.entity';
-import { UsersService } from './users/users.service';
-import MessageService from './messages/message.service';
-import JwtTwoFactorGuard from './auth/jwt-two-factor-auth.guard';
-import { AuthService } from './auth/auth.service';
-import { WsJwtGuard } from './auth/ws-jwt-strategy';
+import ChannelService from './channel.service';
+import { Channel } from './channel.entity';
+import { User } from '../users/users.entity';
+import { UsersService } from '../users/users.service';
+import MessageService from '../messages/message.service';
+import JwtTwoFactorGuard from '../auth/jwt-two-factor-auth.guard';
+import { AuthService } from '../auth/auth.service';
+import { WsJwtGuard } from '../auth/ws-jwt-strategy';
 
 @Injectable()
 @WebSocketGateway({ cors: true, namespace: 'chat' })
@@ -38,19 +38,19 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	async sendNewMessage(room: string, msg: Object, user: User, channel: Channel)
 	{
-		let unauthaurizedUsers : User[] = [];
+		let unauthorizedUsers : User[] = [];
 		let blockedUsers = await this.userService.getBiDirectionalBlockedUsers(user);
-		unauthaurizedUsers.concat(blockedUsers);
-		unauthaurizedUsers.concat(channel.pending_users);
+		unauthorizedUsers = unauthorizedUsers.concat(blockedUsers);
+		unauthorizedUsers = unauthorizedUsers.concat(channel.pending_users);
 
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
 				socket.leave(room);
 		}
 		this.server.to(room).emit('message', msg);
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
@@ -69,16 +69,16 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	async addMember(room: string, msg: string, channel: Channel)
 	{
-		let unauthaurizedUsers = channel.pending_users;
+		let unauthorizedUsers = channel.pending_users;
 
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
 				socket.leave(room);
 		}
 		this.server.to(room).emit('new_member', msg);
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
@@ -88,16 +88,16 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	async notifChannel(room: string, notif: string, msg:string, channel: Channel)
 	{
-		let unauthaurizedUsers = channel.pending_users;
+		let unauthorizedUsers = channel.pending_users;
 
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
 				socket.leave(room);
 		}
 		this.server.to(room).emit(notif, msg);
-		for (let unauthorized of unauthaurizedUsers)
+		for (let unauthorized of unauthorizedUsers)
 		{
 			let socket = this.getSocketByUser(unauthorized);
 			if (socket)
@@ -181,18 +181,21 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 				return val[1];
 		}
 		return null;
+	}
 
-		// let arr: [number, [User, Socket]];
-		// console.log(Object.keys(this.clients));
-		// for (arr of this.clients.entries())
-		// {
-		// 	this.logger.debug(arr[1][0].username);
-		// 	let val = arr[1];
-		// 	let user = val[0];
-		// 	console.log("Test %d == %d", user.id, search.id);
-		// 	if (user.id == search.id)
-		// 		return val[1];
-		// }
-		// return null;
+	createChannel()
+	{
+		this.server.emit("channel_created", {});
+	}
+
+	destroyChannel(channelID: string, users: User[], name: string)
+	{
+		this.server.emit("channel_destroyed", {channel_id: parseInt(channelID), msg: "Channel " + name + " has been destroyed."});
+		for (let user of users)
+		{
+			let socket = this.getSocketByUser(user);
+			if (socket)
+				socket.leave("channel_" + channelID);
+		}
 	}
 }
