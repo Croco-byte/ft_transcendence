@@ -221,13 +221,14 @@ h2
 
 .paginationMenu
 {
-	width: 50%;
 	margin: 0 auto;
 }
 
 .pagination
 {
-	display: inline-block;
+	display: flex;
+    justify-content: center;
+    align-items: center;
 	height: 3rem;
 	width: 100%;
 	text-align: center;
@@ -274,6 +275,7 @@ input:placeholder
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .friend_item

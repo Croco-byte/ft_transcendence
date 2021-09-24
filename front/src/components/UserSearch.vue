@@ -145,7 +145,6 @@ export default defineComponent({
 <style scoped>
 	#searchUser {
 		border: solid;
-		width: 50%;
 		margin: 0 auto;
 	}
 	

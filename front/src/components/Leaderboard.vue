@@ -410,5 +410,19 @@ h2
 	margin: 0 0.5rem;
 }
 
+@media screen and (max-width: 425px)
+{
+	.leaderboard_item .image,
+	.leaderboard_header .profile
+	{
+		display: none;
+	}
+
+	.pagination button
+	{
+		margin: 0;
+	}
+}
+
 
 </style>
