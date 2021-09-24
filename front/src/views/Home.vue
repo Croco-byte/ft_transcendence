@@ -1,15 +1,16 @@
 <template>
 <div class='fullPage'>
-	<div class="homeImage">
-		<img src="https://i.pinimg.com/originals/d7/65/ca/d765cadd577d6901922c2bfcd8419015.gif ">
-	</div>
-	<div class="welcome">
-		<h1>WELCOME</h1>
-		<LoggingButton :message="message"/>
-	</div>
 
-	<div class="leaderboard">
-		<Leaderboard/>
+	<div class="container1">
+		<span class="text1">Welcome to</span>
+		<span class="text2">Pong Game</span>
+		<div class="container2">
+			<LoggingButton :message="message"/>
+		</div>
+
+		<div class="container3">
+			<Leaderboard class="childLeader"/>
+		</div>
 	</div>
 	
 </div>
@@ -17,40 +18,77 @@
 
 <style scoped>
 
-.homeImage {
-	/* width: 20vw;
-	height: 20vh; */
-	right: 0px;
-	top: 0px;
-	position: absolute;
-	z-index: 10;
-}
-
-
 .fullPage {
+	min-width: 1000px;
 	height: 100%;
 	width: 100%;
 	position: absolute;
-	display: flex;
-	align-items: flex-start;
+	display: block;
 	background-color: #E6EFF2;
 	z-index: 100;
 }
 
-.welcome {
-	color: #73C6B6;
-	top: 10vh;
-	left: 70vw;
-	z-index: 100;
+.container1 span {
+	text-transform: uppercase;
+	display: block;
 }
 
+.container1 {
+	text-align: center;
+	position: relative;
+	top: 5%;
+}
 
-.leaderboard {
-	z-index: 1;
-	align-self: center;
-	top: 20vh;
-	width: 50%;
-	height: 50%;
+.text1 .text2 {
+	transform: translate(-50%, -50%);
+	width: 100%
+}
+
+.text1 {
+	color: #73C6B6;
+	font-size:3.5em;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	margin-bottom: 0.2em;
+	background: #E6EFF2;
+	position: relative;
+	animation: textAnim 4s 1;
+}
+
+.text2 {
+	font-weight: bold;
+	font-size: 1.7em;
+	color: #117864;
+}
+
+@keyframes textAnim {
+	0% {
+		color: #E6EFF2;
+		margin-bottom: -0.8em;
+	}
+	30% {
+		letter-spacing: 0.3em;
+		margin-bottom: -0.8em;
+	}
+	85% {
+		letter-spacing: 0.1em;
+		margin-bottom: -0.8em;
+	}
+	
+}
+
+.container2 {
+	position: relative;
+	margin-top: 10em;
+	margin-bottom: 8em;
+	/* left: 20vw; */
+}
+
+.container3 {
+
+	margin-top: 10em;
+	width: 50vw;
+	margin: 0 auto;
 }
 
 </style>
