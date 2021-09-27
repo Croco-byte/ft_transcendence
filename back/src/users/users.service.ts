@@ -11,6 +11,7 @@ import { paginate, Pagination, IPaginationOptions } from 'nestjs-typeorm-paginat
 import { UserStatus, User_Status } from './status.interface';
 import { unlink } from 'fs';
 import { Logger } from '@nestjs/common'
+import ChannelService from 'src/channels/channel.service';
 
 @Injectable()
 export class UsersService {
@@ -49,7 +50,7 @@ export class UsersService {
 
 	/* Returns all public informations about the user (everything but 2FA status and secret) */
 	async findUserById(id: number): Promise<User> {
-		const user = await this.usersRepository.findOne({ where: { id: id } });
+		const user = await this.usersRepository.findOne({ where: { id: id }, relations: ["blocked"]});
 		if (!user) {
 			throw new NotFoundException();
 		}
@@ -153,7 +154,8 @@ export class UsersService {
 		return "not-blocked";
 	}
 
-	async blockUser(currUserId: number, blockedUserId: number) {
+	async blockUser(currUserId: number, blockedUserId: number)
+	{
 		if (currUserId === blockedUserId) throw new ForbiddenException("You can't block yourself !");
 		const currUser: User = await this.usersRepository.findOne({
 			relations: ['blocked'],
@@ -164,13 +166,16 @@ export class UsersService {
 			where: { id: blockedUserId }
 		});
 		let userAlreadyBlocked = await this.isUserAlreadyBlocked(currUser, blockedUser);
-		if (userAlreadyBlocked === "not-blocked") {
+		if (userAlreadyBlocked === "not-blocked")
+		{
 			return await getConnection()
 					.createQueryBuilder()
 					.relation(User, "blocked")
 					.of(currUser)
 					.add(blockedUser);
-		} else {
+		}
+		else
+		{
 			throw new ForbiddenException("You already blocked this user, or this user already blocked you");
 		}
 	}
@@ -224,7 +229,7 @@ export class UsersService {
 		const receiver: User = await this.findUserById(receiverId);
 		const creator: User = await this.findUserById(creatorId);
 		const hasFriendRequestBeenSentOrReceived: string = await this.hasFriendRequestBeenSentOrReceived(creator, receiver);
-		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("A friend request already exists from / to this user, or you're already friends");
+		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("Can't send friend request. Possible reasons are : 1. You're already friends 2. A request already exists from or to this user 3. The user has already declined a request coming from you, and only him can send you one now ");
 		if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
 
 		let friendRequest: FriendRequest = {

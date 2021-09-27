@@ -2,12 +2,33 @@
 <div class='fullPage'>
 
 	<div class="container1">
-		<span class="text1">Welcome to</span>
-		<span class="text2">Pong Game</span>
-		<div class="container2">
-			<LoggingButton :message="message"/>
-		</div>
-
+		<p class="text1">Welcome to</p>
+		<p class="text2">Pong Game</p>
+		<div class="auth">
+			<div>
+				<h2> Login with username and password</h2>
+			</div>
+			<div class="buttons_container">
+				<div class="buttons_wrapper">
+					<div class="conf_selected" id="login_button" @click="changeBasicAuthMode($event, 'login')">Login</div>
+					<div id="register_button" @click="changeBasicAuthMode($event, 'register')">Register</div>
+				</div>
+			</div>
+			<div class="container1_5" v-if="config_mode === 'register'">
+				<div><input type="text" name="registerUsername" v-model="registerInput.username" placeholder="Username" /></div>
+				<div><input type="password" name="registerPassword" v-model="registerInput.password" placeholder="Password"/></div>
+				<div style="margin-top: 10px;"><button type="button" @click="register()">Register</button></div>
+			</div>
+			<div class="container1_7" v-if="config_mode === 'login'">
+				<div><input type="text" name="loginUsername" v-model="loginInput.username" placeholder="Username" /></div>
+				<div><input type="password" name="loginPassword" v-model="loginInput.password" placeholder="Password"/></div>
+				<div style="margin-top: 10px;"><button type="button" @click="login()">Login</button></div>
+			</div>
+			</div>
+			<div class="container2">
+				<h2>Login with 42</h2>
+				<LoggingButton :message="message"/>
+			</div>
 		<div class="container3">
 			<Leaderboard class="childLeader"/>
 		</div>
@@ -19,16 +40,14 @@
 <style scoped>
 
 .fullPage {
-	min-width: 1000px;
-	height: 100%;
+	padding: 2rem 0;
 	width: 100%;
-	position: absolute;
 	display: block;
 	background-color: #E6EFF2;
 	z-index: 100;
 }
 
-.container1 span {
+.container1 p {
 	text-transform: uppercase;
 	display: block;
 }
@@ -36,12 +55,12 @@
 .container1 {
 	text-align: center;
 	position: relative;
-	top: 5%;
 }
 
 .text1 .text2 {
 	transform: translate(-50%, -50%);
-	width: 100%
+	width: 100%;
+	margin: 0 auto;
 }
 
 .text1 {
@@ -68,26 +87,68 @@
 	}
 	30% {
 		letter-spacing: 0.3em;
-		margin-bottom: -0.8em;
+		margin-bottom: -1rem;
 	}
 	85% {
 		letter-spacing: 0.1em;
-		margin-bottom: -0.8em;
+		margin-bottom: -1rem;
 	}
 	
 }
 
-.container2 {
-	position: relative;
-	margin-top: 10em;
-	margin-bottom: 8em;
-	/* left: 20vw; */
+.auth
+{
+	display: flex;
+	width: 50%;
+	margin: auto;
+	justify-content: space-around;
+	text-align: center;
+	margin-bottom: 30px;
+	margin-top: 20px;
 }
 
+/*
+.container2 {
+	position: relative;
+	margin-top: 2.5em;
+	margin-bottom: 2.5em;
+} */
+
 .container3 {
-	margin-top: 10em;
 	width: 50vw;
+	margin-top: 2.5em;
 	margin: 0 auto;
+	padding: 0 2rem;
+}
+
+.buttons_container
+{
+	display: flex;
+	justify-content: center;
+	margin-bottom: 10px;
+}
+
+.buttons_wrapper
+{
+	display: flex;
+	flex-wrap: wrap;
+	align-self: center;
+}
+
+.buttons_wrapper > div
+{
+	padding: 0.25rem 1rem;
+	border: solid 1px #39d88f;
+	color: #39d88f;
+	font-size: 1rem;
+	cursor: pointer;
+	transition: all 0.25s;
+}
+
+.buttons_wrapper > .conf_selected
+{
+	background-color: #39d88f;
+	color: white;
 }
 
 </style>
@@ -97,10 +158,16 @@
 import { defineComponent } from 'vue';
 import Leaderboard from '../components/Leaderboard.vue';
 import LoggingButton from '../components/LoggingButton.vue';
+import AuthService from '../services/auth.service';
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 interface LoginViewData
 {
 	message: string;
+	registerInput: { username: string, password: string };
+	loginInput: { username: string, password: string };
+	config_mode: string;
 }
 
 export default defineComponent ({
@@ -110,11 +177,79 @@ export default defineComponent ({
 	data(): LoginViewData {
 		return {
 			message: this.$route.params.message as string || '',
+			registerInput: { username: "", password: "" },
+			loginInput: { username: "", password: "" },
+			config_mode: "login"
 		}
 	},
 
 	components: {
 		Leaderboard, LoggingButton
+	},
+
+	methods: {
+		register: function() {
+			AuthService.registerUserBasicAuth(this.registerInput.username, this.registerInput.password).then(
+				() => {
+					this.confirmNotification("User successfully registered");
+					this.registerInput.username = "";
+					this.registerInput.password = "";
+				},
+				(error) => {
+					this.registerInput.username = "";
+					this.registerInput.password = "";
+					if (error.response.data.message) this.errorNotification(error.response.data.message);
+					else this.errorNotification("Something went wrong");
+				}
+			)
+		},
+
+		login: async function() {
+			try {
+				const result = await this.$store.dispatch('basicAuthLogin', { username: this.loginInput.username, password: this.loginInput.password });
+				this.loginInput.username = "";
+				this.loginInput.password = "";
+				if (result.twoFARedirect === true) { this.$router.push('/twoFA'); }
+				else { this.$store.commit('loginSuccess', result); } 
+			} catch(e) {
+				this.loginInput.username = "";
+				this.loginInput.password = "";
+				this.$store.commit('disconnectUser', { message: e.message });
+			}
+		},
+
+		changeBasicAuthMode(event, mode)
+		{
+			let elem = document.getElementById(this.config_mode + '_button');
+			if (elem)
+				elem.classList.remove('conf_selected');
+			event.currentTarget.classList.add('conf_selected');
+			this.config_mode = mode;
+		},
+
+		confirmNotification: function(message: string): void {
+			createToast({
+				title: 'Success',
+				description: message
+			},
+			{
+				position: 'top-right',
+				type: 'success',
+				transition: 'slide'
+			})
+		},
+
+		errorNotification: function(message: string): void {
+			createToast({
+				title: 'Error',
+				description: message
+			},
+			{
+				position: 'top-right',
+				type: 'danger',
+				transition: 'slide'
+			})
+		}
 	},
 
 	updated(): void {

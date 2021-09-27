@@ -73,7 +73,7 @@ export class UserController {
 				where: [{ winner: req.user }, { looser: req.user }],
 				relations: ['winner', 'looser'],
 				order: {time: 'DESC'},
-				select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time', 'gameOptions']
+				select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time', 'gameOptions', 'looserdisconnected']
 			})).pipe(
 				map((matchHistoryPageable: Pagination<MatchHistoryEntity>) => {
 					var items = [];
@@ -161,12 +161,21 @@ export class UserController {
 	/* Get public informations about a particular user (whose ID is in the URL) */
 	@Get(':userId')
 	@UseGuards(JwtTwoFactorGuard)
-	findUserById(@Param('userId') userStringId: string) {
-		try {
+	async findUserById(@Param('userId') userStringId: string, @Req() req)
+	{
+		try
+		{
 			const userId = parseInt(userStringId);
 			if (!userId) throw new BadRequestException();
-			return this.userService.findUserById(userId);
-		} catch(e) {
+			let ret = await this.userService.findUserById(userId);
+			let user = await this.userService.findUserById(req.user.id);
+			if (ret.blocked.findIndex(u => u.id == user.id) != -1
+				|| user.blocked.findIndex(u => u.id == ret.id) != -1)
+				ret["isBlocked"] = true;
+			return (ret);
+		}
+		catch(e)
+		{
 			throw(e);
 		}
 	}
@@ -208,21 +217,24 @@ export class UserController {
 	}
 
 	/* ==== Endpoints allowing to block or unblock a user from current user ====*/
-	@Post('/block')
+	@Post('/:id/block')
 	@UseGuards(JwtTwoFactorGuard)
-	blockUser(@Body() blockedUserId: { id: number }, @Req() req) {
-		try {
-			return this.userService.blockUser(req.user.id, blockedUserId.id);
-		} catch (e) {
+	blockUser(@Param("id") blocked_id: number, @Req() req) {
+		try
+		{
+			return this.userService.blockUser(req.user.id, blocked_id);
+		}
+		catch (e)
+		{
 			throw new ForbiddenException(e.message);
 		}
 	}
 
-	@Post('/unblock')
+	@Post('/:id/unblock')
 	@UseGuards(JwtTwoFactorGuard)
-	unBlockUser(@Body() blockedUserId: { id: number }, @Req() req) {
+	unBlockUser(@Param("id") blocked_id: number, @Req() req) {
 		try {
-			return this.userService.unBlockUser(req.user.id, blockedUserId.id);
+			return this.userService.unBlockUser(req.user.id, blocked_id);
 		} catch (e) {
 			throw new ForbiddenException(e.message);
 		}

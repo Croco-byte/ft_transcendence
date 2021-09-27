@@ -61,6 +61,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 			console.log("[Status Gateway] Client connected to gateway : " + user.id);
 			client.data = { userId: user.id, username: user.username };
 			if (user.status !== "offline") {
+				console.log("User wasn't offline, so we're kicking him");
 				await this.userService.changeUserStatus(user.id, "offline");
 				this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id });
 			}
@@ -187,10 +188,10 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {
-		if (data.currUserId !== client.data.userId) {
+		if (client.data.userId && data.currUserId && data.currUserId !== client.data.userId) {
+			console.log("Detected a change in the JWT of the user (the user ID of the JWT isn't the same as the one the user connected to the gataway with). Bouncing new user.")
 			await this.userService.changeUserStatus(data.currUserId, "offline");
 			await this.userService.changeUserStatus(client.data.userId, "offline");
-			console.log("Detected a change in the JWT of the user (the user ID of the JWT isn't the same as the one the user connected to the gataway with). Bouncing new user.")
 			this.wss.emit('multipleConnectionsOnSameUser', { userId: data.currUserId })
 			client.disconnect();
 		}

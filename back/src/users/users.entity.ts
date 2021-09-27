@@ -14,6 +14,9 @@ export class User extends BaseEntity
 	@Column()
 	username: string;
 
+	@Column({ nullable: true })
+	password: string;
+
 	@Column({ default: "regular" })
 	is_admin: string;
 

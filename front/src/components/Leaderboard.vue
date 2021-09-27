@@ -88,7 +88,6 @@ export default defineComponent({
 <template>
 	<div id="leaderboard">
 		<div class="leaderboardUsers_item_container">
-			<h2>Leaderboard</h2>
 			<div class="leaderboard_header">
 				<div class="userInfo">
 					<div class="rank">
@@ -408,6 +407,20 @@ h2
 .leaderboard_item .image
 {
 	margin: 0 0.5rem;
+}
+
+@media screen and (max-width: 425px)
+{
+	.leaderboard_item .image,
+	.leaderboard_header .profile
+	{
+		display: none;
+	}
+
+	.pagination button
+	{
+		margin: 0;
+	}
 }
 
 

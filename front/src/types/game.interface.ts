@@ -65,6 +65,7 @@ export interface Setup
 export interface PlayerDbInfo
 {
 	username: string;
+	displayname: string;
 	avatar: string;
 }
 
@@ -85,6 +86,7 @@ export interface MatchHistory
 	looserScore: number;
 	time: string;
 	gameOptions: string;
+	looserdisconnected: boolean;
 }
 
 export interface MatchDisplay

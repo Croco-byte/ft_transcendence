@@ -6,7 +6,7 @@
 		<div class="playerInfo">
 			<div class="player1">
 				<div class="playerAvatar">
-					<h2 class="fontStyle">{{ this.endGameInfo.p1DbInfo.username}}</h2>
+					<h2 class="fontStyle">{{ this.endGameInfo.p1DbInfo.displayname}}</h2>
 					<div class="img">
 						<img class="avatar" :src="this.avatarPlayer1" alt="Player1Avatar">
 					</div>
@@ -25,7 +25,7 @@
 		<div class="playerInfo">
 			<div class="player2">
 				<div class="playerAvatar">
-					<h2 class="fontStyle">{{ this.endGameInfo.p2DbInfo.username}}</h2>
+					<h2 class="fontStyle">{{ this.endGameInfo.p2DbInfo.displayname}}</h2>
 					<div class="img">
 						<img class="avatar" :src="avatarPlayer2" alt="Player2Avatar">
 					</div>
@@ -97,6 +97,8 @@ img {
 	border-radius: 50%;
 	max-width: 100%;
 	max-height: 100%;
+	width: 8rem;
+	height: 8rem;
 }
 
 .winner {

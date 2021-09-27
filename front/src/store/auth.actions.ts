@@ -14,6 +14,15 @@ export const actions: ActionTree<RootState, RootState> = {
 		}
 	},
 
+	async basicAuthLogin({ commit }, payload: { username: string, password: string }): Promise<User | string> {
+		try {
+			const user = await AuthService.loginUserBasicAuth(payload.username, payload.password);
+			return Promise.resolve(user);
+		} catch(error) {
+			throw new Error(error.response.data.message);
+		}
+	},
+
 	async twoFALogin({ commit }, payload: { code: string }): Promise<User | string> {
 		try {
 			const user = await AuthService.twoFALogin(payload.code);

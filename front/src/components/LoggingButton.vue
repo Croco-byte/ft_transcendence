@@ -1,6 +1,5 @@
 <template>
 <div>
-	<p v-if='message !=""' style="color:#FF0000;"><b> {{ message }} </b></p>
 	<div class="buttonLogin">
 		<div v-if="$store.state.status.loggedIn === false">
 			<button class="cybr-btn" type="button" v-on:click="redirectTo42LoginPage()">
@@ -74,6 +73,7 @@ export default defineComponent({
 }
 
 .cybr-btn {
+  z-index: 1;
   --primary: hsl(var(--primary-hue), 85%, calc(var(--primary-lightness, 50) * 1%));
   --shadow-primary: hsl(var(--shadow-primary-hue), 90%, 50%);
   --primary-hue: 0;
@@ -105,8 +105,9 @@ export default defineComponent({
   position: relative;
   font-weight: 700;
   border: 0;
-  min-width: 300px;
   height: 75px;
+  padding: 0 3rem;
+  margin: 0 auto;
   line-height: 75px;
   transition: background 0.2s;
 }

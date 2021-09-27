@@ -23,4 +23,7 @@ export class MatchHistoryEntity extends BaseEntity {
 
 	@Column({ nullable: true })
 	gameOptions: string;
+
+	@Column({ nullable: true })
+	looserdisconnected: boolean;
 }

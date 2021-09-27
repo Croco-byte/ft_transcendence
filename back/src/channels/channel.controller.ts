@@ -1,14 +1,15 @@
-import { Controller, Req, Logger, Get, Post, Patch, Delete, Query, Param, Body, UseGuards, Request, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Req, Logger, Get, Post, Patch, Delete, Query, Param, Body, UseGuards, Request, UnauthorizedException, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Channel } from './channel.entity';
 import ChannelService from './channel.service';
 import StringUtils from 'src/utils/string';
 import { UsersService } from 'src/users/users.service';
-import { AppGateway } from 'src/app.gateway';
+import { AppGateway } from 'src/channels/channel.gateway';
 import JwtTwoFactorGuard from 'src/auth/jwt-two-factor-auth.guard';
 import { request } from 'express';
 import { User } from 'src/users/users.entity';
 import MessageService from 'src/messages/message.service';
 import { CreateChannelDto, EditTypeDto } from './dto/channel.dto';
+import * as bcrypt from 'bcrypt';
 
 @Controller('channels')
 @UseGuards(JwtTwoFactorGuard)
@@ -56,15 +57,23 @@ export class ChannelController
 			let to = await this.userService.findByUsername(body.to_user);
 			if (!to)
 				throw new NotFoundException("User " + body.to_user + " not found !");
+			channel.type = "private";
 			channel.users.push(to);
 			channel.administrators = channel.users;
+			channel.name = user.username + '_' + to.username; 
+			let exists = await this.channelService.directExists(user, to);
+			console.log("blocked => ", to.blocked, user.blocked);
+			if (exists)
+				return {id: exists.id};
 		}
 		channel = await this.channelService.insert(channel);
 
 		this.websocketGateway.joinChannel(channel, user);
+		if (channel.type == "public")
+			this.websocketGateway.createChannel();
 
 		this.logger.log("Create new channel named '" + body.name + "'");
-		return {message: "Channel " + body.name + " successfully created"};
+		return {message: "Channel " + body.name + " successfully created", id: channel.id};
 	}
 
 	@Get()
@@ -80,19 +89,39 @@ export class ChannelController
 
 		for (let i = 0; i < channels.length; i++)
 		{
-			ret.push(
+			let channel = 
 				{
 					id: channels[i].id,
 					name: channels[i].name,
+					type: channels[i].type,
 					lastMessage: channels[i].lastMessage,
 					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
+					creationDate: channels[i].creationDate.toLocaleDateString().replace(',', ''),
 					userRole: this.channelService.getUserRole(channels[i], user),
 					isJoined: this.channelService.isInChannel(channels[i], user),
-					requirePassword: channels[i].requirePassword
-				}
-			);
+					requirePassword: channels[i].requirePassword,
+					owner: (channels[i].owner ? channels[i].owner.toPublic() : null),
+					members: [],
+					administrators: [],
+				};
+			Object.assign(channel.members, await Promise.all(channels[i].users.map(async (user) =>
+			{
+				let ret = user.toPublic();
+				ret["isMuted"] = await this.channelService.isMuted(channels[i], user);
+				ret["isBanned"] = await this.channelService.isBanned(channels[i], user);
+				ret["isAdmin"] = this.channelService.isAdmin(channels[i], user);
+				return (ret);
+			})));
+			Object.assign(channel.administrators, await Promise.all(channels[i].administrators.map(async (user) =>
+			{
+				let ret = user.toPublic();
+				ret["isMuted"] = await this.channelService.isMuted(channels[i], user);
+				ret["isBanned"] = await this.channelService.isBanned(channels[i], user);
+				return (ret);
+			})));
+			ret.push(channel);
 		}
-		return ret;
+		return {channels: ret};
 	}
 
 	@Get("public")
@@ -166,7 +195,17 @@ export class ChannelController
 
 		for (let i = 0; i < channels.length; i++)
 		{
-			let name = "";
+			let isBlocked = false;
+			let u1 = channels[i].users[0];
+			let u2 = channels[i].users[1];
+			if (u1.blocked.findIndex(b => b.id == u2.id) != -1)
+				isBlocked = true;
+			if (u2.blocked.findIndex(b => b.id == u1.id) != -1)
+				isBlocked = true;
+
+			if (isBlocked)
+				continue ;
+
 			let second_user = channels[i].users.filter(u => u.id != user.id)[0];
 			ret.push(
 				{
@@ -187,9 +226,17 @@ export class ChannelController
 	@Delete(":channelID")
 	async deleteChannel(@Param("channelID") channelID: string, @Request() req)
 	{
-
-		await this.channelService.delete(channelID).then(res =>
+		let user = await this.userService.findOne(req.user.id);
+		if (!user)
+			throw new UnauthorizedException("User not found");
+		let channel = await this.channelService.findOne(channelID);
+		if (!channel)
+			throw new NotFoundException("Channel not found");
+		// If user is not admin of website - unauthorized
+		channel = await this.channelService.clean(channel);
+		await this.channelService.delete(channelID).then(() =>
 		{
+			this.websocketGateway.destroyChannel(channelID, channel.users, channel.name);
 			return {message: "Channel deleted successfully"};
 		});
 	}
@@ -202,6 +249,8 @@ export class ChannelController
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 		return await this.channelService.findOne(channelID).then(async c =>
 		{
+			if (!c)
+				throw new NotFoundException("Channel not found");
 			if (c.pending_users.findIndex(tmp_user => tmp_user.id == user.id) != -1)
 				throw new UnauthorizedException("You must authenticate to access to this channel !");
 
@@ -212,9 +261,16 @@ export class ChannelController
 				let ret = user.toPublic();
 				ret["isMuted"] = await this.channelService.isMuted(c, user);
 				ret["isBanned"] = await this.channelService.isBanned(c, user);
+				ret["isAdmin"] = this.channelService.isAdmin(c, user);
 				return (ret);
 			})));
-			Object.assign(channel.administrators, c.administrators.map((user) => user.toPublic()));
+			Object.assign(channel.administrators, await Promise.all(c.administrators.map(async (user) =>
+			{
+				let ret = user.toPublic();
+				ret["isMuted"] = await this.channelService.isMuted(c, user);
+				ret["isBanned"] = await this.channelService.isBanned(c, user);
+				return (ret);
+			})));
 			return channel;
 		});
 	}
@@ -232,7 +288,7 @@ export class ChannelController
 		if (channel.requirePassword && !body.password)
 			throw new BadRequestException("A password is required to join this channel");
 		
-		if (channel.requirePassword && body.password != channel.password)
+		if (channel.requirePassword && !(await this.channelService.check_password(channel, body.password)))
 			throw new UnauthorizedException("Invalid Password for channel '" + channel.name + "'");
 
 		this.channelService.addUser(channel, user, false);
@@ -266,26 +322,23 @@ export class ChannelController
 
 		if (!user)
 			throw new NotFoundException("User not found");
-		return await this.channelService.findOne(channelID).then(async (channel) =>
-		{
-			let username = body.username;
-		
-			if (!channel.owner || channel.owner.id != user.id)
-				throw new UnauthorizedException("You must be the owner to perform this action");
-
-			return await this.userService.findByUsername(username).then((admin) =>
-			{
-				if (!this.channelService.isInChannel(channel, admin))
-					throw new NotFoundException("Member " + admin.username + " not found in this channel");
-				this.channelService.addAdmin(channel, admin);
-
-				this.logger.log("New admin (user : '" + admin.username + "') in channel " + channel.name);
-				return {message: "Administrator '" + admin.username + "' added successfully"};
-			});
-		})
-		.catch(() =>
-		{
+		let channel = await this.channelService.findOne(channelID)
+		if (!channel)
 			throw new NotFoundException("Channel not found");
+		let username = body.username;
+	
+		if ((!channel.owner || channel.owner.id != user.id)
+			&& !(user.is_admin == "owner" || user.is_admin == "moderator"))
+			throw new UnauthorizedException("You must be the owner to perform this action");
+
+		return await this.userService.findByUsername(username).then((admin) =>
+		{
+			if (!this.channelService.isInChannel(channel, admin))
+				throw new NotFoundException("Member " + admin.username + " not found in this channel");
+			this.channelService.addAdmin(channel, admin);
+
+			this.logger.log("New admin (user : '" + admin.username + "') in channel " + channel.name);
+			return {message: "Administrator '" + admin.username + "' added successfully"};
 		});
 	}
 
@@ -300,8 +353,15 @@ export class ChannelController
 		{
 			await this.channelService.findOne(channelID).then(async channel =>
 			{
-				if (!(await this.channelService.isAdmin(channel, curr_user)))
+				if (!this.channelService.isAdmin(channel, curr_user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
 					throw new UnauthorizedException("You must be an administrator to perform this action.");
+
+				if (this.channelService.isAdmin(channel, user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
+					throw new UnauthorizedException("You must be the owner of this channel to mute Admin");
 
 				if ((await this.channelService.isMuted(channel, user)) == false)
 					this.channelService.muteUser(channel, user);
@@ -320,13 +380,21 @@ export class ChannelController
 		{
 			await this.channelService.findOne(channelID).then(async channel =>
 			{
-				if (!(await this.channelService.isAdmin(channel, curr_user)))
+				if (!this.channelService.isAdmin(channel, curr_user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
 					throw new UnauthorizedException("You must be an administrator to perform this action.");
+
+				if (this.channelService.isAdmin(channel, user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
+					throw new UnauthorizedException("You must be the owner of this channel to unmute Admin");
+
 				this.channelService.unmuteUser(channel, user);
 			});
 		});
-		this.logger.log("Mute user '" + username + "' to this channel");
-		return {message: "User " + username + " muted successfully"};
+		this.logger.log("Unmute user '" + username + "' to this channel");
+		return {message: "User " + username + " unmuted successfully"};
 	}
 
 	@Post(":channelID/members/:username/ban")
@@ -338,8 +406,15 @@ export class ChannelController
 		{
 			await this.channelService.findOne(channelID).then(async channel =>
 			{
-				if (!(await this.channelService.isAdmin(channel, curr_user)))
+				if (!this.channelService.isAdmin(channel, curr_user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
 					throw new UnauthorizedException("You must be an administrator to perform this action.");
+
+				if (this.channelService.isAdmin(channel, user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
+					throw new UnauthorizedException("You must be the owner of this channel to ban Admin");
 
 				if ((await this.channelService.isBanned(channel, user)) == false)
 					this.channelService.banUser(channel, user);
@@ -359,8 +434,16 @@ export class ChannelController
 		{
 			await this.channelService.findOne(channelID).then(async channel =>
 			{
-				if (!(await this.channelService.isAdmin(channel, curr_user)))
+				if (!this.channelService.isAdmin(channel, curr_user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
 					throw new UnauthorizedException("You must be an administrator to perform this action.");
+
+				if (this.channelService.isAdmin(channel, user)
+					&& !this.channelService.isOwner(channel, curr_user)
+					&& !(curr_user.is_admin == "owner" || curr_user.is_admin == "moderator"))
+					throw new UnauthorizedException("You must be the owner of this channel to unban Admin");
+
 				if (await this.channelService.isBanned(channel, user))
 				{
 					this.channelService.unbanUser(channel, user);
@@ -368,8 +451,8 @@ export class ChannelController
 				}
 			});
 		});
-		this.logger.log("Ban user '" + username + "' to this channel");
-		return {message: "User " + username + " banned successfully"};
+		this.logger.log("Unban user '" + username + "' to this channel");
+		return {message: "User " + username + " unbanned successfully"};
 	}
 
 	@Post(":channelID/messages")
@@ -391,14 +474,24 @@ export class ChannelController
 			|| await this.channelService.isBanned(channel, user)
 			|| this.channelService.isPendingUser(channel, user))
 			throw new UnauthorizedException("User cannot send message in this channel");
-		else
+		
+		if (channel.isDirect)
 		{
-			await this.messageService.add(channel, user, data.content).then(async (message) =>
-			{
-				await this.channelService.updateModifiedDate(channel);
-				this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.username, content: message.content, user_id: user.id}, user, channel);
-			});
+			let isBlocked = false;
+			let u1 = channel.users[0];
+			let u2 = channel.users[1];
+			if (u1.blocked.findIndex(b => b.id == u2.id) != -1)
+				isBlocked = true;
+			if (u2.blocked.findIndex(b => b.id == u1.id) != -1)
+				isBlocked = true;
+			if (isBlocked)
+				throw new ForbiddenException("You can't send message to this user.");
 		}
+		await this.messageService.add(channel, user, data.content).then(async (message) =>
+		{
+			await this.channelService.updateModifiedDate(channel);
+			this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.username, content: message.content, user_id: user.id}, user, channel);
+		});
 	}
 
 	@Get(":channelID")
@@ -417,6 +510,8 @@ export class ChannelController
 			throw new UnauthorizedException({message: "You must authenticate to access to this channel !", authentify_in_channel: true});
 			
 		let messages = await this.channelService.getMessages(channel);
+		let blockedUsers = await this.userService.getBiDirectionalBlockedUsers(user);
+		messages = messages.filter(msg => (blockedUsers.findIndex(u => u.id == msg.user.id) == -1));
 		for (let i = 0; i < messages.length; i++)
 		{
 			messages[i].user_id = messages[i].user.id;
@@ -495,13 +590,10 @@ export class ChannelController
 		if (!channel)
 			throw new NotFoundException("Channel not found");
 
-		if (channel.password == body.password)
-		{
-			this.channelService.removePendingUser(channel, user);
-			return ;
-		}
+		if (this.channelService.check_password(channel, body.channel))
+			await this.channelService.removePendingUser(channel, user);
 		else
-			throw new UnauthorizedException("Authentification failed, retry please.");
+			throw new UnauthorizedException("Invalid password");
 	}
 
 	@Delete("/:channelID/members")
@@ -536,6 +628,10 @@ export class ChannelController
 			throw new NotFoundException("User not found");
 		if (!this.channelService.isInChannel(channel, kicked_user))
 			throw new NotFoundException("User not in this channel");
+		if (this.channelService.isAdmin(channel, kicked_user) && !this.channelService.isOwner(channel, user))
+			throw new UnauthorizedException("You must be the owner to perform this action");
+		if (channel.owner && channel.owner.id == kicked_user.id)
+			throw new UnauthorizedException("You cannot kick owner of a channel !");
 		await this.channelService.removeUser(channel, kicked_user);
 		this.websocketGateway.kickMember(kicked_user, channel);
 		this.websocketGateway.leaveChannel(channel, kicked_user);
@@ -543,25 +639,21 @@ export class ChannelController
 	}
 
 	@Delete("/:channelID/admin/:username")
-	async kickAdmin(@Param("channelID") channelID: string, @Param("username") username: string, @Request() req)
+	async deleteAdmin(@Param("channelID") channelID: string, @Param("username") username: string, @Request() req)
 	{
-		let user = await this.userService.findById(req.user.id);
+		let user = await this.userService.findUserById(req.user.id);
 		let channel = await this.channelService.findOne(channelID);
 		if (!user)
-			throw new UnauthorizedException();
+			throw new UnauthorizedException("User not found");
 		if (!channel)
 			throw new NotFoundException("Channel not found");
-		if (!this.channelService.isOwner(channel, user))
-			throw new UnauthorizedException("You must be the owner to perform this action.");
-		let kickedAdmin = await this.userService.findByUsername(username);
-		if (!kickedAdmin)
+		if (!this.channelService.isOwner(channel, user)
+			&& !(user.is_admin == "owner" || user.is_admin == "moderator"))
+			throw new UnauthorizedException("You must be the owner of this channel to perform this action.");
+		let ex_admin = await this.userService.findByUsername(username);
+		if (!ex_admin || !this.channelService.isInChannel(channel, ex_admin))
 			throw new NotFoundException("User not found");
-		if (!this.channelService.isAdmin(channel, kickedAdmin))
-			throw new NotFoundException("User not in this channel");
-		await this.channelService.removeUser(channel, kickedAdmin);
-		this.websocketGateway.kickMember(kickedAdmin, channel);
-		this.websocketGateway.leaveChannel(channel, kickedAdmin);
-		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", kickedAdmin.username + " leave channel " + channel.name, channel);
+		this.channelService.removeAdmin(channel, ex_admin);
 	}
 
 	@Get("/:channelID/invitation")
