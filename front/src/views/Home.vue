@@ -7,6 +7,7 @@
 		<div class="auth">
 			<div>
 				<h2> Login with username and password</h2>
+			</div>
 			<div class="buttons_container">
 				<div class="buttons_wrapper">
 					<div class="conf_selected" id="login_button" @click="changeBasicAuthMode($event, 'login')">Login</div>
