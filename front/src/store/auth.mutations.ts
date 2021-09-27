@@ -7,6 +7,7 @@ import router from '../router/index';
 import store from './index';
 import Swal from 'sweetalert2';
 import axios from '../axios-instance';
+import GameService from '../services/game.service';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
 
@@ -43,7 +44,10 @@ export const mutations: MutationTree<RootState> = {
 		 * the user and asking him if he wants to join or not the private game.
 		 */
 		state.websockets.connectionStatusSocket.on('acceptChallenge', async (obj) => {
+
+			console.log('checking if this challenge is for us');
 			const result = await UserService.getCurrUserId();
+			console.log(`resultId = ${result.data.id} et objfriendID = ${obj.friendId}`);
 			if (obj.friendId === result.data.id) {
 				const resultCheckBox: any = await Swal.fire({
 					title: 'Someone\'s challenging you!',
@@ -53,15 +57,35 @@ export const mutations: MutationTree<RootState> = {
 				})
 					
 				if (resultCheckBox.value != false) {
-					await axios.post("http://" + window.location.hostname + ":3000" + '/game/joinChallenge/' 
-					+ obj.friendId, { newRoomId: obj.newRoomId }, {headers: authHeader()});
+					const userThatMadeRequest = await UserService.getUserInfo(obj.userId);
+					console.log(`userThatMadeRequest room ${userThatMadeRequest.data.roomId} and id ${userThatMadeRequest.data.id}`);
 
-					router.push(({name: 'Game', params: { 
-						RenderGameOption: 'false',
-						RenderGameJoin: 'true',
-						status: 'private',
-						random: this.GameService.generateRandomStr(),
-					}}));
+					console.log(`obj.newRoomId = ${obj.newRoomId.data}`);
+					console.log(obj);
+
+					if (userThatMadeRequest.data.roomId === obj.newRoomId.data) {
+						await axios.post("http://" + window.location.hostname + ":3000" + '/game/joinChallenge/' 
+						+ obj.friendId, { newRoomId: obj.newRoomId }, {headers: authHeader()});
+
+						router.push(({name: 'Game', params: { 
+							RenderGameOption: 'false',
+							RenderGameJoin: 'true',
+							status: 'private',
+							random: GameService.generateRandomStr(),
+						}}));
+					}
+
+					else
+						createToast({
+							title: 'Error',
+							description: 'The invitation has expired',
+						},
+						{
+							position: 'top-right',
+							type: 'danger',
+							transition: 'slide'
+						});
+
 				}
 				else if (state.websockets.connectionStatusSocket) {
 					state.websockets.connectionStatusSocket.emit('challengeDeclined', obj.userId);
@@ -76,11 +100,24 @@ export const mutations: MutationTree<RootState> = {
 		state.websockets.connectionStatusSocket.on('cancelPrivateGame', async (userId) => {
 			
 			const result = await UserService.getCurrUserId();
+			console.log(`cancelPrivateGame, result.data.id = ${result.data.id} et userID = ${userId}`);
+
 			if (userId === result.data.id) {
-				router.push(({name: 'Home' }));
+				
+				const result = await UserService.getCurrUserStatus();
+				console.log(`status = ${result.data.status}`);
+				if (result.data.status === 'in-queue') {
+					router.push(({name: 'Game', params: { 
+						RenderGameOption: 'true',
+						RenderGameJoin: 'false',
+						status: 'privateCancelled',
+						random: GameService.generateRandomStr(),
+					}}));
+				}
+
 				createToast({
 					title: 'Error',
-					description: 'Your friend refused the invitation',
+					description: 'Your friend refused your invitation',
 				},
 				{
 					position: 'top-right',

@@ -46,14 +46,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
 			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
-			
-			this.logger.log(`user.id = ${user.id} user.status = ${user.status}`);
 
 			client.data = { userDbId: user.id, userStatus: user.status, roomId: user.roomId };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
-			console.log(`JUSTE APRES CONNEXION client.data.userDbId = ${client.data.userDbId}`);
-
-			
 		} 
 		catch(e) {
 			this.logger.log('Unauthorized client trying to connect');
@@ -68,11 +63,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
 		}
 		else if (client.data.roomId === 'none') {
-			this.logger.log(`GAME NORMAL`)
 			client.emit('renderOption');
 		}
 		else {
-			this.logger.log(`GAME PRIVATE`)
 			client.emit('waitInPrivateQueue');
 		}
 	}
@@ -90,23 +83,19 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		let room: Room = this.gameService.findRoomByPlayerId(client.id);
 		
 		if (room && room.game.isStarted) {
-			this.logger.log('CASE 1');
 			clearInterval(room.intervalId);
-			this.gameService.updateScores(this.wss, room, client.id);
+			this.gameService.updateScores(client, this.wss, room, client.id);
 		}
 		
 		else if (room && room.player2Id != '') {
-			this.logger.log('CASE 2');
 			this.wss.to(room.name).emit('resetMatchmaking');
 			this.gameService.removeRoom(this.wss, room);
 		}
 		
 		else if (room) {
-			this.logger.log('CASE 3');
 			this.gameService.removeRoom(this.wss, room);
 		}
 		else {
-			this.logger.log('CASE 4');
 			this.usersService.updateRoomId(client.data.userDbId, 'none');
 		}
 	}
@@ -144,17 +133,22 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
-	@SubscribeMessage('privateGame')
-	async handlePrivateGame(@ConnectedSocket() client: Socket, @MessageBody() privateRoomId: string) : Promise<void>
+	@SubscribeMessage('waitInPrivateQueue')
+	async handleWaitInPrivateQueue(@ConnectedSocket() client: Socket) : Promise<void>
 	{
-		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, privateRoomId);
+		const user: User = await this.usersService.findUserById(client.data.userDbId);
+		client.data.roomId = user.roomId;
+		client.emit('waitInPrivateQueue');
+	}
+
+	@SubscribeMessage('privateGame')
+	async handlePrivateGame(@ConnectedSocket() client: Socket) : Promise<void>
+	{
+		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, client.data.roomId);
 
 		client.join(room.name);
-
-		if (room.player2Id === '')
-			client.emit('waitingForPlayer');
 		
-		else if (room.player2Id != '') {
+		if (room.player2Id != '') {
 			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
 
@@ -181,7 +175,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 				if (this.gameService.updateGame(room)) {
 					clearInterval(room.intervalId);
-					this.gameService.updateScores(this.wss, room);
+					this.gameService.updateScores(client, this.wss, room);
 				}
 			}, this.gameService.FRAMERATE);
 		}
@@ -206,8 +200,16 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * @param boolean True if the player was playing, false if it was in-queue.
 	 */
 	@SubscribeMessage('disconnectClient')
-	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
+	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
 		client.disconnect();
+	}
+
+	@SubscribeMessage('privateCancelled')
+	handlePrivateCancelled(@ConnectedSocket() client: Socket): void
+	{
+		const room: Room = this.gameService.findRoomByPlayerId(client.id);
+		this.gameService.removeRoom(this.wss, room);
+		client.data.roomId = 'none';
 	}
 };

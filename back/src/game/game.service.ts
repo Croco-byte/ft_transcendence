@@ -18,7 +18,7 @@ import {
   matchHistory,
 } from './interfaces/game.interface';
 import { MatchHistoryEntity } from '../users/match-history.entity';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
@@ -229,8 +229,9 @@ export class GameService
 	 * @param room Object with game information.
 	 * @param clientId Client socket ID. Fills it if the player disconnected.
 	 */
-	async updateScores(wss: Socket, room: Room, clientId?: string): Promise<boolean>
+	async updateScores(client: Socket, wss: Socket, room: Room, clientId?: string): Promise<boolean>
 	{
+		client.data.roomId = 'none';
 		this.logger.log(`Game won (client id: ${clientId} (room id: ${room.name})`);
 		const endGameInfo: EndGameInfo = await this.resetEndGameInfo(room, clientId);
 

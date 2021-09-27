@@ -22,6 +22,7 @@ import axios from '../axios-instance';
 import authHeader from '../services/auth-header';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
+import GameService from '../services/game.service';
 
 export default defineComponent({
 	
@@ -54,29 +55,29 @@ export default defineComponent({
 		launchSpectate() : void
 		{
 			console.log('launchSpectate listener event');
-			this.RenderGameOption = false;
+			this.resetData();
 			this.isSpectating = true;
 			this.isStarting = true;
 		},
 
-		async launchChallengeAgain(obj: any)
-		{
-			const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + obj.userId, {},
-				{headers: authHeader()});
+		// async launchChallengeAgain(obj: any)
+		// {
+		// 	const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + obj.userId, {},
+		// 		{headers: authHeader()});
 				
-			this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
-				userId: obj.userId,
-				friendId: obj.friendId,
-				newRoomId: newRoomId,
-			});
+		// 	this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
+		// 		userId: obj.userId,
+		// 		friendId: obj.friendId,
+		// 		newRoomId: newRoomId,
+		// 	});
 			
-			router.push(({name: 'Game', params: { 
-				RenderGameOption: 'false',
-				RenderGameJoin: 'true',
-				status: 'private',
-				random: this.GameService.generateRandomStr(),
-			}}));
-		},
+		// 	router.push(({name: 'Game', params: { 
+		// 		RenderGameOption: 'false',
+		// 		RenderGameJoin: 'true',
+		// 		status: 'private',
+		// 		random: GameService.generateRandomStr(),
+		// 	}}));
+		// },
 
 		renderOption() : void
 		{
@@ -86,8 +87,9 @@ export default defineComponent({
 		waitInPrivateQueue() : void
 		{
 			this.socket.emit('privateGame');
+			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
+			this.resetData();
 			this.isPrivate = true;
-			this.RenderGameOption = false;
 			this.RenderGameJoin = true;
 
 			createToast({
@@ -105,16 +107,25 @@ export default defineComponent({
 		{
 			console.log('waitingForPlayer listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
-			this.RenderGameOption = false;
+			this.resetData();
 			this.RenderGameJoin = true;
 		},
 		
 		resetMatchmaking() : void
 		{
+			createToast({
+				title: 'Error',
+				description: 'Opponent left the queue',
+			},
+			{
+				position: 'top-right',
+				type: 'danger',
+				transition: 'slide'
+			});
+
 			console.log('resetMatchmaking listener event');
+			this.resetData();
 			this.RenderGameOption = true;
-			this.RenderGameJoin = false;
-			this.isStarting = false;
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 		},
 
@@ -190,23 +201,29 @@ export default defineComponent({
 
 		playAgain() : void
 		{
-			this.RenderGameEnd = false;
+			this.resetData();
 			this.RenderGameOption = true;
+		},
+
+		// async playPrivateAgain(obj: any) : Promise<void>
+		// {	
+		// 	this.resetData();
+			
+		// 	await this.launchChallengeAgain(obj);
+		// 	this.isPrivate = true;
+		// 	this.RenderGameJoin = true;
+		// },
+
+		resetData() : void
+		{
+			this.RenderGameOption = false;
+			this.RenderGameJoin  = false;
+			this.RenderGamePlay = false;
+			this.RenderGameEnd = false;
+			this.isPrivate = false;
 			this.isStarting = false;
 			this.isSpectating = false;
 		},
-
-		async playPrivateAgain(obj: any) : Promise<void>
-		{	
-			this.RenderGameEnd = false;
-			this.isStarting = false;
-			this.isSpectating = false;
-
-			await this.launchChallengeAgain(obj);
-
-			this.socket.emit('privateGame');
-			this.isPrivate = true;
-		}
 	},
 
 	created() 
@@ -281,13 +298,20 @@ export default defineComponent({
 
 	beforeRouteUpdate (to, from , next)
 	{
-		console.log(this.$route.params);
-		console.log(this.$route.params.caca);
-		console.log(this.$route.params.RenderGameOption);
-		console.log(this.$route.params.RenderGameJoin);
 		console.log('beforerouteupdate');
-		console.log(to);
-		// this.socket.emit('renderFirstScreen');
+
+		if (to.params.status === 'private') {
+			this.socket.emit('waitInPrivateQueue');
+		}
+
+		if (to.params.status === 'privateCancelled' && !this.RenderGamePlay) {
+			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
+
+			this.resetData();
+			this.RenderGameOption = true;
+			this.socket.emit('privateCancelled');
+		}
+
 		next();
 	}
 })
@@ -299,5 +323,6 @@ export default defineComponent({
 {
 	background-color: #E6EFF2;
 }
+
 
 </style>

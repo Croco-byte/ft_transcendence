@@ -164,6 +164,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('challengeSomebody')
 	async handleChallengeSomebody(@ConnectedSocket() client: Socket, @MessageBody() obj: any)
 	{
+		this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
 		const user: User = await this.userService.findUserById(obj.userId);
 		obj.username = user.username;
 		this.wss.emit('acceptChallenge', obj);
@@ -179,6 +180,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('challengeDeclined')
 	async handleDeclinedChallenge(@ConnectedSocket() client: Socket, @MessageBody() userId: number)
 	{
+		this.logger.log('STATUS GATEWAY CHALLENGEDECLINED');
 		this.userService.updateRoomId(userId, 'none');
 		this.wss.emit('cancelPrivateGame', userId);
 	}

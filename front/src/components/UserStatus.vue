@@ -60,14 +60,14 @@ export default defineComponent({
 					RenderGameOption: 'false',
 					RenderGamePlay: 'true',
 					status: 'spectate',
-					random: this.GameService.generateRandomStr(),
+					random: GameService.generateRandomStr(),
 				}}));
 			});
 		},
 
 		async launchChallenge()
 		{
-			
+			console.log(`dans launchChallenge: userId ${this.userId}, friendId: ${this.friendId}`);
 			const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + this.userId, {},
 				{headers: authHeader()});
 				
@@ -81,7 +81,7 @@ export default defineComponent({
 				RenderGameOption: 'false',
 				RenderGameJoin: 'true',
 				status: 'private',
-				random: this.GameService.generateRandomStr(),
+				random: GameService.generateRandomStr(),
 			}}));
 		},
 	},

@@ -142,24 +142,23 @@ export default defineComponent({
 			const header = document.getElementById('header') as HTMLElement;
 
 			if (this.canvas && this.fullGameWindow && header) {
+				let widthWithoutHeader: number = this.fullGameWindow.clientWidth - header.offsetWidth;
 
-				let heightWithoutHeader: number = this.fullGameWindow.clientHeight - header.offsetHeight;
-
-				if (this.fullGameWindow.clientWidth < this.room.game.width || 
-						heightWithoutHeader < this.room.game.height) {
+				if (widthWithoutHeader < this.room.game.width || 
+						this.fullGameWindow.clientHeight < this.room.game.height) {
 					this.canvas.width = this.room.game.width;
 					this.canvas.height = this.room.game.height;
 				}
 
-				else if (heightWithoutHeader * this.gameScale() 
-						< this.fullGameWindow.clientWidth) {
-					this.canvas.width = heightWithoutHeader * this.gameScale();
-					this.canvas.height = heightWithoutHeader;
+				else if (this.fullGameWindow.clientHeight * this.gameScale() 
+						< widthWithoutHeader) {
+					this.canvas.width = this.fullGameWindow.clientHeight * this.gameScale();
+					this.canvas.height = this.fullGameWindow.clientHeight;
 				}
 
 				else {
-					this.canvas.width = this.fullGameWindow.clientWidth;
-					this.canvas.height = this.fullGameWindow.clientWidth * this.gameScaleReverse();
+					this.canvas.width = widthWithoutHeader;
+					this.canvas.height = widthWithoutHeader * this.gameScaleReverse();
 				}
 			}
 		},

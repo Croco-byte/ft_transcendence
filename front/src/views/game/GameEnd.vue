@@ -170,12 +170,7 @@ button {
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
 import { EndGameInfo } from '../../types/game.interface'
-import { User } from '../../types/user.interface'
 import UserService from '../../services/user.service'
-import authService from '../../services/auth.service'
-import router from '../../router/index';
-import axios from '../../axios-instance';
-import authHeader from '../../services/auth-header';
 
 export default defineComponent ({
 	
@@ -207,24 +202,7 @@ export default defineComponent ({
 	methods: {
 		async playingAgain()
 		{
-			if (!this.isPrivate)
-				this.$emit('playAgain');
-			else {
-				let userId = 0;
-				let friendId = 0;
-				const res = await UserService.getCurrUserId();
-				
-				if (res.data.id === this.endGameInfo.room.user1DbId) {
-					userId = this.endGameInfo.room.user1DbId;
-					friendId = this.endGameInfo.room.user2DbId;
-				}
-				else {
-					userId = this.endGameInfo.room.user2DbId;
-					friendId = this.endGameInfo.room.user1DbId;
-				}
-
-				this.$emit('playPrivateAgain', { userId, friendId });
-			}
+			this.$emit('playAgain');
 		},
 
 		async loadAvatar(playerDbId: string) : Promise<void>
@@ -252,6 +230,10 @@ export default defineComponent ({
 		if (this.isSpectating) {
 			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
 			buttonPlayingAgain.innerHTML = "FINISH SPECTATING AND START A MATCH";
+		}
+		else if (this.isPrivate) {
+			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
+			buttonPlayingAgain.innerHTML = "GO BACK TO NORMAL QUEUE";
 		}
 	}
 })

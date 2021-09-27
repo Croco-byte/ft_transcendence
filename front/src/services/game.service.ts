@@ -5,11 +5,11 @@ class GameService {
 	 */
 	generateRandomStr() : string
 	{
-		const length: number = 12;
-		const charset: string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-		let retVal: string = "";
+		const length = 12;
+		const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		let retVal = "";
 		
-		for (var i = 0, n = charset.length; i < length; ++i) {
+		for (let i = 0, n = charset.length; i < length; ++i) {
 			retVal += charset.charAt(Math.floor(Math.random() * n));
 		}
 		return retVal;

@@ -85,7 +85,6 @@
 }
 
 .container3 {
-
 	margin-top: 10em;
 	width: 50vw;
 	margin: 0 auto;
