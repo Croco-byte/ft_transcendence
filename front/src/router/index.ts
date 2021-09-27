@@ -34,7 +34,7 @@ const routes = [
 		beforeEnter: ifAuthenticated
 	},
 	{
-		path: '/chat',
+		path: '/chat/:direct_id?',
 		name: 'Chat',
 		component: () => import('../components/Chat.vue'),
 		beforeEnter: ifAuthenticated

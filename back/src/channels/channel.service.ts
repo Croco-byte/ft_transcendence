@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { tmpdir } from "os";
 import ChannelBannedUserService from "./channel_banned_users/channel_banned_user.service";
@@ -12,11 +12,12 @@ import { Connection, getConnection, getRepository, Repository } from "typeorm";
 import {Channel} from './channel.entity';
 import { InvitationLink } from "./invitation_links/invitation_link.entity";
 import { InvitationService } from "./invitation_links/invitation.service";
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export default class ChannelService
 {
-	private relations : Array<string> = ["users", "administrators", "owner", "pending_users", "invitation_links"];
+	private relations : Array<string> = ["users", "users.blocked", "administrators", "owner", "pending_users", "invitation_links"];
 	constructor (
 				@InjectRepository(Channel) private repository: Repository<Channel>,
 				private readonly channelMutedUserService: ChannelMutedUserService,
@@ -42,11 +43,11 @@ export default class ChannelService
 		return user.channels.filter(channel => !channel.isDirect);
 	}
 
-	async findAllDirectChannels(user: User)
+	async findAllDirectChannels(user: User): Promise<Channel[]>
 	{
 		let channels = user.channels.filter(channel => channel.isDirect);
 		let ids = new Array<number>();
-		let ret = [];
+		let ret = new Array<Channel>();
 		for (let channel of channels)
 		{
 			let c = await this.repository.find({relations: this.relations, where: { id: channel.id}});
@@ -57,12 +58,22 @@ export default class ChannelService
 
 	async findAll(): Promise<Channel[]>
 	{
-		return await this.repository.find({relations: this.relations});
+		return await this.repository.find({relations: this.relations, where:[{isDirect: false}]});
 	}
 	
 	async findOne(id: string): Promise<Channel>
 	{
 		return await this.repository.findOne({relations: this.relations, where: [{id: id}]});
+	}
+
+	async directExists(user_1: User, user_2: User): Promise<Channel>
+	{
+		let name = user_1.username + "_" + user_2.username;
+		let name_2 = user_2.username + "_" + user_1.username;
+		let channel = await this.repository.createQueryBuilder("channel")
+			.where("name = :name or name = :name_2", {name: name, name_2: name_2})
+			.getOne();
+		return channel
 	}
 	
 	async delete(id: string): Promise<void>
@@ -78,7 +89,10 @@ export default class ChannelService
 	async addUser(channel: Channel, user: User, enable_pending: boolean = true)
 	{
 		if (channel.users == null)
+		{
+			console.log("channel.user = null, intialize...", channel.users);
 			channel.users = new Array();
+		}
 		if (channel.requirePassword && enable_pending)
 		{
 			if (!channel.pending_users)
@@ -92,9 +106,17 @@ export default class ChannelService
 
 	async addPassword(channel: Channel, password: string)
 	{
-		channel.requirePassword = true;
-		channel.password = password;
-		this.repository.save(channel);
+		bcrypt.hash(password, 10, (err, hash) =>
+		{
+			channel.requirePassword = true;
+			channel.password = hash;
+			this.repository.save(channel);
+		});
+	}
+
+	async check_password(channel: Channel, password: string)
+	{
+		return await bcrypt.compare(password, channel.password)
 	}
 
 	async removePassword(channel: Channel)
@@ -110,6 +132,14 @@ export default class ChannelService
 			channel.administrators = new Array();
 	
 		channel.administrators.push(user);
+		this.repository.save(channel);
+	}
+
+	async removeAdmin(channel: Channel, user: User)
+	{
+		let index = channel.administrators.findIndex(admin => admin.id == user.id);
+		if (index != -1)
+			channel.administrators.splice(index, 1);
 		this.repository.save(channel);
 	}
 
@@ -250,5 +280,38 @@ export default class ChannelService
 		channel.invitation_links.push(link);
 		await this.repository.save(channel);
 		return link.path;
+	}
+
+	async removeMessages(channel: Channel): Promise<Channel>
+	{
+		channel.messages = [];
+		return await this.repository.save(channel);
+	}
+
+	async removeInvitations(channel: Channel): Promise<Channel>
+	{
+		channel.invitation_links = [];
+		return await this.repository.save(channel);
+	}
+
+	async removeMutedUsers(channel: Channel): Promise<Channel>
+	{
+		channel.mutedUsers = [];
+		return await this.repository.save(channel);
+	}
+
+	async removeBannedUsers(channel: Channel): Promise<Channel>
+	{
+		return await this.channelBannedUserService.removeAllFromChannel(channel);
+	}
+
+	async clean(channel: Channel): Promise<Channel>
+	{
+		channel = await this.removeMessages(channel);
+		channel = await this.removeInvitations(channel);
+		channel = await this.removeInvitations(channel);
+		channel = await this.removeMutedUsers(channel);
+		await this.removeBannedUsers(channel);
+		return channel;
 	}
 }

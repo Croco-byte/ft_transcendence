@@ -11,7 +11,7 @@ import { ChannelModule } from './channels/channel.module';
 import { MessageModule } from './messages/message.module';
 import { ChannelMutedUserModule } from './channels/channel_muted_users/channel_muted_user.module';
 import { ChannelBannedUserModule } from './channels/channel_banned_users/channel_banned_user.module';
-import { AppGateway } from './app.gateway';
+import { AppGateway } from './channels/channel.gateway';
 import configuration from './config/configuration_env';
 import { RankingController } from './ranking/ranking.controller';
 

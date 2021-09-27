@@ -2,8 +2,8 @@
 <div class='fullPage'>
 
 	<div class="container1">
-		<span class="text1">Welcome to</span>
-		<span class="text2">Pong Game</span>
+		<p class="text1">Welcome to</p>
+		<p class="text2">Pong Game</p>
 		<div class="auth">
 			<div>
 				<h2> Login with username and password</h2>
@@ -28,8 +28,6 @@
 				<h2>Login with 42</h2>
 				<LoggingButton :message="message"/>
 			</div>
-		</div>
-
 		<div class="container3">
 			<Leaderboard class="childLeader"/>
 		</div>
@@ -41,16 +39,14 @@
 <style scoped>
 
 .fullPage {
-	min-width: 1000px;
-	height: 100%;
+	padding: 2rem 0;
 	width: 100%;
-	position: absolute;
 	display: block;
 	background-color: #E6EFF2;
 	z-index: 100;
 }
 
-.container1 span {
+.container1 p {
 	text-transform: uppercase;
 	display: block;
 }
@@ -58,12 +54,12 @@
 .container1 {
 	text-align: center;
 	position: relative;
-	top: 5%;
 }
 
 .text1 .text2 {
 	transform: translate(-50%, -50%);
-	width: 100%
+	width: 100%;
+	margin: 0 auto;
 }
 
 .text1 {
@@ -90,11 +86,11 @@
 	}
 	30% {
 		letter-spacing: 0.3em;
-		margin-bottom: -0.8em;
+		margin-bottom: -1rem;
 	}
 	85% {
 		letter-spacing: 0.1em;
-		margin-bottom: -0.8em;
+		margin-bottom: -1rem;
 	}
 	
 }
@@ -109,18 +105,19 @@
 	margin-bottom: 30px;
 	margin-top: 20px;
 }
+
 /*
 .container2 {
 	position: relative;
-	margin-top: 10em;
-	margin-bottom: 8em;
+	margin-top: 2.5em;
+	margin-bottom: 2.5em;
 } */
 
 .container3 {
 
-	margin-top: 10em;
-	width: 50vw;
+	margin-top: 2.5em;
 	margin: 0 auto;
+	padding: 0 2rem;
 }
 
 .buttons_container
