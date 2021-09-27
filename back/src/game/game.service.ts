@@ -215,7 +215,8 @@ export class GameService
 		!endGameInfo.clientId ? wss.to(room.name).emit('gameEnded', endGameInfo) : 
 				wss.to(room.name).emit('opponentLeft', endGameInfo);
 
-		await this.addToMatchHistory(room);
+		!clientId ? await this.addToMatchHistory(room) :
+					await this.addToMatchHistoryAfterDisconnexion(room, clientId);
 		
 		!clientId ?	await this.updateScoresDueToWin(room) :
 					await this.updateScoresDueDisconnexion(room, clientId);
@@ -254,12 +255,14 @@ export class GameService
 			const winnerScore = room.game.p1Score;
 			const looserScore = room.game.p2Score;
 			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
+			const looserdisconnected = false;
 			const record: matchHistory= {
 				winner,
 				looser,
 				winnerScore,
 				looserScore,
-				gameOptions
+				gameOptions,
+				looserdisconnected
 			}
 			await this.matchHistoryRepository.save(record);
 		}
@@ -270,12 +273,54 @@ export class GameService
 			const winnerScore = room.game.p2Score;
 			const looserScore = room.game.p1Score;
 			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
+			const looserdisconnected = false;
 			const record: matchHistory= {
 				winner,
 				looser,
 				winnerScore,
 				looserScore,
-				gameOptions
+				gameOptions,
+				looserdisconnected
+			}
+			await this.matchHistoryRepository.save(record);
+		}
+	}
+
+	async addToMatchHistoryAfterDisconnexion(room: Room, clientId: string): Promise<void>
+	{
+		if (clientId === room.player1Id)
+		{
+			const winner: User = await this.usersService.findUserById(room.user2DbId);
+			const looser: User = await this.usersService.findUserById(room.user1DbId);
+			const winnerScore = room.game.p2Score;
+			const looserScore = room.game.p1Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
+			const looserdisconnected = true;
+			const record: matchHistory= {
+				winner,
+				looser,
+				winnerScore,
+				looserScore,
+				gameOptions,
+				looserdisconnected
+			}
+			await this.matchHistoryRepository.save(record);
+		}
+		else
+		{
+			const winner: User = await this.usersService.findUserById(room.user1DbId);
+			const looser: User = await this.usersService.findUserById(room.user2DbId);
+			const winnerScore = room.game.p1Score;
+			const looserScore = room.game.p2Score;
+			const gameOptions = '{ "level": ' + room.game.p1Left.setup.level +', "score": ' + room.game.p1Left.setup.score + ' }';
+			const looserdisconnected = true;
+			const record: matchHistory= {
+				winner,
+				looser,
+				winnerScore,
+				looserScore,
+				gameOptions,
+				looserdisconnected
 			}
 			await this.matchHistoryRepository.save(record);
 		}
@@ -438,7 +483,7 @@ export class GameService
 			return {
 				clientId: _clientId,
 				p1DbInfo: await this.resetPlayerDbInfo(_room.user1DbId),
-				p2DbInfo: { username: '', avatar: '' },
+				p2DbInfo: { username: '', displayname: '', avatar: '' },
 				room: _room,
 			}
 		}
@@ -453,6 +498,7 @@ export class GameService
 			const user = await this.usersService.updateRoomId(userDbId, 'none');
 			return {
 				username: user.username,
+				displayname: user.displayname,
 				avatar: user.avatar,
 			}
 		}

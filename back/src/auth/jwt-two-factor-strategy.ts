@@ -23,7 +23,7 @@ export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-fa
 
 	async validate(payload: any) {
 		const user = await User.findOne({ where: { id: payload.id } });
-		if (user.is_blocked) throw new HttpException("You are blocked from the website", 444);
+		if (user && user.is_blocked) throw new HttpException("You are blocked from the website", 444);
 		
 		if (user && !user.isTwoFactorAuthenticationEnabled) {
 			return { id: user.id, username: user.username, is_admin: user.is_admin };

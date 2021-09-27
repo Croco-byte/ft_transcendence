@@ -14,12 +14,19 @@ class AuthService {
 		return JSON.parse(atob(user.accessToken.split('.')[1]));
 	}
 
-	/* Sends the authentification request to backend, and return the resulting acces token. */
+	/* Sends the authentification request to backend, and return the resulting access token. */
 	async login(code, state) {
 			const response = await axios.post(API_URL + 'login', { code: code, state: state });
 			if (response.data.accessToken) localStorage.setItem('user', JSON.stringify(response.data));
 			else throw new Error();
 			return response.data;
+	}
+
+	async loginUserBasicAuth(username: string, password: string) {
+		const response = await axios.post(API_URL + "login/basic_auth_login", { username: username, password: password });
+		if (response.data.accessToken) localStorage.setItem('user', JSON.stringify(response.data));
+		else throw new Error();
+		return response.data;
 	}
 
 	/* Sends the 2FA authentication request to backend, removes previous JWT (non-2FA JWT) and replaces it with a 2FA JWT. */
@@ -49,6 +56,10 @@ class AuthService {
 	/* Allows to turn off 2FA */
 	turnOff2FA() {
 		return axios.post(API_URL + "2fa/turn-off", '', { headers: authHeader() });
+	}
+
+	registerUserBasicAuth(username: string, password: string) {
+		return axios.post(API_URL + "login/basic_auth_register", { username: username, password: password });
 	}
 }
 

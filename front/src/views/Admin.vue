@@ -4,7 +4,7 @@
     <h2>Website administration</h2>
 	<div class="owner">
 		<h2>Owner</h2>
-		<p><i class="fas fa-crown"></i> <a :href="'/user/' + owner.id ">{{ owner.displayname }}</a></p>
+		<p><i class="fas fa-crown"></i> <router-link :to="{ name: 'User', params: { id: owner.id }}">{{ owner.displayname }}</router-link></p>
 	</div>
 	<div class="mods">
 		<h2>Moderators</h2>
@@ -13,7 +13,7 @@
 				<div class="mods_avatar">
 					<img :src="moderatorsAvatars[index]"/>
 				</div>
-				<p><a :href="'/user/' + moderator.id ">{{ moderator.displayname }}</a></p>
+				<p><router-link :to="{ name: 'User', params: { id: moderator.id }}">{{ moderator.displayname }}</router-link></p>
 			</div>
 			<div class="paginationMenu">
 				<p class="pagination">
@@ -36,7 +36,7 @@
 		<h2>Blocked users</h2>
 				<div v-if="blockedUsers.length > 0">
 			<div class="blockedUsers_items" v-for="(blockedUser) in blockedUsers" :key="blockedUser.id">
-				<p><i class="fas fa-caret-right"></i> <a :href="'/user/' + blockedUser.id ">{{ blockedUser.displayname }}</a></p>
+				<p><i class="fas fa-caret-right"></i> <router-link :to="{ name: 'User', params: { id: blockedUser.id }}">{{ blockedUser.displayname }}</router-link></p>
 			</div>
 			<div class="paginationMenu">
 				<p class="pagination">
@@ -61,7 +61,7 @@
 	<div v-if="users.length > 0" class="users_item_container">
 		<div class="users_item" v-for="user in users" :key="user.id">
 			<div class="displayname">
-				<a :href="'/user/' + user.id ">{{ user.displayname }}</a>
+				<router-link :to="{ name: 'User', params: { id: user.id }}">{{ user.displayname }}</router-link>
 			</div>
 			<div class="status">
 				[status]

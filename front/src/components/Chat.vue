@@ -794,7 +794,7 @@ export default defineComponent(
 					</div>
 					<div class="view">
 						<div v-for="message in channel.messages" :key="message" class="message" :class="{ me: isMe(message)}">
-							<a class="username" :href="getUserLink(message.user_id)">{{ message.user }}</a>
+							<router-link class="username" :to="{ name: 'User', params: { id: message.user_id }}">{{ message.user }}</router-link>
 							<p class="content">{{ message.content }}</p>
 						</div>
 					</div>

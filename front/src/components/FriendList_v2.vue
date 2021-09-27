@@ -184,7 +184,7 @@ export default defineComponent({
 					<img :src="avatars[index]"/>
 				</div>
 				<p class="username">
-					<a :href="'/user/' + friend.id ">{{ friend.displayname }}</a>
+					<router-link :to="{ name: 'User', params: { id: friend.id }}">{{ friend.displayname }}</router-link>
 				</p>
 				<UserStatus :status="friend.status" :friendId="friend.id" :userId="currUserId"/>
 				<button class="unfriend_button" v-on:click="unfriendUser(friend.id)">Unfriend</button>

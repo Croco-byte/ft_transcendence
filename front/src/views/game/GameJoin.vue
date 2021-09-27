@@ -48,19 +48,15 @@ export default defineComponent({
 
 <style>
 .text {
-	margin-top: 30%;
+	margin-top: 20vh;
 	position: relative;
 	text-align: center;
 	font-size:3vw;
-	font-weight: bold;
 }
 
-p {
-	top: 40%;
-}
-
-.test {
-	height: 50%;
+#msg {
+	letter-spacing: 0.2em;
+	font-weight: 700;
 }
 
 

@@ -6,8 +6,10 @@
 		<div class="playerInfo">
 			<div class="player1">
 				<div class="playerAvatar">
-					<h2 class="fontStyle">{{ this.endGameInfo.p1DbInfo.username}}</h2>
-					<img :src="this.avatarPlayer1" width="200" height="200" alt="Player1Avatar">
+					<h2 class="fontStyle">{{ this.endGameInfo.p1DbInfo.displayname}}</h2>
+					<div class="img">
+						<img class="avatar" :src="this.avatarPlayer1" alt="Player1Avatar">
+					</div>
 				</div>
 				<div class="gameStatus">
 					<p class="loser fontStyle" v-if="this.endGameInfo.clientId === this.endGameInfo.room.player1Id">DISCONNECTED</p>
@@ -23,8 +25,10 @@
 		<div class="playerInfo">
 			<div class="player2">
 				<div class="playerAvatar">
-					<h2 class="fontStyle">{{ this.endGameInfo.p2DbInfo.username}}</h2>
-					<img :src="avatarPlayer2" width="200" height="200" alt="Player2Avatar">
+					<h2 class="fontStyle">{{ this.endGameInfo.p2DbInfo.displayname}}</h2>
+					<div class="img">
+						<img class="avatar" :src="avatarPlayer2" alt="Player2Avatar">
+					</div>
 				</div>
 				<div class="gameStatus">
 					<p class="loser fontStyle" v-if="this.endGameInfo.clientId === this.endGameInfo.room.player2Id">DISCONNECTED</p>
@@ -51,6 +55,8 @@
 
 <style scoped>
 
+
+
 .fontStyle {
 	font-size: 3vw;
 	text-align: center;
@@ -59,14 +65,10 @@
 
 .init {
 	top: 10vh;
-	position: absolute;
-	width: 100vw;
-	height: 80vh;
-	/* background-color: crimson; */
+	position: relative;
 }
 
 .profile {
-	/* background-color: blueviolet; */
 	position: relative;
 	display: flex;
 	width: 100 vw;
@@ -74,10 +76,9 @@
 
 .playerInfo {
 	width: 50vw;
-	height: 40vh;
+	height: auto;
 	display: flex;
 	justify-content: center;
-	/* background-color: darkgreen; */
 }
 
 .playerBorder {
@@ -85,12 +86,24 @@
 	border-color: #4F4F4F;
 }
 
+.img {
+	min-width: 10rem;
+	width: 25%;
+	height: auto;
+	margin: 0 auto;
+}
+
 img {
 	border-radius: 50%;
+	max-width: 100%;
+	max-height: 100%;
+	width: 8rem;
+	height: 8rem;
 }
 
 .winner {
 	color: #28B463 ;
+	width: 100%;
 }
 
 .loser {
@@ -98,7 +111,6 @@ img {
 }
 
 .scoreGame {
-	/* background-color: gold; */
 	display: flex;
 	justify-content: space-evenly;
 	position: relative;
@@ -111,7 +123,6 @@ img {
 
 .play-again {
 	width: 100vw;
-	/* background-color: cyan; */
 	position: relative;
 	display: flex;
 	justify-content: center;
