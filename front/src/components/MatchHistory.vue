@@ -73,6 +73,8 @@ export default defineComponent({
 		},
 
 		showGameScore: function(match: MatchHistory): string {
+			if (match.looserdisconnected && match.winner.id === this.currUserId) return "Opponent disconnected";
+			if (match.looserdisconnected && match.winner.id !== this.currUserId) return "You disconnected"
 			if (match.winner.id === this.currUserId) return match.winnerScore + " - " + match.looserScore;
 			else return match.looserScore + " - " + match.winnerScore;
 		},
@@ -86,6 +88,7 @@ export default defineComponent({
 			if (ref.historyMeta.totalPages > 0 && (Number.isNaN(page) || page < 1 || page > this.historyMeta.totalPages)) return ;
 			UserService.getHistory(page).then(
 				response => {
+					ref.matches = [];
 					ref.historyMeta = response.data.meta;
 					for (let i = 0; i < response.data.items.length; i++) {
 						ref.matches[i] = {};

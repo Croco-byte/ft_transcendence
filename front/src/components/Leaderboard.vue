@@ -88,7 +88,6 @@ export default defineComponent({
 <template>
 	<div id="leaderboard">
 		<div class="leaderboardUsers_item_container">
-			<h2>Leaderboard</h2>
 			<div class="leaderboard_header">
 				<div class="userInfo">
 					<div class="rank">

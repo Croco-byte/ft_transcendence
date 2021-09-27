@@ -224,7 +224,7 @@ export class UsersService {
 		const receiver: User = await this.findUserById(receiverId);
 		const creator: User = await this.findUserById(creatorId);
 		const hasFriendRequestBeenSentOrReceived: string = await this.hasFriendRequestBeenSentOrReceived(creator, receiver);
-		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("A friend request already exists from / to this user, or you're already friends");
+		if (hasFriendRequestBeenSentOrReceived === "true") throw new Error("Can't send friend request. Possible reasons are : 1. You're already friends 2. A request already exists from or to this user 3. The user has already declined a request coming from you, and only him can send you one now ");
 		if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
 
 		let friendRequest: FriendRequest = {

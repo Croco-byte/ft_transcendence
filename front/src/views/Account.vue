@@ -180,6 +180,10 @@ export default defineComponent({
 				transition: 'slide'
 			})
 		},
+
+		sleep: function(time: number) {
+			return new Promise((resolve) => setTimeout(resolve, time));
+		}
 	},
 
 	created(): void {
@@ -197,7 +201,6 @@ export default defineComponent({
 				this.score = response.data.score;
 				this.wins = response.data.wins;
 				this.loses = response.data.loses;
-				this.status = response.data.status;
 		},
 		() => { console.log("Error in retrieving the informations for the current user"); })
 

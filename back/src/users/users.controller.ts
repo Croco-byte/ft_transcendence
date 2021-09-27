@@ -73,7 +73,7 @@ export class UserController {
 				where: [{ winner: req.user }, { looser: req.user }],
 				relations: ['winner', 'looser'],
 				order: {time: 'DESC'},
-				select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time', 'gameOptions']
+				select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time', 'gameOptions', 'looserdisconnected']
 			})).pipe(
 				map((matchHistoryPageable: Pagination<MatchHistoryEntity>) => {
 					var items = [];

@@ -1,6 +1,5 @@
 <template>
 <div>
-	<p v-if='message !=""' style="color:#FF0000;"><b> {{ message }} </b></p>
 	<div class="buttonLogin">
 		<div v-if="$store.state.status.loggedIn === false">
 			<button class="cybr-btn" type="button" v-on:click="redirectTo42LoginPage()">

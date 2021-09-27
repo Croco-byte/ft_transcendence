@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { User } from '../users/users.entity';
+import * as bcrypt from 'bcrypt';
 
 
 @Injectable()
@@ -39,8 +40,19 @@ export class AuthService {
 				this.logger.log("We don\'t have the user " + infos.username + ". Creating it in database.");
 				const newUser = User.create();
 				newUser.username = infos.username;
-				newUser.displayname = infos.username;
-				if (newUser.username === this.configService.get<string>('WEBSITE_OWNER')) newUser.is_admin = "owner";
+				if (infos.username === this.configService.get<string>('WEBSITE_OWNER')) newUser.is_admin = 'owner';
+
+				let displayname = infos.username;
+				let tool = 1;
+				let displaynameConflict: User | null = await User.findOne({ where: { displayname: displayname } });
+				while (displaynameConflict)
+				{
+					tool++;
+					displayname = infos.username + "_" + tool.toString();
+					displaynameConflict = await User.findOne({ where: { displayname: displayname } });
+				}
+
+				newUser.displayname = displayname;
 				await User.save(newUser);
 			}
 			const user = await User.findOne({ where: { username: infos.username } });
@@ -91,11 +103,52 @@ export class AuthService {
 	}
 
 	async registerUserBasicAuth(username: string, password: string) {
-		const existing = await User.findOne({ where : [
-			{ username: username },
-			{ displayname: username}
-		]});
-		if (existing) throw new ForbiddenException("Username is already taken.");
-		
+		try {
+			console.log(username + " | " + typeof(username));
+			if (!username || username.length <= 3) throw new ForbiddenException("Name must be at least 4 characters");
+			if (!password || password.length <= 6) throw new ForbiddenException("Password must be at least 7 characters");
+			const invalidChars = /^[a-zA-Z0-9-_]+$/;
+			if (username.search(invalidChars) === -1 || username.length > 15) throw new ForbiddenException("Invalid characters in username or username too long");
+			
+			const existing = await User.findOne({ where :
+				{ displayname: username }
+			});
+			if (existing) throw new ForbiddenException("Name is already taken.");
+
+			const newUser = User.create();
+			newUser.username = "unknown";
+			newUser.displayname = username;
+			newUser.password = await bcrypt.hash(password, 5);
+			return await User.save(newUser);
+		} catch (e) {
+			throw e;
+		}
 	}
+
+	async authenticateUserBasicAuth(username: string, password: string) {
+		try {
+			if (!username || !password) throw new ForbiddenException("Username or password empty");
+			const invalidChars = /^[a-zA-Z0-9-_]+$/;
+			if (username.search(invalidChars) === -1 || username.length > 15) throw new ForbiddenException("Invalid characters in username or username too long");
+			const existingUser = await User.findOne({ where: { displayname: username } });
+			if (!existingUser) throw new ForbiddenException("No user with such username");
+
+			const passwordMatch = await bcrypt.compare(password, existingUser.password);
+			if (!passwordMatch) throw new ForbiddenException("Wrong password for this username");
+
+
+			let returnObject : { username?: string, accessToken?: string, twoFARedirect?: boolean };
+			returnObject = {};
+			returnObject.username = existingUser.username;
+			returnObject.accessToken = this.jwtService.sign({ id: existingUser.id, username: existingUser.username, isSecondFactorAuthenticated: false }, { expiresIn: '24h' });
+			if (existingUser.isTwoFactorAuthenticationEnabled === true) {
+				returnObject.twoFARedirect = true;
+			}
+			return returnObject;
+		} catch (e) {
+			throw e;
+		}
+	}
+
+
 }
