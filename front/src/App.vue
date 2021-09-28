@@ -27,6 +27,7 @@ export default defineComponent({
 		margin: 0;
 		overflow-x: hidden;
 		font-family: 'Source Sans Pro';
+		background: #E6EFF2;
 	}
 
 	*
@@ -59,7 +60,7 @@ export default defineComponent({
 	.router_view
 	{
 		width: 100%;
-		background: white;
+		background: #E6EFF2;
 		transition: all 0.25s;
 		min-height: 100vh;
 	}
