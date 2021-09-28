@@ -1,7 +1,6 @@
 <script lang="ts">
 import { defineComponent } from '@vue/runtime-core';
 import Header from './components/Header.vue';
-import UserService from './services/user.service';
 
 export default defineComponent({
 	name: 'App',
@@ -28,6 +27,7 @@ export default defineComponent({
 		margin: 0;
 		overflow-x: hidden;
 		font-family: 'Source Sans Pro';
+		background: #E6EFF2;
 	}
 
 	*
@@ -60,7 +60,7 @@ export default defineComponent({
 	.router_view
 	{
 		width: 100%;
-		background: white;
+		background: #E6EFF2;
 		transition: all 0.25s;
 		min-height: 100vh;
 	}

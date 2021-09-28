@@ -9,7 +9,7 @@
 
 
 <script lang="ts">
-import { defineComponent, watch } from 'vue'
+import { defineComponent } from 'vue'
 import { Setup } from '../types/game.interface'
 import GameOption from './game/GameOption.vue'
 import GamePlay from './game/GamePlay.vue'
@@ -17,12 +17,9 @@ import GameJoin from './game/GameJoin.vue'
 import GameEnd from './game/GameEnd.vue'
 import io from 'socket.io-client'
 import { Room, EndGameInfo } from '../types/game.interface'
-import router from '../router/index';
-import axios from '../axios-instance';
 import authHeader from '../services/auth-header';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
-import GameService from '../services/game.service';
 
 export default defineComponent({
 	
@@ -31,8 +28,11 @@ export default defineComponent({
 
 	data() {
 		return {
+			// eslint-disable-next-line
 			socket: null as any,
+			// eslint-disable-next-line
 			room: null as any,
+			// eslint-disable-next-line
 			endGameInfo: null as any,
 			RenderGameOption: true,
 			RenderGameJoin: false as boolean,
@@ -59,25 +59,6 @@ export default defineComponent({
 			this.isSpectating = true;
 			this.isStarting = true;
 		},
-
-		// async launchChallengeAgain(obj: any)
-		// {
-		// 	const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + obj.userId, {},
-		// 		{headers: authHeader()});
-				
-		// 	this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
-		// 		userId: obj.userId,
-		// 		friendId: obj.friendId,
-		// 		newRoomId: newRoomId,
-		// 	});
-			
-		// 	router.push(({name: 'Game', params: { 
-		// 		RenderGameOption: 'false',
-		// 		RenderGameJoin: 'true',
-		// 		status: 'private',
-		// 		random: GameService.generateRandomStr(),
-		// 	}}));
-		// },
 
 		renderOption() : void
 		{

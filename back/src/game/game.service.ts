@@ -237,7 +237,7 @@ export class GameService
 	async updateScores(client: Socket, wss: Socket, room: Room, clientId?: string): Promise<boolean>
 	{
 		client.data.roomId = 'none';
-		this.logger.log(`Game won (client id: ${clientId} (room id: ${room.name})`);
+		this.logger.log(`Game won (room id: ${room.name})`);
 		const endGameInfo: EndGameInfo = await this.resetEndGameInfo(room, clientId);
 
 		!endGameInfo.clientId ? wss.to(room.name).emit('gameEnded', endGameInfo) : 

@@ -15,6 +15,7 @@ export default defineComponent({
 	},
 	mounted()
 	{
+		// eslint-disable-next-line
 		let id = this.$route.params.id;
 		window.setTimeout(() =>
 		{

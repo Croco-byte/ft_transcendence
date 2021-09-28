@@ -85,9 +85,11 @@ export default defineComponent(
 					axios.post(this.serverURL + '/channels/' + channel.id + '/members', {password: password}, {headers: authHeader()})
 					.then(() =>
 					{
-						this.loadChannelsList();
-						this.channels[id].isJoined = true;
-						this.switchChat(this.channels[id].id);
+						this.loadChannelsList().then(() =>
+						{
+							this.channels[id].isJoined = true;
+							this.switchChat(this.channels[id].id);
+						})
 					})
 					.catch(error =>
 					{
@@ -120,7 +122,8 @@ export default defineComponent(
 
 		loadMessages(): void
 		{
-			axios.get(this.serverURL + "/channels/" + this.channel.id + "/", {headers: authHeader()}).then((res: {data: {messages: Array<MessageInterface>, user_role: string}}) =>
+			axios.get(this.serverURL + "/channels/" + this.channel.id + "/", {headers: authHeader()})
+			.then((res: {data: {messages: Array<MessageInterface>, user_role: string}}) =>
 			{
 				this.channel.messages = res.data.messages;
 				this.channel.user_role = res.data.user_role;
@@ -906,7 +909,8 @@ export default defineComponent(
 			}
 			else
 			{
-				this.channel.messages.push(data);
+				if (this.channel.messages)
+					this.channel.messages.push(data);
 			}
 		})
 		socket.on('new_member', (msg: string) =>
@@ -1012,7 +1016,7 @@ export default defineComponent(
 							<p class="title">{{ chan.name }}</p>
 							<p class="date">{{ chan.modifiedDate }}</p>
 						</div>
-						<p class="last_msg_preview">Je suis le message...</p>
+						<p class="last_msg_preview"></p>
 						<div class="new_sticker" v-if="chan.has_new_message"></div>
 					</div>
 				</div>

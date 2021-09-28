@@ -5,6 +5,8 @@ import AuthService from '../services/auth.service';
 
 
 export const actions: ActionTree<RootState, RootState> = {
+	
+	// eslint-disable-next-line
 	async login({ commit }, payload: { code: string, state: string }): Promise<User | string> {
 		try {
 			const user = await AuthService.login(payload.code, payload.state);
@@ -14,6 +16,7 @@ export const actions: ActionTree<RootState, RootState> = {
 		}
 	},
 
+	// eslint-disable-next-line
 	async basicAuthLogin({ commit }, payload: { username: string, password: string }): Promise<User | string> {
 		try {
 			const user = await AuthService.loginUserBasicAuth(payload.username, payload.password);
@@ -23,6 +26,7 @@ export const actions: ActionTree<RootState, RootState> = {
 		}
 	},
 
+	// eslint-disable-next-line
 	async twoFALogin({ commit }, payload: { code: string }): Promise<User | string> {
 		try {
 			const user = await AuthService.twoFALogin(payload.code);
