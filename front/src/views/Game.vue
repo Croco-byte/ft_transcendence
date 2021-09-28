@@ -229,4 +229,9 @@ export default defineComponent({
 	background-color: #E6EFF2;
 }
 
+#game
+{
+	min-height: 100%;
+}
+
 </style>

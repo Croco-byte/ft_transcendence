@@ -4,31 +4,33 @@
 	<div class="container1">
 		<p class="text1">Welcome to</p>
 		<p class="text2">Pong Game</p>
-		<div class="auth">
-			<div>
-				<h2> Login with username and password</h2>
-			</div>
-			<div class="buttons_container">
-				<div class="buttons_wrapper">
-					<div class="conf_selected" id="login_button" @click="changeBasicAuthMode($event, 'login')">Login</div>
-					<div id="register_button" @click="changeBasicAuthMode($event, 'register')">Register</div>
+		<div class="auth_container">
+			<div class="auth">
+				<div>
+					<h2> Login with username and password</h2>
 				</div>
-			</div>
-			<div class="container1_5" v-if="config_mode === 'register'">
-				<div><input type="text" name="registerUsername" v-model="registerInput.username" placeholder="Username" /></div>
-				<div><input type="password" name="registerPassword" v-model="registerInput.password" placeholder="Password"/></div>
-				<div style="margin-top: 10px;"><button type="button" @click="register()">Register</button></div>
-			</div>
-			<div class="container1_7" v-if="config_mode === 'login'">
-				<div><input type="text" name="loginUsername" v-model="loginInput.username" placeholder="Username" /></div>
-				<div><input type="password" name="loginPassword" v-model="loginInput.password" placeholder="Password"/></div>
-				<div style="margin-top: 10px;"><button type="button" @click="login()">Login</button></div>
-			</div>
+				<div class="buttons_container">
+					<div class="buttons_wrapper">
+						<div class="conf_selected" id="login_button" @click="changeBasicAuthMode($event, 'login')">Login</div>
+						<div id="register_button" @click="changeBasicAuthMode($event, 'register')">Register</div>
+					</div>
+				</div>
+				<div class="container1_5" v-if="config_mode === 'register'">
+					<div><input type="text" name="registerUsername" v-model="registerInput.username" placeholder="Username" /></div>
+					<div><input type="password" name="registerPassword" v-model="registerInput.password" placeholder="Password"/></div>
+					<div style="margin-top: 10px;"><button type="button" @click="register()">Register</button></div>
+				</div>
+				<div class="container1_7" v-if="config_mode === 'login'">
+					<div><input type="text" name="loginUsername" v-model="loginInput.username" placeholder="Username" /></div>
+					<div><input type="password" name="loginPassword" v-model="loginInput.password" placeholder="Password"/></div>
+					<div style="margin-top: 10px;"><button type="button" @click="login()">Login</button></div>
+				</div>
 			</div>
 			<div class="container2">
 				<h2>Login with 42</h2>
 				<LoggingButton :message="message"/>
 			</div>
+		</div>
 		<div class="container3">
 			<Leaderboard class="childLeader"/>
 		</div>
@@ -96,23 +98,57 @@
 	
 }
 
+.auth_container
+{
+	display: flex;
+	flex-direction: row-reverse;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.auth_container > *
+{
+	padding: 0 2rem;
+}
+
 .auth
 {
 	display: flex;
-	width: 50%;
-	margin: auto;
+	flex-direction: column;
 	justify-content: space-around;
 	text-align: center;
 	margin-bottom: 30px;
 	margin-top: 20px;
 }
 
-/*
-.container2 {
+.auth input
+{
+	margin: 0.25rem 0;
+}
+
+.auth button
+{
+	padding: 0.25rem 2rem;
+	border: solid 1px transparent;
+	background: #39d88f;
+	color: white;
+	cursor: pointer;
+	transition: all 0.25s;
+}
+
+.auth button:hover
+{
+	background: transparent;
+	color: #39d88f;
+	border-color: #39d88f;
+}
+
+.container2
+{
 	position: relative;
 	margin-top: 2.5em;
 	margin-bottom: 2.5em;
-} */
+}
 
 .container3 {
 

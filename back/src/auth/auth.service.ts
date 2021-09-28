@@ -116,7 +116,7 @@ export class AuthService {
 			if (existing) throw new ForbiddenException("Name is already taken.");
 
 			const newUser = User.create();
-			newUser.username = "unknown";
+			newUser.username = "_" + username;
 			newUser.displayname = username;
 			newUser.password = await bcrypt.hash(password, 5);
 			return await User.save(newUser);

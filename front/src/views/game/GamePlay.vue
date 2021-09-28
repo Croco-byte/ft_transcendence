@@ -207,9 +207,17 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.fullWindow {
-	width: 100vw;
-	height: 100vh;
+
+.fullWindow
+{
+	width: 100%;
+	min-height: 100vh;
 	background-color: #778899;
 }
+
+canvas
+{
+	box-shadow: 0px 0px 17px 10px #FFFFFF;
+}
+
 </style>

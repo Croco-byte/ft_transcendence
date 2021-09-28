@@ -122,7 +122,7 @@ img {
 }
 
 .play-again {
-	width: 100vw;
+	width: 100%;
 	position: relative;
 	display: flex;
 	justify-content: center;

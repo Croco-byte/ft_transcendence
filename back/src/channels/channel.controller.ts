@@ -71,6 +71,8 @@ export class ChannelController
 		this.websocketGateway.joinChannel(channel, user);
 		if (channel.type == "public")
 			this.websocketGateway.createChannel();
+		else if (channel.type == "private" && channel.isDirect)
+			this.websocketGateway.joinChannel(channel, channel.users[1]);
 
 		this.logger.log("Create new channel named '" + body.name + "'");
 		return {message: "Channel " + body.name + " successfully created", id: channel.id};
