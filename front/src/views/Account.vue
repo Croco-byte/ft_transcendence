@@ -21,7 +21,7 @@
 		<div id="info">
 			<div class="header_wrapper">
 			<div class="header">
-				<h2>{{ displayname }}</h2>
+				<h2 style="margin-right: 10px;">{{ displayname }}</h2>
 				<UserStatus :status="status"/>
 			</div>
 			<div v-if="admin">
@@ -278,7 +278,6 @@ export default defineComponent({
 	flex-wrap: wrap;
 	justify-content: space-around;
     align-items: center;
-	background-color: white;
 	height: 100%;
     padding: 2rem;
     width: 100%;
@@ -352,13 +351,7 @@ export default defineComponent({
 	height: 250px;
 	max-width: 100%;
 	max-height: 100%;
-	object-fit: contain;
 	border-radius: 100%;
-}
-
-#config
-{
-	display: flex;
 }
 
 #info_and_match_history

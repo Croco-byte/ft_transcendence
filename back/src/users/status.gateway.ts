@@ -167,7 +167,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	{
 		this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
 		const user: User = await this.userService.findUserById(obj.userId);
-		obj.username = user.username;
+		obj.username = user.displayname;
 		this.wss.emit('acceptChallenge', obj);
 	}
 

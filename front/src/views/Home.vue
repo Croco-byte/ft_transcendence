@@ -28,7 +28,7 @@
 			</div>
 			<div class="container2">
 				<h2>Login with 42</h2>
-				<LoggingButton :message="message"/>
+				<LoggingButton/>
 			</div>
 		</div>
 		<div class="container3">
@@ -200,7 +200,6 @@ import 'mosha-vue-toastify/dist/style.css';
 
 interface LoginViewData
 {
-	message: string;
 	registerInput: { username: string, password: string };
 	loginInput: { username: string, password: string };
 	config_mode: string;
@@ -212,7 +211,6 @@ export default defineComponent ({
 
 	data(): LoginViewData {
 		return {
-			message: this.$route.params.message as string || '',
 			registerInput: { username: "", password: "" },
 			loginInput: { username: "", password: "" },
 			config_mode: "login"
@@ -287,9 +285,5 @@ export default defineComponent ({
 			})
 		}
 	},
-
-	updated(): void {
-		this.message = this.$route.params.message as string;
-	}
 })
 </script>

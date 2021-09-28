@@ -33,12 +33,6 @@ import { defineComponent, watch } from 'vue'
 export default defineComponent({
 	name: 'Login',
 
-	props: {
-		message: {
-			type: String,
-		},
-	},
-
 	components: {
 	},
 

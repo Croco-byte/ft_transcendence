@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 const ifAuthenticated = (from, to, next) =>
 {
@@ -7,7 +9,16 @@ const ifAuthenticated = (from, to, next) =>
 		next();
 		return ;
 	}
-	next({name: 'Home', params: { message: 'Please login first !' }} );
+	createToast({
+		title: 'Error',
+		description: 'Please login first !'
+	},
+	{
+		position: 'top-right',
+		type: 'danger',
+		transition: 'slide'
+	})
+	next({name: 'Home'} );
 }
 
 const routes = [

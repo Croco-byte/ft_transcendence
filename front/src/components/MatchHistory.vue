@@ -132,7 +132,7 @@ export default defineComponent({
 	<div id="yourHistory">
 		<div class="header">
 			<div><i class="fas fa-th-list"></i></div>
-			<h2>Match history</h2>
+			<h2 style="margin-left: 10px;">Match history</h2>
 		</div>
 		<div class="history_item_container">
 			<div class="history_header">
@@ -212,7 +212,6 @@ export default defineComponent({
 	display: flex;
 	flex-direction: column;
 	/* border: solid 1px rgb(50, 50, 50); */
-	background-color: white;
 }
 
 .header
