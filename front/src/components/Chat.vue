@@ -85,9 +85,11 @@ export default defineComponent(
 					axios.post(this.serverURL + '/channels/' + channel.id + '/members', {password: password}, {headers: authHeader()})
 					.then(() =>
 					{
-						this.loadChannelsList();
-						this.channels[id].isJoined = true;
-						this.switchChat(this.channels[id].id);
+						this.loadChannelsList().then(() =>
+						{
+							this.channels[id].isJoined = true;
+							this.switchChat(this.channels[id].id);
+						})
 					})
 					.catch(error =>
 					{
@@ -906,7 +908,8 @@ export default defineComponent(
 			}
 			else
 			{
-				this.channel.messages.push(data);
+				if (this.channel.messages)
+					this.channel.messages.push(data);
 			}
 		})
 		socket.on('new_member', (msg: string) =>
