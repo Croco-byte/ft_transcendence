@@ -17,7 +17,8 @@ import { getConnection } from 'typeorm';
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
 export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
-	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
+	constructor(private readonly authService: AuthService, 
+		private readonly userService: UsersService) {}
 
 	async onModuleInit() {
 		await getConnection()
@@ -150,6 +151,40 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 		}
 	}
 
+	
+	// -------------------------------------------------------
+	// ------------------ PRIVATE GAME PART ------------------ 
+	
+	/**
+	 * Relay to everybody a private game request. Adds username of user that made the request.
+	 * 
+	 * @param client Socket object.
+	 * @param obj	Contains user db id (made the private game request) and friend db id 
+	 * 				(targeted by private game request).
+	 */
+	@SubscribeMessage('challengeSomebody')
+	async handleChallengeSomebody(@ConnectedSocket() client: Socket, @MessageBody() obj: any)
+	{
+		this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
+		const user: User = await this.userService.findUserById(obj.userId);
+		obj.username = user.username;
+		this.wss.emit('acceptChallenge', obj);
+	}
+
+	/**
+	 * Relay to everybody that the friend declined the private game. User that send this request
+	 * will be able to recognize himself thanks to userId.
+	 * 
+	 * @param client Socket object.
+	 * @param userId User db id that made the private game request.
+	 */
+	@SubscribeMessage('challengeDeclined')
+	async handleDeclinedChallenge(@ConnectedSocket() client: Socket, @MessageBody() userId: number)
+	{
+		this.logger.log('STATUS GATEWAY CHALLENGEDECLINED');
+		this.userService.updateRoomId(userId, 'none');
+		this.wss.emit('cancelPrivateGame', userId);
+	}
 
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {

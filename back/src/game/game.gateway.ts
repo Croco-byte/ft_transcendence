@@ -46,10 +46,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			const user: User | null = await this.authService.customWsGuard(client.handshake.query.token as string);
 			if (!user) { client.emit('unauthorized', { message: "Session expired !" }); return; }
 			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
-			
-			this.logger.log(`user.id = ${user.id} user.status = ${user.status} user.roomId = ${user.roomId}`);
 
-			client.data = { userDbId: user.id, userStatus: user.status };
+			client.data = { userDbId: user.id, userStatus: user.status, roomId: user.roomId };
 			console.log("[Game Gateway] Client connected to gateway : " + client.id);
 		} 
 		catch(e) {
@@ -64,8 +62,11 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
 		}
-		else {
+		else if (client.data.roomId === 'none') {
 			client.emit('renderOption');
+		}
+		else {
+			client.emit('waitInPrivateQueue');
 		}
 	}
 
@@ -83,7 +84,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		
 		if (room && room.game.isStarted) {
 			clearInterval(room.intervalId);
-			this.gameService.updateScores(this.wss, room, client.id);
+			this.gameService.updateScores(client, this.wss, room, client.id);
 		}
 		
 		else if (room && room.player2Id != '') {
@@ -91,11 +92,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			this.gameService.removeRoom(this.wss, room);
 		}
 		
-		else if (room)
+		else if (room) {
 			this.gameService.removeRoom(this.wss, room);
-
-		else 
+		}
+		else {
 			this.usersService.updateRoomId(client.data.userDbId, 'none');
+		}
 	}
 
 	/**
@@ -131,6 +133,33 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 		}
 	}
 
+	@SubscribeMessage('waitInPrivateQueue')
+	async handleWaitInPrivateQueue(@ConnectedSocket() client: Socket) : Promise<void>
+	{
+		const user: User = await this.usersService.findUserById(client.data.userDbId);
+		client.data.roomId = user.roomId;
+		client.emit('waitInPrivateQueue');
+	}
+
+	@SubscribeMessage('privateGame')
+	async handlePrivateGame(@ConnectedSocket() client: Socket) : Promise<void>
+	{
+		let room: Room = this.gameService.attributePrivateRoom(client.data.userDbId, client.id, client.data.roomId);
+
+		client.join(room.name);
+		
+		if (room.player2Id != '') {
+			this.wss.to(room.name).emit('startingGame', false);
+			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
+
+			// To prevent to launch the game if one player left during starting game screen
+			if (this.gameService.findRoomByPlayerId(client.id)) {
+				room.game.isStarted = true;
+				this.wss.to(room.name).emit('startingGame', true);
+			}
+		}
+	}
+
 	@SubscribeMessage('launchGame')
 	async handleLaunchGame(@ConnectedSocket() client: Socket) : Promise<void>
 	{
@@ -146,7 +175,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
 				if (this.gameService.updateGame(room)) {
 					clearInterval(room.intervalId);
-					this.gameService.updateScores(this.wss, room);
+					this.gameService.updateScores(client, this.wss, room);
 				}
 			}, this.gameService.FRAMERATE);
 		}
@@ -171,8 +200,16 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * @param boolean True if the player was playing, false if it was in-queue.
 	 */
 	@SubscribeMessage('disconnectClient')
-	handleDisconnectClient(@ConnectedSocket() client: Socket, @MessageBody() wasInGame: boolean): void
+	handleDisconnectClient(@ConnectedSocket() client: Socket): void
 	{
 		client.disconnect();
+	}
+
+	@SubscribeMessage('privateCancelled')
+	handlePrivateCancelled(@ConnectedSocket() client: Socket): void
+	{
+		const room: Room = this.gameService.findRoomByPlayerId(client.id);
+		this.gameService.removeRoom(this.wss, room);
+		client.data.roomId = 'none';
 	}
 };

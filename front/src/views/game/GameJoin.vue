@@ -19,6 +19,10 @@ export default defineComponent({
 		isStarting: {
 			required: true,
 			type: Boolean,
+		},
+		isPrivate: {
+			required: true,
+			type: Boolean,
 		}
 	},
 
@@ -35,11 +39,17 @@ export default defineComponent({
 	{
 		console.log('gamejoin mounted');
 
-		if (this.isStarting) 
-			this.updateHtmlText('msg', 'Player found! Game will start soon.');
+		if (this.isPrivate)
+			this.updateHtmlText('msg', 'Waiting for your friend to accept the match...');
+
+		if (this.isStarting) {
+			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
+								this.updateHtmlText('msg', 'Player found! Game will start soon.');
+		}
 
 		watch(() => this.isStarting, () => {
-			this.updateHtmlText('msg', 'Player found! Game will start soon.');
+			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
+								this.updateHtmlText('msg', 'Player found! Game will start soon.');
 		})
 	},
 

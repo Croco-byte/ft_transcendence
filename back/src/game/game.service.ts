@@ -18,7 +18,7 @@ import {
   matchHistory,
 } from './interfaces/game.interface';
 import { MatchHistoryEntity } from '../users/match-history.entity';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class GameService
@@ -56,6 +56,18 @@ export class GameService
 	public readonly FRAMERATE: number = 1000 / this.configService.get<number>('framerate');
 	public readonly TIME_MATCH_START: number = this.configService.get<number>('time_match_start');
 
+	generateRoomId() : string
+	{
+		const length: number = 12;
+		const charset: string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		let retVal: string = "";
+		
+		for (var i = 0, n = charset.length; i < length; ++i) {
+			retVal += charset.charAt(Math.floor(Math.random() * n));
+		}
+		return retVal;
+	}
+
 	/**
 	 * Finds which room the player belongs.
 	 * 
@@ -88,7 +100,17 @@ export class GameService
 		if (roomToFill) 
 			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
 		else
-			return this.createNewRoom(setupChosen, userDbId, playerId);
+			return this.createNewRoom(setupChosen, userDbId, playerId, playerId);
+	}
+
+	attributePrivateRoom(userDbId: number, playerId: string, privateRoomId: string) : Room
+	{
+		const roomToFill: Room = this.rooms.find(el => el.name === privateRoomId);
+
+		if (roomToFill) 
+			return this.playerJoinRoom(roomToFill, this.resetSetup(), userDbId, playerId);
+		else
+			return this.createNewRoom(this.resetSetup(), userDbId, privateRoomId, playerId);
 	}
 
 	/**
@@ -118,11 +140,11 @@ export class GameService
 	 * @param userDbId Player 1 database id.
 	 * @param playerId Player 1 socket id.
 	 */
-	createNewRoom(setupChosen: Setup, userDbId: number, playerId: string) : Room
+	createNewRoom(setupChosen: Setup, userDbId: number, roomName: string, playerId: string) : Room
 	{
 		this.rooms.push({ 
 			intervalId: undefined,
-			name: playerId, 
+			name: roomName, 
 			user1DbId: userDbId,
 			user2DbId: 0,
 			player1Id: playerId, 
@@ -207,8 +229,9 @@ export class GameService
 	 * @param room Object with game information.
 	 * @param clientId Client socket ID. Fills it if the player disconnected.
 	 */
-	async updateScores(wss: Socket, room: Room, clientId?: string): Promise<boolean>
+	async updateScores(client: Socket, wss: Socket, room: Room, clientId?: string): Promise<boolean>
 	{
+		client.data.roomId = 'none';
 		this.logger.log(`Game won (client id: ${clientId} (room id: ${room.name})`);
 		const endGameInfo: EndGameInfo = await this.resetEndGameInfo(room, clientId);
 
@@ -580,12 +603,20 @@ export class GameService
 	 * @param setupChosen Setup chosen by player one.
 	 * @return A Setup object with default configuration.
 	 */
-	private resetSetup(setupChosen: Setup) : Setup
+	private resetSetup(setupChosen?: Setup) : Setup
 	{
+		if (setupChosen) {
+			return {
+				level: setupChosen.level,
+				score: setupChosen.score,
+				paddleColor: setupChosen.paddleColor,
+			}
+		}
+
 		return {
-			level: setupChosen.level,
-			score: setupChosen.score,
-			paddleColor: setupChosen.paddleColor,
+			level: 1,
+			score: 5,
+			paddleColor: 'white',
 		}
 	}
 

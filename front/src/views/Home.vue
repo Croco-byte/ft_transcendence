@@ -151,7 +151,7 @@
 }
 
 .container3 {
-
+	width: 50vw;
 	margin-top: 2.5em;
 	margin: 0 auto;
 	padding: 0 2rem;

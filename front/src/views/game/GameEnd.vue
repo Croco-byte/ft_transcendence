@@ -172,17 +172,19 @@ button {
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
 import { EndGameInfo } from '../../types/game.interface'
-import { User } from '../../types/user.interface'
 import UserService from '../../services/user.service'
-import authService from '../../services/auth.service'
 
 export default defineComponent ({
 	
 	name: 'GameEnd',
-	emits: ["playAgain"],
+	emits: ["playAgain", "playPrivateAgain"],
 	
 	props: {
 		isSpectating: {
+			required: true,
+			type: Boolean,
+		},
+		isPrivate: {
 			required: true,
 			type: Boolean,
 		},
@@ -200,7 +202,7 @@ export default defineComponent ({
 	},
 
 	methods: {
-		playingAgain() : void
+		async playingAgain()
 		{
 			this.$emit('playAgain');
 		},
@@ -219,13 +221,6 @@ export default defineComponent ({
 	},
 
 	async created() {
-		console.log(`player1 ID : ${this.endGameInfo.room.player1Id}`);
-		console.log(`player2 ID : ${this.endGameInfo.room.player2Id}`);
-		console.log(`player1 DBID : ${this.endGameInfo.room.user1DbId.toString()}`);
-		console.log(`player2 DBID : ${this.endGameInfo.room.user2DbId.toString()}`);
-		console.log(`player1 username : ${this.endGameInfo.p1DbInfo.username}`);
-		console.log(`player2 username : ${this.endGameInfo.p2DbInfo.username}`);
-
 		this.loadAvatar(this.endGameInfo.room.user1DbId.toString());
 		this.loadAvatar(this.endGameInfo.room.user2DbId.toString());
 	},
@@ -237,6 +232,10 @@ export default defineComponent ({
 		if (this.isSpectating) {
 			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
 			buttonPlayingAgain.innerHTML = "FINISH SPECTATING AND START A MATCH";
+		}
+		else if (this.isPrivate) {
+			const buttonPlayingAgain = document.getElementById('button-play-again') as HTMLElement;
+			buttonPlayingAgain.innerHTML = "GO BACK TO NORMAL QUEUE";
 		}
 	}
 })
