@@ -3,13 +3,13 @@
 		<p v-if="status === 'online'" class="online">online</p>
 		<p v-if="status === 'offline'" class="offline">offline</p>
 		<p v-if="status === 'in-queue'" class="in-queue">in queue</p>
-		<span v-if="status === 'in-game'">
-			<span class="in-game">in game</span>
+		<p v-if="status === 'in-game'">
+			<!-- <span class="in-game">in game</span> -->
 			<button @click="launchSpectating()">watch</button>
-		</span>
-		<span v-else-if="status === 'online' && friendId">
-			<button @click="launchChallenge()">challenge</button>
-		</span>
+		</p>
+		<p v-else-if="status === 'online' && friendId">
+			<button @click="launchChallenge()" class="challenge_button fas fa-table-tennis"></button>
+		</p>
 	</div>
 </template>
 
@@ -89,6 +89,21 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
+.user_status
+{
+	display: flex;
+	/* flex-wrap: wrap; */
+	justify-content: center;
+	align-items: center;
+	padding: 0 0.5rem;
+}
+
+p
+{
+	margin: 0.25rem;
+}
+
 .online
 {
 	position: relative;
@@ -172,6 +187,23 @@ button
     border-radius: 5rem;
     color: white;
     cursor: pointer;
+}
+
+.challenge_button
+{
+	background: #006eff;
+    border: solid 1px transparent;
+    padding: 0.25rem 0.75rem;
+    font-size: 1rem;
+	cursor: pointer;
+	transition: all 0.25s;
+}
+
+.challenge_button:hover
+{
+	border-color: #006eff;
+	color: #006eff;
+	background: white;
 }
 
 </style>
