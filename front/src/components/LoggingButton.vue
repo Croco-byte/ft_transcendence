@@ -27,7 +27,7 @@
 ** OAuth page on the 42 API for our application.
 */
 
-import { defineComponent, watch } from 'vue'
+import { defineComponent } from 'vue'
 
 
 export default defineComponent({
