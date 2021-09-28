@@ -90,6 +90,8 @@ export class GameService
 	async attributeRoom(userDbId: number, playerId: string, setupChosen?: Setup) : Promise<Room>
 	{
 		const user: User = await this.usersService.findUserById(userDbId);
+		if (!user) this.logger.log("[DEBUG] Couldn't find user ID when trying to attribute room to user with ID : " + userDbId);
+		
 
 		if (user.roomId != 'none' && user.status === 'spectating')
 			return this.rooms.find(el => el.name === user.roomId);
@@ -129,6 +131,8 @@ export class GameService
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
 
+		this.logger.log("[DEBUG] The user2DbId of the user that just joined is " + userDbId);
+
 		return roomToFill;
 	}
 
@@ -153,6 +157,7 @@ export class GameService
 		});
 
 		this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
+		this.logger.log("[DEBUG] The user1DbId of the first player of the newly created room is : " + userDbId);
 
 		return this.rooms[this.rooms.length - 1];
 	}
