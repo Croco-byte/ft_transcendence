@@ -28,7 +28,7 @@
 			</div>
 			<div class="container2">
 				<h2>Login with 42</h2>
-				<LoggingButton :message="message"/>
+				<LoggingButton/>
 			</div>
 		</div>
 		<div class="container3">
@@ -59,7 +59,8 @@
 	position: relative;
 }
 
-.text1 .text2 {
+.text1 .text2
+{
 	transform: translate(-50%, -50%);
 	width: 100%;
 	margin: 0 auto;
@@ -73,7 +74,7 @@
 	margin-bottom: 0.2em;
 	background: #E6EFF2;
 	position: relative;
-	animation: textAnim 4s 1;
+	animation: textAnim 4s forwards;
 }
 
 .text2 {
@@ -85,9 +86,9 @@
 @keyframes textAnim {
 	0% {
 		color: #E6EFF2;
-		margin-bottom: -0.8em;
+		margin-bottom: -2em;
 	}
-	30% {
+	50% {
 		letter-spacing: 0.3em;
 		margin-bottom: -1rem;
 	}
@@ -200,7 +201,6 @@ import 'mosha-vue-toastify/dist/style.css';
 
 interface LoginViewData
 {
-	message: string;
 	registerInput: { username: string, password: string };
 	loginInput: { username: string, password: string };
 	config_mode: string;
@@ -212,7 +212,6 @@ export default defineComponent ({
 
 	data(): LoginViewData {
 		return {
-			message: this.$route.params.message as string || '',
 			registerInput: { username: "", password: "" },
 			loginInput: { username: "", password: "" },
 			config_mode: "login"
@@ -287,9 +286,5 @@ export default defineComponent ({
 			})
 		}
 	},
-
-	updated(): void {
-		this.message = this.$route.params.message as string;
-	}
 })
 </script>

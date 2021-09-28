@@ -4,18 +4,24 @@ import axios, { AxiosResponse } from 'axios';
 //import axios from '../axios-instance';
 import { io, Socket } from 'socket.io-client';
 import { defineComponent } from 'vue'
-import ChannelInterface from '../interface/channel.interface';
+import { ChannelInterface, UserInterface } from '../interface/channel.interface';
 import MessageInterface from '../interface/message.interface';
 import DOMEventInterface from '../interface/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
 import authService from '../services/auth.service';
 import { createToast } from 'mosha-vue-toastify';
+import UserStatus from '../components/UserStatus.vue';
 import 'mosha-vue-toastify/dist/style.css';
+import { UserStatusChangeData } from '../types/user.interface';
 
 export default defineComponent(
 {
 	name: 'Chat',
+	components:
+	{
+		UserStatus
+	},
 	data() {
 		return {
 			mode: 'normal' as string,
@@ -28,7 +34,7 @@ export default defineComponent(
 				password: '',
 				messages: [],
 				has_new_message: false,
-				members: [],
+				members: new Array<UserInterface>(),
 				administrators: [],
 				user_role: 'MEMBER',
 				isJoined: false,
@@ -79,9 +85,11 @@ export default defineComponent(
 					axios.post(this.serverURL + '/channels/' + channel.id + '/members', {password: password}, {headers: authHeader()})
 					.then(() =>
 					{
-						this.loadChannelsList();
-						this.channels[id].isJoined = true;
-						this.switchChat(this.channels[id].id);
+						this.loadChannelsList().then(() =>
+						{
+							this.channels[id].isJoined = true;
+							this.switchChat(this.channels[id].id);
+						})
 					})
 					.catch(error =>
 					{
@@ -639,7 +647,7 @@ export default defineComponent(
 				password: '',
 				messages: [],
 				has_new_message: false,
-				members: [],
+				members: new Array<UserInterface>(),
 				administrators: [],
 				user_role: "MEMBER",
 				isJoined: false,
@@ -847,6 +855,17 @@ export default defineComponent(
 				console.log(error)
 			})
 		},
+
+		changeUserStatus(data: UserStatusChangeData): void
+		{
+			if (!this.channel || this.channel.id == -1)
+				return ;
+			for(let i=0; i < this.channel.members.length; i++)
+			{
+				if (this.channel.members[i].id == data.userId)
+					this.channel.members[i].status = data.status;
+			}
+		},
 	},
 
 	created(): void
@@ -862,6 +881,7 @@ export default defineComponent(
 
 	mounted(): void
 	{
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
 		if (this.$route.params.direct_id)
 		{
 			this.setFilter("direct");
@@ -888,7 +908,8 @@ export default defineComponent(
 			}
 			else
 			{
-				this.channel.messages.push(data);
+				if (this.channel.messages)
+					this.channel.messages.push(data);
 			}
 		})
 		socket.on('new_member', (msg: string) =>
@@ -966,6 +987,7 @@ export default defineComponent(
 	{
 		let socket = this.socket as Socket;
 		socket.disconnect();
+		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
 });
 
@@ -1078,9 +1100,10 @@ export default defineComponent(
 					<div class="content">
 						<div class="flex j-sb member" v-for="member in channel.members" v-bind:key="member.id">
 							<p>
-								<router-link :to="'/user/' + member.id"> {{ member.username }}</router-link>
+								<router-link :to="'/user/' + member.id"> {{ member.displayname }}</router-link>
 							</p>
-							<div v-if="!channel.isDirect">
+							<UserStatus :status="member.status" :friendId="member.id" />
+							<div v-if="!channel.isDirect" class="action_button_container">
 								<p v-if="member.isMuted == false" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.username)"></p>
 								<p v-else class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(member.username)"></p>
 								<p v-if="member.isBanned == false" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(member.username)"></p>
@@ -1092,31 +1115,6 @@ export default defineComponent(
 						</div>
 					</div>
 				</section>
-				<!-- <section v-if="!channel.isDirect">
-					<p class="title" v-on:click="expandInfoSection">
-						Administrators
-						<i class="arrow fas fa-chevron-left"></i>
-					</p>
-					<div class="content">
-						<div class="flex j-sb member" v-for="admin in channel.administrators" v-bind:key="admin.id">
-							<p>
-								<router-link :to="'/user/' + admin.id"> {{ admin.username }}</router-link>
-							</p>
-							<p v-if="admin.isMuted == false && channel.user_role == 'OWNER'" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(admin.username)"></p>
-							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(admin.username)"></p>
-							<p v-if="admin.isBanned == false && channel.user_role == 'OWNER'" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(admin.username)"></p>
-							<p v-else-if="channel.user_role == 'OWNER'" class="fas fa-sign-out-alt unban_button action_button" v-on:click="unbanMember(admin.username)"></p>
-							<p v-if="channel.user_role == 'OWNER'" class="fas fa-times kick_button action_button" @click="kickMember(admin.username)"></p>
-						</div>
-						<div v-if="channel.administrators && channel.administrators.length == 0">
-							No administrators in this channel
-						</div>
-						<p id="add_member_button" v-on:click="changeMode('add_admin')" v-if="channel.user_role == 'OWNER'">
-							<i class="fas fa-plus-square"></i>
-							Add an administrator
-						</p>
-					</div>
-				</section> -->
 				<section v-if="channel.user_role == 'OWNER' && !channel.isDirect">
 					<p class="title" v-on:click="expandInfoSection">
 						Password
@@ -1645,10 +1643,16 @@ export default defineComponent(
 		margin: 0.5rem 0;
 	}
 
+	.action_button_container
+	{
+		display: flex;
+		align-items: center;
+	}
+
 	.channel_info_container .action_button
 	{
 		margin: 0.5rem 0;
-		padding: 0.5rem 1rem;
+		padding: 0.5rem 0.5rem;
 		cursor: pointer;
 		font-size: 1rem;
 	}
