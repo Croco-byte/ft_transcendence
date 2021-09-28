@@ -234,6 +234,8 @@ export class ChannelController
 		let channel = await this.channelService.findOne(channelID);
 		if (!channel)
 			throw new NotFoundException("Channel not found");
+		if (user.is_admin !== 'admin')
+			throw new ForbiddenException("You must be the website admin to perform this action");
 		// If user is not admin of website - unauthorized
 		channel = await this.channelService.clean(channel);
 		await this.channelService.delete(channelID).then(() =>
@@ -264,6 +266,7 @@ export class ChannelController
 				ret["isMuted"] = await this.channelService.isMuted(c, user);
 				ret["isBanned"] = await this.channelService.isBanned(c, user);
 				ret["isAdmin"] = this.channelService.isAdmin(c, user);
+				ret["displayname"] = user.displayname;
 				return (ret);
 			})));
 			Object.assign(channel.administrators, await Promise.all(c.administrators.map(async (user) =>

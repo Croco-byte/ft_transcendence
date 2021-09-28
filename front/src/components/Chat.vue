@@ -1097,7 +1097,7 @@ export default defineComponent(
 					<div class="content">
 						<div class="flex j-sb member" v-for="member in channel.members" v-bind:key="member.id">
 							<p>
-								<router-link :to="'/user/' + member.id"> {{ member.username }}</router-link>
+								<router-link :to="'/user/' + member.id"> {{ member.displayname }}</router-link>
 							</p>
 							<UserStatus :status="member.status" :friendId="member.id" />
 							<div v-if="!channel.isDirect" class="action_button_container">
