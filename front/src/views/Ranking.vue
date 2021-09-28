@@ -1,7 +1,7 @@
 <script lang="ts">
 
 import axios from 'axios';
-import Vue, { defineComponent } from 'vue';
+import { defineComponent } from 'vue';
 import authHeader from '../services/auth-header';
 
 

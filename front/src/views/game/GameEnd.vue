@@ -209,7 +209,9 @@ export default defineComponent ({
 
 		async loadAvatar(playerDbId: string) : Promise<void>
 		{
+			// eslint-disable-next-line
 			const user: any = await UserService.getUserInfo(playerDbId);
+			// eslint-disable-next-line
 			const avatar: any = await UserService.getUserAvatar(user.data.avatar);
 			const urlCreator = window.URL || window.webkitURL;
 
