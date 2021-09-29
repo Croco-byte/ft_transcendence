@@ -123,7 +123,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			client.emit('waitingForPlayer');
 		
 		else if (room.player2Id != '') {
-			if (room.user1DbId === room.user2DbId) { console.log("HELLO"); this.wss.emit("cantStartGame", { userId: room.user1DbId }); return; }
+			if (room.user1DbId === room.user2DbId) { this.wss.emit("cantStartGame", { userId: room.user1DbId }); return; }
 			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
 
