@@ -270,7 +270,6 @@ export default defineComponent({
 	beforeRouteLeave (to, from , next)
 	{
 		this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
-
 		const wasInGame = this.RenderGamePlay ? true : false;
 		this.socket.emit('disconnectClient', wasInGame);
 		
