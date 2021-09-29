@@ -1053,6 +1053,7 @@ export default defineComponent(
 						</p>
 						<p id="chat_title">
 							{{ channel.name }}
+							<UserStatus v-if="channel.isDirect" :status="channel.members[1].status" :friendId="channel.members[1].id" :userId="user_id"/>
 						</p>
 						<p id="chat_info_button" class="fas fa-info" v-on:click="changeMode('channel_info')" v-if="channel.id != -1 && !channel.isDirect"></p>
 					</div>
@@ -1065,7 +1066,7 @@ export default defineComponent(
 					<div class="message_bar" v-if="channel.id != -1">
 						<input id="msg_input" type="text" v-bind:placeholder="placeholder" v-on:keyup.enter="sendMessage"/>
 						<button id="send_button" v-on:click="sendMessage">Envoyer</button>
-						<p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch" v-if="channel.isDirect"></p>
+						<!-- <p id="play_button" class="fas fa-table-tennis" v-on:click="createMatch" v-if="channel.isDirect"></p> -->
 					</div>
 				</div>
 			</div>
@@ -1118,8 +1119,8 @@ export default defineComponent(
 							<p>
 								<router-link :to="'/user/' + member.id"> {{ member.displayname }}</router-link>
 							</p>
-							<UserStatus :status="member.status" :friendId="member.id" />
-							<div v-if="!channel.isDirect" class="action_button_container">
+							<UserStatus v-if="member.id !== user_id" :status="member.status" :friendId="member.id" :userId="user_id"/>
+							<div v-if="!channel.isDirect && member.id !== user_id" class="action_button_container">
 								<p v-if="member.isMuted == false" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.username)"></p>
 								<p v-else class="fas fa-volume-mute unmute_button action_button" v-on:click="unmuteMember(member.username)"></p>
 								<p v-if="member.isBanned == false" class="fas fa-sign-out-alt ban_button action_button" v-on:click="banMember(member.username)"></p>
@@ -1377,6 +1378,9 @@ export default defineComponent(
 	{
 		width: calc(100% - 2rem);
 		color: black;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 	}
 
 	.chat_view #chat_info_button
