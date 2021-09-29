@@ -4,9 +4,9 @@ import axios, { AxiosResponse } from 'axios';
 //import axios from '../axios-instance';
 import { io, Socket } from 'socket.io-client';
 import { defineComponent } from 'vue'
-import { ChannelInterface, UserInterface } from '../interface/channel.interface';
-import MessageInterface from '../interface/message.interface';
-import DOMEventInterface from '../interface/DOMEvent.interface';
+import { ChannelInterface, UserInterface } from '../types/channel.interface';
+import MessageInterface from '../types/message.interface';
+import DOMEventInterface from '../types/DOMEvent.interface';
 import $ from 'jquery';
 import authHeader from '../services/auth-header';
 import authService from '../services/auth.service';

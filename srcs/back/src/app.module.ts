@@ -13,7 +13,6 @@ import { ChannelMutedUserModule } from './channels/channel_muted_users/channel_m
 import { ChannelBannedUserModule } from './channels/channel_banned_users/channel_banned_user.module';
 import { AppGateway } from './channels/channel.gateway';
 import configuration from './config/configuration_env';
-import { RankingController } from './ranking/ranking.controller';
 
 @Module({
   imports: [GameModule, 
@@ -29,7 +28,6 @@ import { RankingController } from './ranking/ranking.controller';
 		ChannelMutedUserModule,
 		ChannelBannedUserModule,
 	],
-  controllers: [RankingController],
   providers: [StatusGateway, FriendRequestsGateway],
 })
 export class AppModule {}

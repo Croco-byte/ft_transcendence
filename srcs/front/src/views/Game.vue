@@ -11,10 +11,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { Setup } from '../types/game.interface'
-import GameOption from './game/GameOption.vue'
-import GamePlay from './game/GamePlay.vue'
-import GameJoin from './game/GameJoin.vue'
-import GameEnd from './game/GameEnd.vue'
+import GameOption from '../components/game/GameOption.vue'
+import GamePlay from '../components/game/GamePlay.vue'
+import GameJoin from '../components/game/GameJoin.vue'
+import GameEnd from '../components/game/GameEnd.vue'
 import io from 'socket.io-client'
 import { Room, EndGameInfo } from '../types/game.interface'
 import authHeader from '../services/auth-header';

@@ -1,7 +1,7 @@
 <script lang="ts">
 import axios from "axios";
 import { defineComponent } from "vue";
-import DOMEventInterface from "../interface/DOMEvent.interface";
+import DOMEventInterface from "../types/DOMEvent.interface";
 import authHeader from "../services/auth-header";
 import $ from 'jquery';
 import { createToast } from "mosha-vue-toastify";

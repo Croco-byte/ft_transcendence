@@ -4,8 +4,8 @@
 
 import { defineComponent } from 'vue'
 
-import FriendList from "../components/FriendList_v2.vue"
-import UserSearch from "../components/UserSearch_v2.vue"
+import FriendList from "../components/FriendList.vue"
+import UserSearch from "../components/UserSearch.vue"
 import FriendRequests from '../components/FriendRequests.vue'
 
 export default defineComponent({
