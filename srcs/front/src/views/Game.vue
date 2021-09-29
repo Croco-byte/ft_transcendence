@@ -20,6 +20,7 @@ import { Room, EndGameInfo } from '../types/game.interface'
 import authHeader from '../services/auth-header';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
+import UserService from '../services/user.service'
 
 export default defineComponent({
 	
@@ -222,7 +223,17 @@ export default defineComponent({
 
 		if (this.socket) {
 			this.socket.on('unauthorized', (data: {message: string }) => {
+				this.socket.disconnect();
 				this.$store.commit('disconnectUser', { message: data.message });
+			});
+
+			var ref = this;
+			this.socket.on('cantStartGame', async function(data: { userId: number }) {
+				const result = await UserService.getCurrUserId();
+				if (result.data.id === data.userId) {
+					ref.socket.disconnect();
+					ref.$store.commit('disconnectUser', { message: "Something went wrong while trying to start your game. Please log in and try again."});
+				}
 			})
 
 			this.socket.on('renderOption', () => {

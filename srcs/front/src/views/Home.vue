@@ -4,7 +4,7 @@
 	<div class="container1">
 		<p class="text1">Welcome to</p>
 		<p class="text2">Pong Game</p>
-		<div class="auth_container">
+		<div class="auth_container" v-if="$store.state.status.loggedIn === false">
 			<div class="auth">
 				<div>
 					<h2> Login with username and password</h2>
@@ -30,6 +30,9 @@
 				<h2>Login with 42</h2>
 				<LoggingButton/>
 			</div>
+		</div>
+		<div class="auth_container" v-else>
+			<LoggingButton/>
 		</div>
 		<div class="container3">
 			<Leaderboard class="childLeader"/>
@@ -105,6 +108,8 @@
 	flex-direction: row-reverse;
 	flex-wrap: wrap;
 	justify-content: center;
+	margin-bottom: 30px;
+	margin-top: 20px;
 }
 
 .auth_container > *
@@ -118,8 +123,6 @@
 	flex-direction: column;
 	justify-content: space-around;
 	text-align: center;
-	margin-bottom: 30px;
-	margin-top: 20px;
 }
 
 .auth input

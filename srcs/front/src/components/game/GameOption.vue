@@ -161,6 +161,7 @@ button {
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { Setup } from '../../types/game.interface'
+import AuthService from '../../services/auth.service'
 
 
 export default defineComponent({
@@ -207,7 +208,7 @@ export default defineComponent({
 
 		startGame() {
 			console.log('start game');
-			this.$emit('setupChosen', this.opt as Setup);
+			this.$emit('setupChosen', { setupChosen: this.opt as Setup, currUserId: Number(AuthService.parseJwt().id) });
 		},
 
 		resetOption() {

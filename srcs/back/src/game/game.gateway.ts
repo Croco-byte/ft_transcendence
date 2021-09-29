@@ -113,15 +113,17 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	 * @param setupChosen Setup chosen by the player.
 	 */
 	@SubscribeMessage('setupChosen')
-	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() setupChosen: Setup) : Promise<void>
+	async handleSetupChosen(@ConnectedSocket() client: Socket, @MessageBody() data: any) : Promise<void>
 	{
-		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, setupChosen);
+		if (data.currUserId !== client.data.userDbId) { this.wss.emit("cantStartGame", { userId: data.currUserId }); return; }
+		let room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id, data.setupChosen);
 		client.join(room.name);
 
 		if (room.player2Id === '')
 			client.emit('waitingForPlayer');
 		
 		else if (room.player2Id != '') {
+			if (room.user1DbId === room.user2DbId) { console.log("HELLO"); this.wss.emit("cantStartGame", { userId: room.user1DbId }); return; }
 			this.wss.to(room.name).emit('startingGame', false);
 			await new Promise(resolve => setTimeout(resolve, this.gameService.TIME_MATCH_START));
 
