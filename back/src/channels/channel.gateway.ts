@@ -188,6 +188,11 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		this.server.emit("channel_created", {});
 	}
 
+	changeType(channel: Channel)
+	{
+		this.server.emit("channel_type_changed", {channel_id: channel.id, type: channel.type})
+	}
+
 	destroyChannel(channelID: string, users: User[], name: string)
 	{
 		this.server.emit("channel_destroyed", {channel_id: parseInt(channelID), msg: "Channel " + name + " has been destroyed."});
@@ -197,5 +202,15 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			if (socket)
 				socket.leave("channel_" + channelID);
 		}
+	}
+
+	activePassword(channel: Channel)
+	{
+		this.server.emit("channel_password_actived", { channel_id: channel.id });
+	}
+
+	deletePassword(channel: Channel)
+	{
+		this.server.emit("channel_password_deleted", {channel_id: channel.id});
 	}
 }

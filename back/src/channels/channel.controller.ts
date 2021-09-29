@@ -495,7 +495,7 @@ export class ChannelController
 		await this.messageService.add(channel, user, data.content).then(async (message) =>
 		{
 			await this.channelService.updateModifiedDate(channel);
-			this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.username, content: message.content, user_id: user.id}, user, channel);
+			this.websocketGateway.sendNewMessage('channel_' + data.channel, {id: message.id, channel: data.channel, user: user.displayname, content: message.content, user_id: user.id}, user, channel);
 		});
 	}
 
@@ -520,7 +520,7 @@ export class ChannelController
 		for (let i = 0; i < messages.length; i++)
 		{
 			messages[i].user_id = messages[i].user.id;
-			messages[i].user = messages[i].user.username;
+			messages[i].user = messages[i].user.displayname;
 			delete messages[i].channel;  //messages[i].channel_id = messages[i].channel.id;
 		}
 		let role: "MEMBER" | "ADMIN" | "OWNER";
@@ -566,6 +566,7 @@ export class ChannelController
 		this.channelService.addPassword(channel, password);
 
 		this.logger.log("Set password of this channel to '" + password + "'");
+		this.websocketGateway.activePassword(channel);
 		return {message: "Password changed successfully to '" + password + "'"};
 	}
 
@@ -578,7 +579,9 @@ export class ChannelController
 		if (!channel.owner || channel.owner.id != user.id)
 			throw new UnauthorizedException("You must be the owner of this channel to perform this action");
 
-		this.channelService.removePassword(channel);
+		await this.channelService.removePassword(channel);
+
+		this.websocketGateway.deletePassword(channel);
 
 		this.logger.log("Password removed for this channel");
 		return {message: "Password removed successfully"};
@@ -688,5 +691,6 @@ export class ChannelController
 		if (!this.channelService.isOwner(channel, user))
 			throw new UnauthorizedException("You must be the owner of this channel to perform this action");
 		await this.channelService.setChannelType(channel, body.type);
+		this.websocketGateway.changeType(channel);
 	}
 }

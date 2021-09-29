@@ -957,6 +957,21 @@ export default defineComponent(
 			if (this.filter == "public")
 				this.loadChannelsList()
 		})
+		socket.on("channel_type_changed", msg =>
+		{
+			if (this.filter == "public")
+				this.loadChannelsList();
+		});
+		socket.on("channel_password_actived", () =>
+		{
+			if (this.filter == "public")
+				this.loadChannelsList();
+		})
+		socket.on("channel_password_deleted", () =>
+		{
+			if (this.filter == "public")
+				this.loadChannelsList();
+		})
 		socket.on("channel_destroyed", (msg) =>
 		{
 			let id = msg.channel_id;
