@@ -593,7 +593,7 @@ export class UsersService {
 			.execute();
 		} 
 		catch (e) {
-			this.logger.log('Couldn\'t find user required in order to increment wins');
+			this.logger.log(`Couldn\'t find user required in order to increment wins (userId: ${userDbId})`);
 		}
 	}
 
@@ -615,7 +615,7 @@ export class UsersService {
 			.execute();
 		} 
 		catch (e) {
-			this.logger.log('Couldn\'t find user required in order to increment loses');
+			this.logger.log(`Couldn\'t find user required in order to increment loses (userId: ${userDbId})`);
 		}
 	}
 
@@ -644,7 +644,7 @@ export class UsersService {
 			.getOne();
 		}
 		catch(e) {
-			this.logger.log('Could\'t find user required in order to update room ID');
+			this.logger.log(`Could\'t find user required in order to update room ID (userId: ${userDbId})`);
 		}
 	}
 
@@ -660,7 +660,7 @@ export class UsersService {
 			.execute();
 		}
 		catch (e) {
-			this.logger.log('Could\'t find room required in order to reset it');
+			this.logger.log(`Could\'t find room required in order to reset it (roomId: ${roomToReset})`);
 		}
 	}
 
@@ -691,209 +691,3 @@ export class UsersService {
 	}
 }
 
-
-
-
-
-
-
-
-
-/*
---- DEPRECATED FUNCTIONS ; USE THE PAGINATED VERSION INSTEAD ---
-
-getFriends(currentUser: User): Observable<User[]> {
-		let myFriends: User[] = [];
-		return from(this.friendRequestRepository.find({
-			where: [{ creator: currentUser, status: "accepted" }, { receiver: currentUser, status: "accepted"}],
-			relations: ['creator', 'receiver']
-		})).pipe(
-			switchMap((acceptedRequests: FriendRequest[]) => {
-				acceptedRequests.forEach(element => {
-					if (element.creator.id !== currentUser.id) {
-						delete element.creator.twoFactorAuthenticationSecret;
-						delete element.creator.isTwoFactorAuthenticationEnabled;
-						delete element.creator.avatar;
-						myFriends.push(element.creator);
-					} else {
-						delete element.receiver.twoFactorAuthenticationSecret;
-						delete element.receiver.isTwoFactorAuthenticationEnabled;
-						delete element.receiver.avatar;
-						myFriends.push(element.receiver);
-					}
-				})
-				return of(myFriends);
-			})
-		)
-	}
-
-	getFriendRequestsFromRecipients(currentUser: User): Observable<FriendRequest[]> {
-		return from(this.friendRequestRepository.find({
-			where: { receiver: currentUser, status: "pending" },
-			relations: ['creator', 'receiver']
-		})).pipe(
-			switchMap((friendRequests: FriendRequest[]) => {
-				friendRequests.forEach(element => {
-					delete element.creator.twoFactorAuthenticationSecret;
-					delete element.receiver.twoFactorAuthenticationSecret;
-					delete element.creator.isTwoFactorAuthenticationEnabled;
-					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
-				});
-				return of(friendRequests);
-			})
-		);
-	}
-
-	getFriendRequestsToRecipients(currentUser: User): Observable<FriendRequest[]> {
-		return from(this.friendRequestRepository.find({
-			where: { creator: currentUser, status: "pending" },
-			relations: ['creator', 'receiver']
-		})).pipe(
-			switchMap((friendRequests: FriendRequest[]) => {
-				friendRequests.forEach(element => {
-					delete element.creator.twoFactorAuthenticationSecret;
-					delete element.receiver.twoFactorAuthenticationSecret;
-					delete element.creator.isTwoFactorAuthenticationEnabled;
-					delete element.receiver.isTwoFactorAuthenticationEnabled;
-					delete element.creator.avatar;
-					delete element.receiver.avatar;
-				});
-				return of(friendRequests);
-			})
-		);
-	}
-
-
-
-	--- DEPRECATED FUNCTIONS : FRIEND REQUESTS HANDLING WITH OBSERVABLES, SWITCHING TO PLAIN PROMISES ---
-
-	hasFriendRequestBeenSentOrReceived(creator: User, receiver: User): Observable<string> {
-		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				if (!friendRequest) return of("false");
-				if (friendRequest.status === "declined" && friendRequest.receiver.id == creator.id) return of("allow-resend");
-				return of("true");
-			}))
-	}
-
-	sendFriendRequest(receiverId: number, creator: User): Observable<FriendRequest> {
-		if (receiverId === creator.id) {
-			throw new Error("You can't send a friend request to yourself !")
-		}
-		return from(this.findUserById(receiverId)).pipe(
-			switchMap((receiver: User) => {
-				return this.hasFriendRequestBeenSentOrReceived(creator, receiver).pipe(
-					switchMap((hasFriendRequestBeenSentOrReceived: string) => {
-						if (hasFriendRequestBeenSentOrReceived === "true")  throw new Error("A friend request already exists from or to this user");
-						if (hasFriendRequestBeenSentOrReceived === "allow-resend") return this.reSendFriendRequest(creator, receiver);
-						let friendRequest: FriendRequest = {
-							creator,
-							receiver,
-							status: 'pending'
-						}
-						return from(this.friendRequestRepository.save(friendRequest));
-					})
-				)
-			})
-		)
-	}
-
-	reSendFriendRequest(creator: User, receiver: User): Observable<FriendRequest> {
-		return from(this.friendRequestRepository.findOne({ where: [ { creator, receiver}, { creator: receiver, receiver: creator } ], relations: ['creator', 'receiver']})).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				friendRequest.creator = creator;
-				friendRequest.receiver = receiver;
-				friendRequest.status = "pending";
-				return from(this.friendRequestRepository.save(friendRequest));
-			}))
-	}
-
-	getFriendRequestStatus(receiverId: number, currentUser: User): Observable<FriendRequestStatus> {
-		return from(this.findUserById(receiverId)).pipe(
-			switchMap((receiver: User) => {
-				return from(this.friendRequestRepository.findOne({
-					where: [
-						{ creator: currentUser, receiver: receiver },
-						{ creator: receiver, receiver: currentUser}
-					],
-					relations: ['creator', 'receiver']
-				})).pipe(
-					switchMap((friendRequest: FriendRequest) => {
-						if (friendRequest?.receiver.id === currentUser.id && friendRequest?.status !== "accepted" && friendRequest?.status !== "declined") {
-							return of({ status: 'waiting-for-current-user-response' as FriendRequest_Status })
-						}
-						if (friendRequest?.receiver.id == currentUser.id && friendRequest?.status === "declined") {
-							return of({ status: 'declined-by-me' as FriendRequest_Status })
-						}
-						return of({ status: friendRequest?.status || 'not-sent' })
-					})
-				)
-			}) 
-		)
-	}
-
-	getFriendRequestById(friendRequestId: number): Observable<FriendRequest> {
-		return from(this.friendRequestRepository.findOne({where: [{ id: friendRequestId}], relations: ['creator', 'receiver']}));
-	}
-
-	respondToFriendRequest(friendRequestId: number, responseStatus: FriendRequest_Status): Observable<FriendRequest> {
-		return from(this.getFriendRequestById(friendRequestId)).pipe(
-			switchMap((friendRequest: FriendRequest) => {
-				return from(this.friendRequestRepository.save(
-					{ ...friendRequest,
-					status: responseStatus }
-				))
-			})
-		)
-	}
-
-
-	 * Update the game status for a specific user.
-	 * 
-	 * @param userDbId Database ID retrieved after authentification.
-	 * @param newStatus Possible values: 'none', 'spectating', 'inGame'.
-	 * @return Promise with the User object updated in database.
-
-	async updateGameStatus(userDbId: number, newStatus: string): Promise<User>
-	{
-		try {
-			const user = await this.usersRepository.findOne({ where: { id: userDbId } });
-			user.gameStatus = newStatus;
-			return this.usersRepository.save(user);
-		} catch(e) {
-			this.logger.log('Could\'t find user required in order to update game status');
-		}
-	}
-
-
-	getCurrUserPaginatedHistory(currentUser: User, options: IPaginationOptions): Observable<Pagination<MatchHistoryEntity>> {
-		return from(paginate(this.matchHistoryRepository, options, {
-			where: [{ winner: currentUser }, { looser: currentUser }],
-			relations: ['winner', 'looser'],
-			order: {time: 'ASC'},
-			select: ['id', 'winner', 'looser', 'winnerScore', 'looserScore', 'time']
-		})).pipe(
-			map((matchHistoryPageable: Pagination<MatchHistoryEntity>) => {
-				var items = [];
-				matchHistoryPageable.items.forEach(function(element) { 
-					delete element.winner.twoFactorAuthenticationSecret;
-					delete element.winner.isTwoFactorAuthenticationEnabled;
-					delete element.looser.twoFactorAuthenticationSecret;
-					delete element.looser.isTwoFactorAuthenticationEnabled;
-					items.push(element.looser);
-					items.push(element.winner);
-				});
-				var historyPageable: Pagination<MatchHistoryEntity> = {
-					items: items,
-					links: matchHistoryPageable.links,
-					meta: matchHistoryPageable.meta
-				};
-				return historyPageable;
-			})
-		)
-	}
-
-
-*/

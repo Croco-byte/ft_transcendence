@@ -1,22 +1,15 @@
 import { 
 	Controller, 
 	Post, 
-	Get, 
-	Put, 
 	UseGuards, 
 	Param, 
-	Req, Res, 
 	Body, 
-	NotFoundException, 
-	Query, 
-	BadRequestException, 
-	UseInterceptors, 
-	UploadedFile, 
-	ForbiddenException 
 } from "@nestjs/common";
 import { UsersService } from "../users/users.service";
 import JwtTwoFactorGuard from "src/auth/jwt-two-factor-auth.guard";
 import { GameService } from './game.service'
+import { Logger } from '@nestjs/common';
+import { User } from '../users/users.entity'
 
 @Controller('/game')
 export class GameController {
@@ -24,14 +17,27 @@ export class GameController {
 		private readonly userService: UsersService,
 		private readonly gameService: GameService,
 		) {}
+	private logger: Logger = new Logger('GameController');
 
 	@Post('challenge/:userId')
 	@UseGuards(JwtTwoFactorGuard)
 	async privateGame(@Param('userId') userId: number) : Promise<string>
 	{
-		const newRoomId: string = await this.gameService.generateRoomId();
-		await this.userService.updateRoomId(userId, newRoomId);
-		return newRoomId;
+		try {
+			const user: User = await this.userService.findUserById(userId);
+
+			this.logger.log(`user.roomId ${user.roomId}`);
+
+			if (user.roomId === 'none') {
+				const newRoomId: string = await this.gameService.generateRoomId();
+				await this.userService.updateRoomId(userId, newRoomId);
+				return newRoomId;
+			}
+			return 'roomIdFieldError';
+		}
+		catch {
+			this.logger.log(`Couldn't find user (userId: ${userId})`);
+		}
 	}
 
 	@Post('joinChallenge/:friendId')

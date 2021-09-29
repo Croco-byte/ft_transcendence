@@ -23,6 +23,8 @@ import router from '../router/index';
 import axios from '../axios-instance';
 import authHeader from '../services/auth-header';
 import GameService from '../services/game.service'
+import { createToast } from 'mosha-vue-toastify';
+import 'mosha-vue-toastify/dist/style.css';
 
 export default defineComponent({
 	name: 'UserStatus',
@@ -68,21 +70,39 @@ export default defineComponent({
 		async launchChallenge()
 		{
 			console.log(`dans launchChallenge: userId ${this.userId}, friendId: ${this.friendId}`);
-			const newRoomId: string = await axios.post(this.serverURL + '/game/challenge/' + this.userId, {},
+			const newRoomId = await axios.post(this.serverURL + '/game/challenge/' + this.userId, {},
 				{headers: authHeader()});
+
+			if (!newRoomId) {
+				console.log('error occurer on post');
+			}
+			else if (newRoomId.data === 'roomIdFieldError') {
+				createToast({
+					title: 'Error',
+					description: 'You can\'t challenge yourself!',
+				},
+				{
+					position: 'top-right',
+					type: 'danger',
+					transition: 'slide'
+				});
+			}
+			else {
+				console.log('challengingsomebody');
+
+				this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
+					userId: this.userId,
+					friendId: this.friendId,
+					newRoomId: newRoomId,
+				});
 				
-			this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
-				userId: this.userId,
-				friendId: this.friendId,
-				newRoomId: newRoomId,
-			});
-			
-			router.push(({name: 'Game', params: { 
-				RenderGameOption: 'false',
-				RenderGameJoin: 'true',
-				status: 'private',
-				random: GameService.generateRandomStr(),
-			}}));
+				router.push(({name: 'Game', params: { 
+					RenderGameOption: 'false',
+					RenderGameJoin: 'true',
+					status: 'private',
+					random: GameService.generateRandomStr(),
+				}}));
+			}
 		},
 	},
 })

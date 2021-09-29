@@ -136,9 +136,14 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	@SubscribeMessage('waitInPrivateQueue')
 	async handleWaitInPrivateQueue(@ConnectedSocket() client: Socket) : Promise<void>
 	{
-		const user: User = await this.usersService.findUserById(client.data.userDbId);
-		client.data.roomId = user.roomId;
-		client.emit('waitInPrivateQueue');
+		try {
+			const user: User = await this.usersService.findUserById(client.data.userDbId);
+			client.data.roomId = user.roomId;
+			client.emit('waitInPrivateQueue');
+		}
+		catch (e) {
+			this.logger.log(`Failed to find user (waitInPrivateQueue, userId: ${client.data.userDbId})`);
+		}
 	}
 
 	@SubscribeMessage('privateGame')

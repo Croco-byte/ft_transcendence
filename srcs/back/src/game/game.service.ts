@@ -89,20 +89,23 @@ export class GameService
 	 */
 	async attributeRoom(userDbId: number, playerId: string, setupChosen?: Setup) : Promise<Room>
 	{
-		const user: User = await this.usersService.findUserById(userDbId);
-		if (!user) this.logger.log("[DEBUG] Couldn't find user ID when trying to attribute room to user with ID : " + userDbId);
+		try {
+			const user: User = await this.usersService.findUserById(userDbId);
 		
+			if (user.roomId != 'none' && user.status === 'spectating')
+				return this.rooms.find(el => el.name === user.roomId);
+			
+			const roomToFill: Room = this.rooms.find(el => el.player2Id === '' && 
+					this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
 
-		if (user.roomId != 'none' && user.status === 'spectating')
-			return this.rooms.find(el => el.name === user.roomId);
-		
-		const roomToFill: Room = this.rooms.find(el => el.player2Id === '' && 
-				this.checkIfSameSetup(el.game.p1Left.setup, setupChosen));
-
-		if (roomToFill) 
-			return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
-		else
-			return this.createNewRoom(setupChosen, userDbId, playerId, playerId);
+			if (roomToFill) 
+				return this.playerJoinRoom(roomToFill, setupChosen, userDbId, playerId);
+			else
+				return this.createNewRoom(setupChosen, userDbId, playerId, playerId);
+		}
+		catch (e) {
+			this.logger.log(`Failed to update db when trying to attribute a room (id: ${userDbId})`);
+		}
 	}
 
 	attributePrivateRoom(userDbId: number, playerId: string, privateRoomId: string) : Room
@@ -377,8 +380,14 @@ export class GameService
 			this.playerOneIntersectBall(room);
 
 		// Case collision to wall up and down.
-		else if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= room.game.height)
-			room.game.ball.velY = room.game.ball.velY * -1;
+		else if (ball.y - ball.radius <= 0) {
+			ball.y = ball.radius;
+			ball.velY = ball.velY * -1;
+		}
+		else if (ball.y + ball.radius >= room.game.height) {
+			ball.y = room.game.height - ball.radius;
+			ball.velY = ball.velY * -1;
+		}
 	}
 
 	/**
@@ -522,16 +531,11 @@ export class GameService
 	 */
 	private async resetPlayerDbInfo(userDbId: number) : Promise<PlayerDbInfo>
 	{
-		try {
-			const user = await this.usersService.updateRoomId(userDbId, 'none');
-			return {
-				username: user.username,
-				displayname: user.displayname,
-				avatar: user.avatar,
-			}
-		}
-		catch {
-			this.logger.log('Could\'t find user required in order to update room ID');	
+		const user = await this.usersService.updateRoomId(userDbId, 'none');
+		return {
+			username: user.username,
+			displayname: user.displayname,
+			avatar: user.avatar,
 		}
 	}
 
