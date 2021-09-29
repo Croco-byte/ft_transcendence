@@ -189,7 +189,7 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('checkForJWTChanges')
 	async verifyAccountUnicity(client: Socket, data: any): Promise<void> {
 		if (client.data.userId && data.currUserId && data.currUserId !== client.data.userId) {
-			console.log("Detected a change in the JWT of the user (the user ID of the JWT isn't the same as the one the user connected to the gataway with). Bouncing new user.")
+			console.log("Detected a change in the JWT of the user (the user ID of the JWT isn't the same as the one the user connected to the gateway with). Bouncing new user.")
 			await this.userService.changeUserStatus(data.currUserId, "offline");
 			await this.userService.changeUserStatus(client.data.userId, "offline");
 			this.wss.emit('multipleConnectionsOnSameUser', { userId: data.currUserId })

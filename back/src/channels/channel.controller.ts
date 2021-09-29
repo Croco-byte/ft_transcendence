@@ -43,7 +43,7 @@ export class ChannelController
 		channel.type = 'public'
 		channel.name = body.name;
 		const invalidChars = /^[a-zA-Z0-9-_]+$/;
-		if (channel.name.search(invalidChars) === -1 || channel.name.length > 15) throw new ForbiddenException("Invalid characters in username or username too long");
+		if (channel.name.search(invalidChars) === -1 || channel.name.length > 15) throw new ForbiddenException("Invalid characters in channel name or channel name too long");
 		channel.requirePassword = false;
 		channel.password = '';
 		channel.creationDate = new Date();

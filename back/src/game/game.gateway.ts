@@ -48,7 +48,7 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			if (user.is_blocked) { client.emit('unauthorized', { message: "User is blocked from website" }); return; }
 
 			client.data = { userDbId: user.id, userStatus: user.status, roomId: user.roomId };
-			console.log("[Game Gateway] Client connected to gateway : " + client.id);
+			console.log("[Game Gateway] Client connected to gateway : " + client.id + " | With ID : " + user.id);
 		} 
 		catch(e) {
 			this.logger.log('Unauthorized client trying to connect');
