@@ -42,6 +42,8 @@ export class ChannelController
 
 		channel.type = 'public'
 		channel.name = body.name;
+		const invalidChars = /^[a-zA-Z0-9-_]+$/;
+		if (channel.name.search(invalidChars) === -1 || channel.name.length > 15) throw new ForbiddenException("Invalid characters in username or username too long");
 		channel.requirePassword = false;
 		channel.password = '';
 		channel.creationDate = new Date();
@@ -234,7 +236,7 @@ export class ChannelController
 		let channel = await this.channelService.findOne(channelID);
 		if (!channel)
 			throw new NotFoundException("Channel not found");
-		if (user.is_admin !== 'admin')
+		if (user.is_admin !== 'owner' && user.is_admin !== 'moderator')
 			throw new ForbiddenException("You must be the website admin to perform this action");
 		// If user is not admin of website - unauthorized
 		channel = await this.channelService.clean(channel);

@@ -180,7 +180,7 @@ export default defineComponent({
 		async setAdmin(username: string): Promise<void>
 		{
 			axios.post(this.serverURL + '/channels/' + this.selectedChannel.id + '/admin', {username: username}, {headers: authHeader()})
-			.then((res) =>
+			.then(() =>
 			{
 				let index = this.selectedChannel.members.findIndex(member => member.username == username)
 				this.selectedChannel.members[index].isAdmin = true;
@@ -202,7 +202,7 @@ export default defineComponent({
 		async deleteAdmin(username: string): Promise<void>
 		{
 			axios.delete(this.serverURL + '/channels/' + this.selectedChannel.id + '/admin/' + username, {headers: authHeader()})
-			.then((res) =>
+			.then(() =>
 			{
 				let index = this.selectedChannel.members.findIndex(member => member.username == username)
 				this.selectedChannel.members[index].isAdmin = false;
@@ -230,7 +230,7 @@ export default defineComponent({
 		{
 			if (window.confirm("Are you sure to destroy this channel ?"))
 			{
-				axios.delete(this.serverURL + "/channels/" + this.selectedChannel.id, {headers: authHeader()}).then(res =>
+				axios.delete(this.serverURL + "/channels/" + this.selectedChannel.id, {headers: authHeader()}).then(() =>
 				{
 					alert("Channel destroyed successfully");
 					this.selected = false;

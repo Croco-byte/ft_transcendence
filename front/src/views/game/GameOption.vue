@@ -171,6 +171,7 @@ export default defineComponent({
 	data() {
 		return {
 			opt: { level: 1, score: 5, paddleColor: 'white' } as Setup,
+			// eslint-disable-next-line
 			select: { level1: false, level2: false, level3: false, score1: false, score2: false, score3: false } as any
 		}
 	},

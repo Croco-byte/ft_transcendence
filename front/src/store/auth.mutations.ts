@@ -49,6 +49,7 @@ export const mutations: MutationTree<RootState> = {
 			const result = await UserService.getCurrUserId();
 			console.log(`resultId = ${result.data.id} et objfriendID = ${obj.friendId}`);
 			if (obj.friendId === result.data.id) {
+				// eslint-disable-next-line
 				const resultCheckBox: any = await Swal.fire({
 					title: 'Someone\'s challenging you!',
 					text: `Your friend ${obj.username} is inviting you to play a private game! Do you accept it?`,

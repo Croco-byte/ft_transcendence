@@ -1,7 +1,6 @@
 <script lang="ts">
 import { defineComponent } from '@vue/runtime-core';
 import Header from './components/Header.vue';
-import UserService from './services/user.service';
 
 export default defineComponent({
 	name: 'App',

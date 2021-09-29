@@ -101,7 +101,6 @@
 import { defineComponent } from 'vue';
 import { User } from '../types/user.interface';
 import { PaginationMeta } from '../types/pagination.interface';
-import UserStatus from '../components/UserStatus.vue';
 import UserService from '../services/user.service';
 import { createToast } from 'mosha-vue-toastify';
 import 'mosha-vue-toastify/dist/style.css';
