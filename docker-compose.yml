@@ -4,19 +4,19 @@ services:
   back:
     container_name: back
     build:
-      context: ./back
+      context: ./srcs/back
       target: development
     links:
        - "postgres"
     volumes:
-      - ./back:/usr/src/app
+      - ./srcs/back:/usr/src/app
       - node_modules_back:/usr/src/app/node_modules
     ports:
       - 3000:3000
       - 9229:9229
     command: npm run start:dev
     env_file:
-      - env
+      - ./srcs/env
     environment:
       - POSTGRES=postgres
     networks:
@@ -32,7 +32,7 @@ services:
     links:
       - "postgres"
     env_file:
-      - env
+      - ./srcs/env
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -63,10 +63,10 @@ services:
   front:
     container_name: front
     build:
-      context: ./front
+      context: ./srcs/front
       target: development
     volumes:
-      - ./front:/usr/src/app
+      - ./srcs/front:/usr/src/app
       - node_modules_front:/usr/src/app/node_modules
     ports:
       - 8080:8080
