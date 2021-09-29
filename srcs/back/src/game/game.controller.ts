@@ -26,14 +26,12 @@ export class GameController {
 		try {
 			const user: User = await this.userService.findUserById(userId);
 
-			this.logger.log(`user.roomId ${user.roomId}`);
-
 			if (user.roomId === 'none') {
 				const newRoomId: string = await this.gameService.generateRoomId();
 				await this.userService.updateRoomId(userId, newRoomId);
 				return newRoomId;
 			}
-			return 'roomIdFieldError';
+			return undefined;
 		}
 		catch {
 			this.logger.log(`Couldn't find user (userId: ${userId})`);
@@ -44,7 +42,17 @@ export class GameController {
 	@UseGuards(JwtTwoFactorGuard)
 	async joinPrivateGame(@Param('friendId') friendId: number, @Body() body: any) : Promise<string>
 	{
-		await this.userService.updateRoomId(friendId, body.newRoomId.data);
-		return body.newRoomId.data;
+		try {
+			const user: User = await this.userService.findUserById(friendId);
+
+			if (user.roomId === 'none') {
+				await this.userService.updateRoomId(friendId, body.newRoomId);
+				return body.newRoomId;
+			}
+			return undefined;
+		}
+		catch {
+			this.logger.log(`Couldn't find user (userId: ${friendId})`);
+		}
 	}
 }

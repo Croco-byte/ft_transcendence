@@ -165,7 +165,15 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('challengeSomebody')
 	async handleChallengeSomebody(@ConnectedSocket() client: Socket, @MessageBody() obj: any)
 	{
+		console.log(`userId = ${obj.friendId} and friendId = ${obj.friendId}`);
+		if (obj.friendId === obj.userId) {
+			client.emit('errorChallengingHimself');
+			return ;
+		}
+		
 		try {
+			
+			
 			this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
 			const user: User = await this.userService.findUserById(obj.userId);
 			obj.username = user.displayname;

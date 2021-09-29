@@ -128,6 +128,20 @@ export const mutations: MutationTree<RootState> = {
 			}
 		});
 
+		state.websockets.connectionStatusSocket.on('errorChallengingHimself', async () => {
+			createToast({
+				title: 'Error',
+				description: 'You can\'t challenge yourself!',
+			},
+			{
+				position: 'top-right',
+				type: 'danger',
+				transition: 'slide'
+			});
+
+			router.push('/home');
+		});
+
 		router.push('/account');
 	},
 

@@ -76,7 +76,7 @@ export default defineComponent({
 			if (!newRoomId) {
 				console.log('error occurer on post');
 			}
-			else if (newRoomId.data === 'roomIdFieldError') {
+			else if (!newRoomId.data) {
 				createToast({
 					title: 'Error',
 					description: 'You can\'t challenge yourself!',
@@ -93,7 +93,7 @@ export default defineComponent({
 				this.$store.state.websockets.connectionStatusSocket.emit('challengeSomebody', {
 					userId: this.userId,
 					friendId: this.friendId,
-					newRoomId: newRoomId,
+					newRoomId: newRoomId.data,
 				});
 				
 				router.push(({name: 'Game', params: { 
