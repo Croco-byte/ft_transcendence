@@ -61,10 +61,10 @@ export const mutations: MutationTree<RootState> = {
 					const userThatMadeRequest = await UserService.getUserInfo(obj.userId);
 					console.log(`userThatMadeRequest room ${userThatMadeRequest.data.roomId} and id ${userThatMadeRequest.data.id}`);
 
-					console.log(`obj.newRoomId = ${obj.newRoomId.data}`);
+					console.log(`obj.newRoomId = ${obj.newRoomId}`);
 					console.log(obj);
 
-					if (userThatMadeRequest.data.roomId === obj.newRoomId.data) {
+					if (userThatMadeRequest.data.roomId === obj.newRoomId) {
 						await axios.post("http://" + window.location.hostname + ":3000" + '/game/joinChallenge/' 
 						+ obj.friendId, { newRoomId: obj.newRoomId }, {headers: authHeader()});
 
@@ -128,6 +128,15 @@ export const mutations: MutationTree<RootState> = {
 			}
 		});
 
+		state.websockets.connectionStatusSocket.on('goToChallenge', async () => {
+			router.push(({name: 'Game', params: { 
+				RenderGameOption: 'false',
+				RenderGameJoin: 'true',
+				status: 'private',
+				random: GameService.generateRandomStr(),
+			}}));
+		});
+		
 		state.websockets.connectionStatusSocket.on('errorChallengingHimself', async () => {
 			createToast({
 				title: 'Error',
@@ -139,7 +148,7 @@ export const mutations: MutationTree<RootState> = {
 				transition: 'slide'
 			});
 
-			router.push('/home');
+			router.push({name: 'Home'});
 		});
 
 		router.push('/account');

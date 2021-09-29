@@ -167,19 +167,20 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	{
 		console.log(`userId = ${obj.friendId} and friendId = ${obj.friendId}`);
 		if (obj.friendId === obj.userId) {
+			this.userService.updateRoomId(obj.userId, 'none');
 			client.emit('errorChallengingHimself');
-			return ;
 		}
-		
-		try {
-			
-			
-			this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
-			const user: User = await this.userService.findUserById(obj.userId);
-			obj.username = user.displayname;
-			this.wss.emit('acceptChallenge', obj);
-		} catch (e) {
-			this.logger.log("CAUGHT ERROR IN CHALLENGE with user id " + obj.userId + " | " + e.message);
+		else {
+			try {
+				client.emit('goToChallenge');
+
+				this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
+				const user: User = await this.userService.findUserById(obj.userId);
+				obj.username = user.displayname;
+				this.wss.emit('acceptChallenge', obj);
+			} catch (e) {
+				this.logger.log("CAUGHT ERROR IN CHALLENGE with user id " + obj.userId + " | " + e.message);
+			}
 		}
 	}
 

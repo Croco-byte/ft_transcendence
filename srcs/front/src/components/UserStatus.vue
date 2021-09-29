@@ -95,13 +95,6 @@ export default defineComponent({
 					friendId: this.friendId,
 					newRoomId: newRoomId.data,
 				});
-				
-				router.push(({name: 'Game', params: { 
-					RenderGameOption: 'false',
-					RenderGameJoin: 'true',
-					status: 'private',
-					random: GameService.generateRandomStr(),
-				}}));
 			}
 		},
 	},
