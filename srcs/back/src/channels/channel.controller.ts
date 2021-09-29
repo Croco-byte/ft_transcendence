@@ -220,7 +220,12 @@ export class ChannelController
 					userRole: this.channelService.getUserRole(channels[i], user),
 					isJoined: true,
 					requirePassword: false,
-					isDirect: true
+					isDirect: true,
+					members:
+					[
+						user.toPublic(),
+						second_user.toPublic()
+					]
 				}
 			);
 		}
