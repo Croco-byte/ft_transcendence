@@ -30,6 +30,6 @@ import { RankingController } from './ranking/ranking.controller';
 		ChannelBannedUserModule,
 	],
   controllers: [RankingController],
-  providers: [StatusGateway, FriendRequestsGateway, AppGateway],
+  providers: [StatusGateway, FriendRequestsGateway],
 })
 export class AppModule {}
