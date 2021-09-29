@@ -859,7 +859,8 @@ export default defineComponent(
 
 		changeUserStatus(data: UserStatusChangeData): void
 		{
-			if (!this.channel || this.channel.id == -1)
+			console.log(this.channel);
+			if (!this.channel || this.channel.id == -1 || !this.channel.members)
 				return ;
 			for(let i=0; i < this.channel.members.length; i++)
 			{
@@ -949,10 +950,16 @@ export default defineComponent(
 			if (this.filter == "public")
 				this.loadChannelsList();
 		});
-		this.socket.on("channel_password_actived", () =>
+		this.socket.on("channel_password_actived", (msg) =>
 		{
-			if (this.filter == "public")
-				this.loadChannelsList();
+			for (let channel of this.channels)
+			{
+				if (channel.id == msg.channel_id)
+				{
+					console.log("Active password for channel", channel.name);					
+					channel.requirePassword = true;
+				}
+			}
 		})
 		this.socket.on("channel_password_deleted", () =>
 		{

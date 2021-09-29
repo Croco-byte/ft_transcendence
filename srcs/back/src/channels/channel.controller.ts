@@ -570,7 +570,7 @@ export class ChannelController
 		if (!channel.owner || channel.owner.id != user.id)
 			throw new UnauthorizedException("You must be the owner of this channel to perform this action");
 
-		this.channelService.addPassword(channel, password);
+		await this.channelService.addPassword(channel, password);
 
 		this.logger.log("Set password of this channel to '" + password + "'");
 		this.websocketGateway.activePassword(channel);
