@@ -25,7 +25,7 @@ export default defineComponent(
 	data() {
 		return {
 			mode: 'normal' as string,
-			socket: null as Socket | null,
+			socket: io() as Socket,
 			channel:
 			{
 				id: -1,
@@ -872,28 +872,15 @@ export default defineComponent(
 	created(): void
 	{
 		this.mode = 'normal';
+		
+		this.loadChannelsList();
+		this.user_id = Number(authService.parseJwt().id);
+
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});
 		this.socket.on('unauthorized', () => {
 				this.$store.commit('disconnectUser', { message: "Session expired or invalid token" });
 		})
-		this.loadChannelsList();
-		this.user_id = Number(authService.parseJwt().id);
-	},
-
-	mounted(): void
-	{
-		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
-		if (this.$route.params.direct_id)
-		{
-			this.setFilter("direct");
-			let id = parseInt(this.$route.params.direct_id as string) as number;
-			this.loadChannelsList().then(() =>
-			{
-				this.switchChat(id);
-			})
-		}
-		let socket = this.socket as Socket;
-		socket.on('message', (data: MessageInterface) =>
+		this.socket.on('message', (data: MessageInterface) =>
 		{
 			if (data.channel !== this.channel.id)
 			{
@@ -913,7 +900,7 @@ export default defineComponent(
 					this.channel.messages.push(data);
 			}
 		})
-		socket.on('new_member', (msg: string) =>
+		this.socket.on('new_member', (msg: string) =>
 		{
 			createToast({
 						title: 'New member',
@@ -925,7 +912,7 @@ export default defineComponent(
 						transition: 'slide'
 					})
 		});
-		socket.on('member_leave', (msg) =>
+		this.socket.on('member_leave', (msg) =>
 		{
 			createToast({
 						title: 'Member leave',
@@ -937,7 +924,7 @@ export default defineComponent(
 						transition: 'slide'
 					})
 		});
-		socket.on('kicked', (msg) =>
+		this.socket.on('kicked', (msg) =>
 		{
 			if (this.channel.id == msg.channel_id)
 				this.restoreChatView();
@@ -952,27 +939,27 @@ export default defineComponent(
 						transition: 'slide'
 					})
 		});
-		socket.on("channel_created", () =>
+		this.socket.on("channel_created", () =>
 		{
 			if (this.filter == "public")
 				this.loadChannelsList()
 		})
-		socket.on("channel_type_changed", msg =>
+		this.socket.on("channel_type_changed", () =>
 		{
 			if (this.filter == "public")
 				this.loadChannelsList();
 		});
-		socket.on("channel_password_actived", () =>
+		this.socket.on("channel_password_actived", () =>
 		{
 			if (this.filter == "public")
 				this.loadChannelsList();
 		})
-		socket.on("channel_password_deleted", () =>
+		this.socket.on("channel_password_deleted", () =>
 		{
 			if (this.filter == "public")
 				this.loadChannelsList();
 		})
-		socket.on("channel_destroyed", (msg) =>
+		this.socket.on("channel_destroyed", (msg) =>
 		{
 			let id = msg.channel_id;
 			if (id == this.channel.id)
@@ -999,10 +986,23 @@ export default defineComponent(
 			}
 		})
 	},
+
+	mounted(): void
+	{
+		this.$store.state.websockets.connectionStatusSocket.on('statusChange', this.changeUserStatus);
+		if (this.$route.params.direct_id)
+		{
+			this.setFilter("direct");
+			let id = parseInt(this.$route.params.direct_id as string) as number;
+			this.loadChannelsList().then(() =>
+			{
+				this.switchChat(id);
+			})
+		}
+	},
 	unmounted()
 	{
-		let socket = this.socket as Socket;
-		socket.disconnect();
+		this.socket.disconnect();
 		this.$store.state.websockets.connectionStatusSocket.off('statusChange', this.changeUserStatus);
 	}
 });
