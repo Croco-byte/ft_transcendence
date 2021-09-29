@@ -39,7 +39,6 @@ export default defineComponent({
 	padding: 2rem;
 	width: 100%;
 	height: 100vh;
-	background-color: white;
 }
 
 .friends_list
