@@ -142,7 +142,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			socket.leave("channel_" + channel.id);
 	}
 
-	async joinChannel(channel: Channel, user: User)
+	joinChannel(channel: Channel, user: User)
 	{
 		let socket: Socket = null;
 		socket = this.getSocketByUser(user)

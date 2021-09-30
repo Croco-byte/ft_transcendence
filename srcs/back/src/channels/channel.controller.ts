@@ -70,6 +70,7 @@ export class ChannelController
 		}
 		channel = await this.channelService.insert(channel);
 
+		this.logger.debug("Channel created !");
 		this.websocketGateway.joinChannel(channel, user);
 		if (channel.type == "public")
 			this.websocketGateway.createChannel();

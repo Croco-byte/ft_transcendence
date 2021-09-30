@@ -5,7 +5,7 @@ services:
     container_name: back
     build:
       context: ./srcs/back
-      target: development
+      # target: development
     links:
        - "postgres"
     volumes:
@@ -63,7 +63,7 @@ services:
     container_name: front
     build:
       context: ./srcs/front
-      target: development
+      # target: development
     volumes:
       - ./srcs/front:/usr/src/app
       - node_modules_front:/usr/src/app/node_modules
