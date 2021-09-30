@@ -214,7 +214,7 @@ export class ChannelController
 			ret.push(
 				{
 					id: channels[i].id,
-					name: second_user.username,
+					name: second_user.displayname,
 					lastMessage: channels[i].lastMessage,
 					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
 					userRole: this.channelService.getUserRole(channels[i], user),
