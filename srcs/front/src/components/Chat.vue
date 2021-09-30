@@ -46,7 +46,8 @@ export default defineComponent(
 			websocketServerURL: "http://" + window.location.hostname + ":3000/chat" as string,
 			user_id: -1,
 			show_channels_list: false,
-			filter: "public"
+			filter: "public",
+			is_loading: false
 		}
 	},
 
@@ -127,7 +128,10 @@ export default defineComponent(
 			{
 				this.channel.messages = res.data.messages;
 				this.channel.user_role = res.data.user_role;
-				document.getElementsByClassName('view')[0].scrollTop =  document.getElementsByClassName('view')[0].scrollHeight;
+				window.setTimeout(() =>
+				{
+					document.getElementsByClassName('view')[0].scrollTop =  document.getElementsByClassName('view')[0].scrollHeight
+				}, 0);
 			})
 			.catch((error) =>
 			{
@@ -603,13 +607,16 @@ export default defineComponent(
 		{
 			return new Promise((resolve, reject) =>
 			{
+				this.is_loading = true;
 				axios.get(this.serverURL + "/channels/" + this.filter, { headers: authHeader() }).then((res) =>
 				{
 					this.channels = res.data;
+					this.is_loading = false;
 					resolve(this.channels);
 				})
 				.catch(err =>
 				{
+					this.is_loading = false;
 					createToast({
 							title: 'Error',
 							description: err.response.message
@@ -884,7 +891,13 @@ export default defineComponent(
 			else
 			{
 				if (this.channel.messages)
+				{
 					this.channel.messages.push(data);
+					window.setTimeout(() =>
+					{
+						document.getElementsByClassName('view')[0].scrollTop =  document.getElementsByClassName('view')[0].scrollHeight
+					}, 0)
+				}
 			}
 		})
 		this.socket.on('new_member', (msg: string) =>
@@ -1018,7 +1031,10 @@ export default defineComponent(
 					</div>
 				</div>
 				<div class="list">
-					<div @click="clickOnChannel" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
+					<div class="loading_icon" v-if="is_loading">
+						<img src="https://i.pinimg.com/originals/d7/65/ca/d765cadd577d6901922c2bfcd8419015.gif"/>
+					</div>
+					<div v-else @click="clickOnChannel" v-for="(chan, index) in channels" v-bind:key="chan.id" class="chat_item" v-bind:data-id="index">
 						<div class="flex j-sb">
 							<p class="title">{{ chan.name }}</p>
 							<p class="date">{{ chan.modifiedDate }}</p>
@@ -1880,6 +1896,19 @@ export default defineComponent(
 	{
 		background: #01c4ff;
 		color: white;
+	}
+
+	.loading_icon
+	{
+		max-width: 100%;
+		width: 50%;
+		justify-self: center;
+		align-self: center;
+	}
+
+	.loading_icon img
+	{
+		max-width: 100%;
 	}
 
 </style>
