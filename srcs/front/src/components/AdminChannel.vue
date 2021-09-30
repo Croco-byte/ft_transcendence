@@ -29,7 +29,7 @@ interface ChannelInterface
 
 export default defineComponent({
 	name: "AdminChannel",
-	data() : {channels: ChannelInterface[], selectedChannel: ChannelInterface, selected: boolean, serverURL: string, socket: Socket | null} {
+	data() : {channels: ChannelInterface[], selectedChannel: ChannelInterface, selected: boolean, serverURL: string, socket: Socket } {
 		return {
 			channels: new Array<ChannelInterface>(),
 			selectedChannel:
@@ -42,13 +42,17 @@ export default defineComponent({
 			},
 			selected: false,
 			serverURL: "http://localhost:3000",
-			socket: null as Socket | null
+			socket: io() as Socket 
 		}
 	},
 
 	mounted()
 	{
 		this.loadChannels();
+	},
+
+	beforeUnmount() {
+		this.socket.disconnect();
 	},
 
 	methods:
@@ -287,7 +291,7 @@ export default defineComponent({
 				<div class="content">
 					<div class="flex j-sb user" v-for="member in selectedChannel.members" :key="member.id">
 						<p>
-							<router-link :to="'/user/' + member.id">{{ member.username }}</router-link>
+							<router-link :to="'/user/' + member.id">{{ member.displayname }}</router-link>
 						</p>
 						<div>
 							<p v-if="!member.isMuted" class="fas fa-volume-mute mute_button action_button" v-on:click="muteMember(member.username)"></p>

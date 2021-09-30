@@ -873,7 +873,7 @@ export default defineComponent(
 	created(): void
 	{
 		this.mode = 'normal';
-		
+
 		this.loadChannelsList();
 		this.user_id = Number(authService.parseJwt().id);
 
