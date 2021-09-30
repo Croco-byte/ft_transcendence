@@ -147,7 +147,10 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		let socket: Socket = null;
 		socket = this.getSocketByUser(user)
 		if (socket)
+		{
+			this.logger.debug("SOCKET FOUND FOR USER " + user.username)
 			socket.join("channel_" + channel.id);
+		}
 		else
 			this.logger.error("SOCKET NOT FOUND ON CREATE CHANNEL");
 			
