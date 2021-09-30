@@ -85,7 +85,8 @@ export class User extends BaseEntity
 			username: this.username,
 			avatar: this.avatar,
 			score: this.score,
-			status: this.status
+			status: this.status,
+			displayname: this.displayname
 		}
 	}
 };
