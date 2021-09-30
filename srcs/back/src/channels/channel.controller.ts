@@ -131,13 +131,16 @@ export class ChannelController
 	@Get("public")
 	async getPublicChannels(@Req() req)
 	{
+		console.log("Start function");
 		let user = await this.userService.findById(req.user.id);
 		if (!user)
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 
+		console.log("After user find");
 		let ret: Object[];
 		let channels = await this.channelService.findAllPublicChannels();
 		ret = new Array();
+		console.log("After channelService");
 
 		for (let i = 0; i < channels.length; i++)
 		{
@@ -154,6 +157,7 @@ export class ChannelController
 				}
 			);
 		}
+		console.log("After for loop");
 		return ret;
 	}
 
