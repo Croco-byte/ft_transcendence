@@ -305,7 +305,7 @@ export class ChannelController
 
 		this.channelService.addUser(channel, user, false);
 		this.websocketGateway.joinChannel(channel, user);
-		this.websocketGateway.addMember("channel_" + channel.id, user.username + " join this channel !", channel);
+		this.websocketGateway.addMember("channel_" + channel.id, user.displayname + " join this channel !", channel);
 	}
 
 	@Get(":channelID/members")

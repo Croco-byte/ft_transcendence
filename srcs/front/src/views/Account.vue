@@ -32,7 +32,7 @@
 			<div class="basic_info">
 				<div v-if="!displaynameEditMode"><p><i class="fas fa-caret-right"></i> <b>Username</b> : {{ displayname }}</p>
 				<button class="edit_displayname" @click="displaynameEditMode = true">Edit username</button></div>
-				<form v-else id="changedisplaynameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
+				<form v-else id="changedisplaynameForm"><i class="fas fa-caret-right"></i> <b>Username</b> :
 				<input name="changedisplaynameInput" v-model="displaynameInput"><br/>
 				<button class="edit_displayname" type="button" v-on:click="changedisplayname()">Update</button>
 				<button class="cancel_displayname" @click="displaynameEditMode = false; displaynameInput = displayname; displaynameErrorMessage = '';">Cancel</button></form>
@@ -129,8 +129,8 @@ export default defineComponent({
 				(e) => {
 					ref.displaynameInput = ref.displayname;
 					ref.displaynameEditMode = false;
-					if (e.response.status == 403) ref.errorNotification('Error in updating display name : Unauthorized characters or name too long');
-					if (e.response.status == 400) ref.errorNotification('Error in updating display name : Name already taken');
+					if (e.response.status == 403) ref.errorNotification('Error in updating username : Unauthorized characters or name too long');
+					if (e.response.status == 400) ref.errorNotification('Error in updating username : Name already taken');
 				}
 			)
 		},
