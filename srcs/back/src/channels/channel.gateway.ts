@@ -136,36 +136,21 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
 	async leaveChannel(channel: Channel, user: User)
 	{
-		let sockID = null;
 		let socket : Socket = null;
-		for (let key in this.clients)
-		{
-			if (this.clients[key][0].username == user.username)
-			{
-				sockID = key;
-				socket = this.clients[key][1];
-				break ;
-			}
-		}
+		socket = this.getSocketByUser(user);
 		if (socket)
 			socket.leave("channel_" + channel.id);
 	}
 
 	async joinChannel(channel: Channel, user: User)
 	{
-		let sockID = null;
 		let socket: Socket = null;
-		for (let key in this.clients)
-		{
-			if (this.clients[key][0].username == user.username)
-			{
-				sockID = key;
-				socket = this.clients[key][1];
-				break ;
-			}
-		}
+		socket = this.getSocketByUser(user)
 		if (socket)
 			socket.join("channel_" + channel.id);
+		else
+			this.logger.error("SOCKET NOT FOUND ON CREATE CHANNEL");
+			
 		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
 	}
 
