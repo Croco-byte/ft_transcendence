@@ -152,7 +152,10 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 			socket.join("channel_" + channel.id);
 		}
 		else
+		{
 			this.logger.error("SOCKET NOT FOUND ON CREATE CHANNEL");
+			console.log(this.clients)
+		}
 			
 		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
 	}
