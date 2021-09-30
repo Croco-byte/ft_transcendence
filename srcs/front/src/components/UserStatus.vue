@@ -1,8 +1,10 @@
 <template>
 	<div class="user_status">
+
 		<p v-if="status === 'online'" class="online">online</p>
 		<p v-if="status === 'offline'" class="offline">offline</p>
 		<p v-if="status === 'in-queue'" class="in-queue">in queue</p>
+		<p v-if="status === 'spectating'" class="spectating">spectating</p>
 		<p v-if="status === 'in-game'">
 			<!-- <span class="in-game">in game</span> -->
 			<button @click="launchSpectating()">watch</button>
@@ -135,6 +137,12 @@ p
 	padding-left: 1.25rem;
 }
 
+.spectating
+{
+	position: relative;
+	padding-left: 1.25rem;
+}
+
 .in-game
 {
 	position: relative;
@@ -190,6 +198,19 @@ p
 	width: 1rem;
 	height: 1rem;
 	background-color: #00b4cc;
+	border-radius: 100%;
+}
+
+.spectating::before
+{
+	content: ' ';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: 1rem;
+	height: 1rem;
+	background-color: #fc8600;
 	border-radius: 100%;
 }
 
