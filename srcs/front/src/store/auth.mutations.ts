@@ -48,7 +48,9 @@ export const mutations: MutationTree<RootState> = {
 			console.log('checking if this challenge is for us');
 			const result = await UserService.getCurrUserId();
 			console.log(`resultId = ${result.data.id} et objfriendID = ${obj.friendId}`);
-			if (obj.friendId === result.data.id) {
+			if (obj.friendId === result.data.id && state.websockets.connectionStatusSocket) {
+				state.websockets.connectionStatusSocket.emit('getInQueue', {});
+				
 				// eslint-disable-next-line
 				const resultCheckBox: any = await Swal.fire({
 					title: 'Someone\'s challenging you!',
@@ -76,7 +78,8 @@ export const mutations: MutationTree<RootState> = {
 						}}));
 					}
 
-					else
+					else {
+						state.websockets.connectionStatusSocket.emit('getOnline', {});
 						createToast({
 							title: 'Error',
 							description: 'The invitation has expired',
@@ -86,9 +89,11 @@ export const mutations: MutationTree<RootState> = {
 							type: 'danger',
 							transition: 'slide'
 						});
+					}
 
 				}
 				else if (state.websockets.connectionStatusSocket) {
+					state.websockets.connectionStatusSocket.emit('getOnline', {});
 					state.websockets.connectionStatusSocket.emit('challengeDeclined', obj.userId);
 				}
 			}
@@ -108,12 +113,7 @@ export const mutations: MutationTree<RootState> = {
 				const result = await UserService.getCurrUserStatus();
 				console.log(`status = ${result.data.status}`);
 				if (result.data.status === 'in-queue') {
-					router.push(({name: 'Game', params: { 
-						RenderGameOption: 'true',
-						RenderGameJoin: 'false',
-						status: 'privateCancelled',
-						random: GameService.generateRandomStr(),
-					}}));
+					router.push(({name: 'Home'}));
 				}
 
 				createToast({
