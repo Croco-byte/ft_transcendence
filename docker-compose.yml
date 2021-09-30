@@ -58,7 +58,6 @@ services:
       - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db_test_scripts/:/db_test_scripts/
 
   front:
     container_name: front
