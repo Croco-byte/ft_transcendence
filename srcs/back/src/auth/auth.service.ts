@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import { HttpService } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';

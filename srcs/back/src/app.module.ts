@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { GameModule } from './game/game.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { HttpModule } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './config/database.module';
 import { StatusGateway } from './users/status.gateway';

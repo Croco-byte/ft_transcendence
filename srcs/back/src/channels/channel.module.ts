@@ -1,4 +1,5 @@
-import { Global, HttpModule, Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import ChannelMutedUserRepository from 'src/channels/channel_muted_users/channel_muted_user.repository';
 import { MessageModule } from 'src/messages/message.module';
