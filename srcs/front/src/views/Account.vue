@@ -30,9 +30,8 @@
 			</div>
 			<div class="info_body" style="display: flex;">
 			<div class="basic_info">
-				<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
-				<div v-if="!displaynameEditMode"><p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayname }}</p>
-				<button class="edit_displayname" @click="displaynameEditMode = true">Edit Display name</button></div>
+				<div v-if="!displaynameEditMode"><p><i class="fas fa-caret-right"></i> <b>Username</b> : {{ displayname }}</p>
+				<button class="edit_displayname" @click="displaynameEditMode = true">Edit username</button></div>
 				<form v-else id="changedisplaynameForm"><i class="fas fa-caret-right"></i> <b>Display name</b> :
 				<input name="changedisplaynameInput" v-model="displaynameInput"><br/>
 				<button class="edit_displayname" type="button" v-on:click="changedisplayname()">Update</button>

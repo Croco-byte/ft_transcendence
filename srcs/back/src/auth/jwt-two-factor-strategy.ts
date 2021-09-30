@@ -22,14 +22,15 @@ export class JwtTwoFactorStrategy extends PassportStrategy(Strategy, 'jwt-two-fa
 	}
 
 	async validate(payload: any) {
-		const user = await User.findOne({ where: { id: payload.id } });
-		if (user && user.is_blocked) throw new HttpException("You are blocked from the website", 444);
-		
-		if (user && !user.isTwoFactorAuthenticationEnabled) {
-			return { id: user.id, username: user.username, is_admin: user.is_admin };
-		}
-		if (payload && payload.isSecondFactorAuthenticated) {
-			return { id: user.id, username: user.username, is_admin: user.is_admin };
+		if (payload && payload.id) {
+			const user = await User.findOne({ where: { id: payload.id } });
+			if (user && user.is_blocked) throw new HttpException("You are blocked from the website", 444);
+			if (user && !user.isTwoFactorAuthenticationEnabled) {
+				return { id: user.id, username: user.username, is_admin: user.is_admin };
+			}
+			if (user && payload && payload.isSecondFactorAuthenticated) {
+				return { id: user.id, username: user.username, is_admin: user.is_admin };
+			}
 		}
 		console.log("Token expired, or 2FA enabled, but the user isn't logged in via 2FA. Bouncing him !")
 	}

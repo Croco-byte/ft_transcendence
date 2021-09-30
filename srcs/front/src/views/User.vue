@@ -33,8 +33,7 @@
 				</div>
 				<br/>
 				<div class="basic_info">
-					<p><i class="fas fa-caret-right"></i> <b>42 login</b> : {{ name }}</p>
-					<p><i class="fas fa-caret-right"></i> <b>Display name</b> : {{ displayname }}</p>
+					<p><i class="fas fa-caret-right"></i> <b>Username</b> : {{ displayname }}</p>
 				</div>
 				<br/>
 				

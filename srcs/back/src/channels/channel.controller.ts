@@ -214,7 +214,7 @@ export class ChannelController
 			ret.push(
 				{
 					id: channels[i].id,
-					name: second_user.username,
+					name: second_user.displayname,
 					lastMessage: channels[i].lastMessage,
 					modifiedDate: channels[i].modifiedDate.toLocaleString().replace(',', ''),
 					userRole: this.channelService.getUserRole(channels[i], user),
@@ -563,6 +563,9 @@ export class ChannelController
 	async changePassword(@Param('channelID') channelID: string, @Body() body, @Request() req)
 	{
 		let password = body.password;
+
+		if (!password || password.length == 0)
+			throw new BadRequestException("Password cannot be empty");
 
 		let channel = await this.channelService.findOne(channelID);
 
