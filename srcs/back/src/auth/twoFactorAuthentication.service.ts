@@ -19,11 +19,9 @@ export class TwoFactorAuthenticationService {
 		let secret: string;
 		const existingUser = await User.findOne({ where: { id: user.id } });
 		if (existingUser && existingUser.twoFactorAuthenticationSecret) {
-			console.log("Using existing secret");
 			secret = existingUser.twoFactorAuthenticationSecret;
 		}
 		else {
-			console.log("Generating a new secret");
 			secret = authenticator.generateSecret();
 			await this.usersService.setTwoFactorAuthenticationSecret(secret, user.id);
 		}
@@ -45,7 +43,6 @@ export class TwoFactorAuthenticationService {
 		}
 		const result = authenticator.verify({ token: twoFactorAuthenticationCode, secret: user.twoFactorAuthenticationSecret });
 		if (!result) {
-			console.log("Verify function returned 'false' for code " + twoFactorAuthenticationCode + " and secret " + user.twoFactorAuthenticationSecret);
 			throw new ForbiddenException();
 		}
 		return (result);

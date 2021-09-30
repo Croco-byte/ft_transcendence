@@ -103,7 +103,6 @@ export default class ChannelService
 	{
 		if (channel.users == null)
 		{
-			console.log("channel.user = null, intialize...", channel.users);
 			channel.users = new Array();
 		}
 		if (channel.requirePassword && enable_pending)

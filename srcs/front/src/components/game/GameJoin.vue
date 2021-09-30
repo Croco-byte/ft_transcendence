@@ -37,8 +37,6 @@ export default defineComponent({
 
 	mounted()
 	{
-		console.log('gamejoin mounted');
-
 		if (this.isPrivate)
 			this.updateHtmlText('msg', 'Waiting for your friend to accept the match...');
 

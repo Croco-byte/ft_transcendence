@@ -133,9 +133,6 @@ export class GameService
 		roomToFill.user2DbId = userDbId;
 		roomToFill.player2Id = playerId;
 		roomToFill.game.p2Right.setup = setupChosen;
-
-		this.logger.log("[DEBUG] The user2DbId of the user that just joined is " + userDbId);
-
 		return roomToFill;
 	}
 
@@ -160,7 +157,6 @@ export class GameService
 		});
 
 		this.logger.log(`Room created (room id: ${this.rooms[this.rooms.length - 1].name})`);
-		this.logger.log("[DEBUG] The user1DbId of the first player of the newly created room is : " + userDbId);
 
 		return this.rooms[this.rooms.length - 1];
 	}

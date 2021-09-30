@@ -191,7 +191,6 @@ export default defineComponent({
 	// ---------------------------------------- LIFECIRCLE HOOKS ----------------------
 	mounted()
 	{
-		console.log('game mounted');
 
 		this.canvas = document.getElementById('PongGame') as HTMLCanvasElement;
 		this.fullGameWindow = document.getElementById('fullGameWindow') as HTMLElement;

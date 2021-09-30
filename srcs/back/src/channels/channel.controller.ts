@@ -64,20 +64,16 @@ export class ChannelController
 			channel.administrators = channel.users;
 			channel.name = user.displayname + '_' + to.displayname; 
 			let exists = await this.channelService.directExists(user, to);
-			console.log("blocked => ", to.blocked, user.blocked);
 			if (exists)
 				return {id: exists.id};
 		}
 		channel = await this.channelService.insert(channel);
 
-		this.logger.debug("Channel created !");
 		this.websocketGateway.joinChannel(channel, user);
 		if (channel.type == "public")
 			this.websocketGateway.createChannel();
 		else if (channel.type == "private" && channel.isDirect)
 			this.websocketGateway.joinChannel(channel, channel.users[1]);
-
-		this.logger.log("Create new channel named '" + body.name + "'");
 		return {message: "Channel " + body.name + " successfully created", id: channel.id};
 	}
 
@@ -132,16 +128,13 @@ export class ChannelController
 	@Get("public")
 	async getPublicChannels(@Req() req)
 	{
-		console.log("Start function");
 		let user = await this.userService.findById(req.user.id);
 		if (!user)
 			throw new UnauthorizedException("You are not authorized to perform this action.");
 
-		console.log("After user find");
 		let ret: Object[];
 		let channels = await this.channelService.findAllPublicChannels();
 		ret = new Array();
-		console.log("After channelService");
 
 		for (let i = 0; i < channels.length; i++)
 		{
@@ -158,7 +151,6 @@ export class ChannelController
 				}
 			);
 		}
-		console.log("After for loop");
 		return ret;
 	}
 
@@ -353,8 +345,6 @@ export class ChannelController
 			if (!this.channelService.isInChannel(channel, admin))
 				throw new NotFoundException("Member " + admin.displayname + " not found in this channel");
 			this.channelService.addAdmin(channel, admin);
-
-			this.logger.log("New admin (user : '" + admin.displayname + "') in channel " + channel.name);
 			return {message: "Administrator '" + admin.displayname + "' added successfully"};
 		});
 	}
@@ -384,7 +374,6 @@ export class ChannelController
 					this.channelService.muteUser(channel, user);
 			});
 		});
-		this.logger.log("Mute user '" + username + "' to this channel");
 		return {message: "User " + username + " muted successfully"};
 	}
 
@@ -410,7 +399,6 @@ export class ChannelController
 				this.channelService.unmuteUser(channel, user);
 			});
 		});
-		this.logger.log("Unmute user '" + username + "' to this channel");
 		return {message: "User " + username + " unmuted successfully"};
 	}
 
@@ -438,7 +426,6 @@ export class ChannelController
 				await this.websocketGateway.leaveChannel(channel, user);
 			});
 		});
-		this.logger.log("Ban user '" + username + "' to this channel");
 		return {message: "User " + username + " banned successfully"};
 	}
 
@@ -468,7 +455,6 @@ export class ChannelController
 				}
 			});
 		});
-		this.logger.log("Unban user '" + username + "' to this channel");
 		return {message: "User " + username + " unbanned successfully"};
 	}
 
@@ -560,7 +546,6 @@ export class ChannelController
 		channel.name = newName;
 		await this.channelService.save(channel);
 
-		this.logger.log("Channel " + channelID + " renamed '" + newName + "'");
 		return {message: "Channel " + channelID + " renamed '" + newName + "'"};
 	}
 
@@ -579,8 +564,6 @@ export class ChannelController
 			throw new UnauthorizedException("You must be the owner of this channel to perform this action");
 
 		await this.channelService.addPassword(channel, password);
-
-		this.logger.log("Set password of this channel to '" + password + "'");
 		this.websocketGateway.activePassword(channel);
 		return {message: "Password changed successfully to '" + password + "'"};
 	}
@@ -598,7 +581,6 @@ export class ChannelController
 
 		this.websocketGateway.deletePassword(channel);
 
-		this.logger.log("Password removed for this channel");
 		return {message: "Password removed successfully"};
 	}
 

@@ -45,9 +45,7 @@ export const mutations: MutationTree<RootState> = {
 		 */
 		state.websockets.connectionStatusSocket.on('acceptChallenge', async (obj) => {
 
-			console.log('checking if this challenge is for us');
 			const result = await UserService.getCurrUserId();
-			console.log(`resultId = ${result.data.id} et objfriendID = ${obj.friendId}`);
 			if (obj.friendId === result.data.id && state.websockets.connectionStatusSocket) {
 				state.websockets.connectionStatusSocket.emit('getInQueue', {});
 				
@@ -61,11 +59,7 @@ export const mutations: MutationTree<RootState> = {
 					
 				if (resultCheckBox.value != false) {
 					const userThatMadeRequest = await UserService.getUserInfo(obj.userId);
-					console.log(`userThatMadeRequest room ${userThatMadeRequest.data.roomId} and id ${userThatMadeRequest.data.id}`);
-
-					console.log(`obj.newRoomId = ${obj.newRoomId}`);
-					console.log(obj);
-
+				
 					if (userThatMadeRequest.data.roomId === obj.newRoomId) {
 						await axios.post("http://" + window.location.hostname + ":3000" + '/game/joinChallenge/' 
 						+ obj.friendId, { newRoomId: obj.newRoomId }, {headers: authHeader()});
@@ -106,12 +100,10 @@ export const mutations: MutationTree<RootState> = {
 		state.websockets.connectionStatusSocket.on('cancelPrivateGame', async (userId) => {
 			
 			const result = await UserService.getCurrUserId();
-			console.log(`cancelPrivateGame, result.data.id = ${result.data.id} et userID = ${userId}`);
 
 			if (userId === result.data.id) {
 				
 				const result = await UserService.getCurrUserStatus();
-				console.log(`status = ${result.data.status}`);
 				if (result.data.status === 'in-queue') {
 					router.push(({name: 'Home'}));
 				}

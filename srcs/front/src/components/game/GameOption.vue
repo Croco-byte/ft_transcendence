@@ -186,7 +186,6 @@ export default defineComponent({
 
 				this.opt.level = value;
 			}
-			console.log(`level: ${this.opt.level}`);
 		},
 
 		setScore(value: number) {
@@ -197,17 +196,14 @@ export default defineComponent({
 
 				this.opt.score = value;
 			}
-			console.log(`score: ${this.opt.score}`);
 		},
 
 		setPadColor(value: string) {
 			if (value != undefined)
 				this.opt.paddleColor = value;
-			console.log(`color ${this.opt.paddleColor}`);
 		},
 
 		startGame() {
-			console.log('start game');
 			this.$emit('setupChosen', { setupChosen: this.opt as Setup, currUserId: Number(AuthService.parseJwt().id) });
 		},
 
@@ -220,7 +216,6 @@ export default defineComponent({
 
 	mounted() {
 		this.resetOption();
-		console.log('option mounted');
 		this.select.level1 = true;
 		this.select.score1 = true;
 	}

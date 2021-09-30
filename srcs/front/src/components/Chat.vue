@@ -180,7 +180,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-					console.log(error)
 				})
 			}
 		},
@@ -356,7 +355,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 
@@ -378,7 +376,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 
@@ -400,7 +397,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -422,7 +418,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -446,7 +441,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -470,7 +464,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -492,7 +485,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -514,7 +506,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -605,7 +596,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -788,7 +778,6 @@ export default defineComponent(
 			})
 			.catch(error =>
 			{
-				console.log(error);
 				createToast({
 						title: 'Error',
 						description: error.response.data.message
@@ -829,7 +818,6 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
@@ -853,13 +841,11 @@ export default defineComponent(
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error)
 			})
 		},
 
 		changeUserStatus(data: UserStatusChangeData): void
 		{
-			console.log(this.channel);
 			if (!this.channel || this.channel.id == -1 || !this.channel.members)
 				return ;
 			for(let i=0; i < this.channel.members.length; i++)
@@ -874,8 +860,7 @@ export default defineComponent(
 	{
 		this.mode = 'normal';
 
-		console.log("hello")
-		this.loadChannelsList().then(() => { console.log("hi") });
+		this.loadChannelsList();
 		this.user_id = Number(authService.parseJwt().id);
 
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});
@@ -957,7 +942,6 @@ export default defineComponent(
 			{
 				if (channel.id == msg.channel_id)
 				{
-					console.log("Active password for channel", channel.name);					
 					channel.requirePassword = true;
 				}
 			}

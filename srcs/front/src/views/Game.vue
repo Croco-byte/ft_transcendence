@@ -55,7 +55,6 @@ export default defineComponent({
 
 		launchSpectate() : void
 		{
-			console.log('launchSpectate listener event');
 			this.resetData();
 			this.isSpectating = true;
 			this.isStarting = true;
@@ -87,7 +86,6 @@ export default defineComponent({
 
 		waitingForPlayer() : void
 		{
-			console.log('waitingForPlayer listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getInQueue', {});
 			this.resetData();
 			this.RenderGameJoin = true;
@@ -105,7 +103,6 @@ export default defineComponent({
 				transition: 'slide'
 			});
 
-			console.log('resetMatchmaking listener event');
 			this.resetData();
 			this.RenderGameOption = true;
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
@@ -113,7 +110,6 @@ export default defineComponent({
 
 		startingGame(inGame: boolean) : void
 		{
-			console.log('startingGame listener event');
 			if (!inGame) {
 				this.RenderGameOption = false;
 				this.RenderGameJoin = true;
@@ -142,7 +138,6 @@ export default defineComponent({
 
 		gameEnded(endGameInfo: EndGameInfo) : void
 		{
-			console.log('gameEnded listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			cancelAnimationFrame(this.gameID);
 			this.endGameInfo = endGameInfo;
@@ -153,7 +148,6 @@ export default defineComponent({
 
 		opponentLeft(endGameInfo: EndGameInfo) : void
 		{
-			console.log('opponentLeft listener event');
 			this.$store.state.websockets.connectionStatusSocket.emit('getOnline', {});
 			cancelAnimationFrame(this.gameID);
 			this.endGameInfo = endGameInfo;
@@ -171,7 +165,6 @@ export default defineComponent({
 		// ----------- SOCKET EMETTERS ------------
 		setupChosen(setup: Setup)
 		{
-			console.log(setup);
 
 			this.socket.emit('setupChosen', setup);
 		},
@@ -289,7 +282,6 @@ export default defineComponent({
 
 	beforeRouteUpdate (to, from , next)
 	{
-		console.log('beforerouteupdate');
 
 		if (to.params.status === 'private') {
 			this.socket.emit('waitInPrivateQueue');

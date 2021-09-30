@@ -12,16 +12,12 @@ import { User } from './users.entity';
 */
 
 @WebSocketGateway({ cors: true, namespace: '/friendRequests' })
-export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class FriendRequestsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 	constructor(private readonly authService: AuthService, private readonly userService: UsersService) {}
 
 	@WebSocketServer() wss: Server;
 	private logger: Logger = new Logger('FriendRequestsGateway');
-
-	afterInit(server: any) {
-		this.logger.log("The FriendRequests Gatway is initialized")
-	}
 
 	handleDisconnect(client: any) {
 			console.log("[FriendRequest Gateway] Client disconnected from gateway : " + client.id);
@@ -107,7 +103,6 @@ export class FriendRequestsGateway implements OnGatewayInit, OnGatewayConnection
 			this.wss.emit('friendStatusChanged', result);
 			client.emit('friendRequestConfirmation', { type: "cancel", message: "Friend request successfully canceled" });
 		} catch(e) {
-			console.log(e.message);
 			client.emit('friendRequestError', { type: "cancel", message: "Something wrong happened while canceling friend request. Please try again later" });
 		}
 	}

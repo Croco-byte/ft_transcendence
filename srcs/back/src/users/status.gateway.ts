@@ -15,7 +15,7 @@ import { getConnection } from 'typeorm';
 */
 
 @WebSocketGateway({ cors: true, namespace: '/connectionStatus' })
-export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayConnection, OnGatewayDisconnect {
 
 	constructor(private readonly authService: AuthService, 
 		private readonly userService: UsersService) {}
@@ -40,10 +40,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@WebSocketServer() wss: Server;
 	private logger: Logger = new Logger('StatusGateway');
 
-	afterInit(server: any) {
-		this.logger.log("The Status Gatway is initialized")
-	}
-
 	async handleDisconnect(client: any) {
 		if (client.data && client.data.userId) {
 			console.log("[Status Gateway] Client disconnected from gateway : " + client.data.userId);
@@ -61,7 +57,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 			console.log("[Status Gateway] Client connected to gateway : " + user.id);
 			client.data = { userId: user.id, username: user.username };
 			if (user.status !== "offline") {
-				console.log("User wasn't offline, so we're kicking him");
 				await this.userService.changeUserStatus(user.id, "offline");
 				this.wss.emit('multipleConnectionsOnSameUser', { userId: user.id });
 			}
@@ -111,7 +106,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'in-game');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-game' });
-			this.logger.log('status changed to ingame');
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -123,7 +117,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 		try {
 			await this.userService.changeUserStatus(client.data.userId, 'in-queue');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'in-queue' });
-			this.logger.log('status changed to in-queue');
 		} catch (e) {
 			this.logger.log(e.message);
 			throw new WsException(e.message);
@@ -143,7 +136,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 			
 			client.emit('goToSpectateView');
 			this.wss.emit('statusChange', { userId: client.data.userId, status: 'spectating' });
-			this.logger.log('status changed to spectating');
 
 		} catch (e) {
 			this.logger.log(e.message);
@@ -165,7 +157,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('challengeSomebody')
 	async handleChallengeSomebody(@ConnectedSocket() client: Socket, @MessageBody() obj: any)
 	{
-		console.log(`userId = ${obj.friendId} and friendId = ${obj.friendId}`);
 		if (obj.friendId === obj.userId) {
 			this.userService.updateRoomId(obj.userId, 'none');
 			client.emit('errorChallengingHimself');
@@ -174,7 +165,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 			try {
 				client.emit('goToChallenge');
 
-				this.logger.log('STATUS GATEWAY CHALLENGESOMEBODY');
 				const user: User = await this.userService.findUserById(obj.userId);
 				obj.username = user.displayname;
 				this.wss.emit('acceptChallenge', obj);
@@ -194,7 +184,6 @@ export class StatusGateway implements OnModuleDestroy, OnModuleInit, OnGatewayIn
 	@SubscribeMessage('challengeDeclined')
 	async handleDeclinedChallenge(@ConnectedSocket() client: Socket, @MessageBody() userId: number)
 	{
-		this.logger.log('STATUS GATEWAY CHALLENGEDECLINED');
 		this.userService.updateRoomId(userId, 'none');
 		this.wss.emit('cancelPrivateGame', userId);
 	}

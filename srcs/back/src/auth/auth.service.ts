@@ -104,7 +104,6 @@ export class AuthService {
 
 	async registerUserBasicAuth(username: string, password: string) {
 		try {
-			console.log(username + " | " + typeof(username));
 			if (!username || username.length <= 3) throw new ForbiddenException("Name must be at least 4 characters");
 			if (!password || password.length <= 6) throw new ForbiddenException("Password must be at least 7 characters");
 			const invalidChars = /^[a-zA-Z0-9-_]+$/;

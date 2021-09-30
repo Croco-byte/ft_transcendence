@@ -21,7 +21,7 @@ import { WsJwtGuard } from '../auth/ws-jwt-strategy';
 @Injectable()
 @WebSocketGateway({ cors: true, namespace: 'chat' })
 @UseGuards(WsJwtGuard)
-export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect
 {
 	@WebSocketServer() server: Server;
 
@@ -63,8 +63,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		let socket = this.getSocketByUser(user);
 		if (socket)
 			socket.emit("kicked", {channel_id: channel.id, msg:"You have been kicked from channel '" + channel.name + "'"});
-		else
-			this.logger.debug("User " + user.username + " not found in clients gateway. socket=" + socket);
 	}
 
 	async addMember(room: string, msg: string, channel: Channel)
@@ -105,11 +103,6 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		}
 	}
 
-	afterInit(server: Server)
-	{
-		this.logger.log('Init');
-	}
-
 	handleDisconnect(client: Socket)
 	{
 		let user = this.clients[client.id];
@@ -148,13 +141,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 		socket = this.getSocketByUser(user)
 		if (socket)
 		{
-			this.logger.debug("SOCKET FOUND FOR USER " + user.username)
 			socket.join("channel_" + channel.id);
 		}
-		else
-			this.logger.error("SOCKET NOT FOUND ON CREATE CHANNEL");
-			
-		// this.server.sockets.adapter.rooms["channel_" + channel.id].sockets[sockID] = true;
 	}
 
 	getSocketByUser(search: User): Socket

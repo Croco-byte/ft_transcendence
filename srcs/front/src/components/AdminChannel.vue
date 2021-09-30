@@ -99,7 +99,6 @@ export default defineComponent({
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 
@@ -125,7 +124,6 @@ export default defineComponent({
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 
@@ -151,7 +149,6 @@ export default defineComponent({
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 
@@ -177,7 +174,6 @@ export default defineComponent({
 						type: 'danger',
 						transition: 'slide'
 					})
-				console.log(error, error.response);
 			})
 		},
 

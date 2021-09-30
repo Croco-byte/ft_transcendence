@@ -18,7 +18,7 @@ import { AuthService } from '../auth/auth.service';
 import { User } from 'src/users/users.entity';
 
 @WebSocketGateway({ cors: true, namespace: 'game' })
-export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
+export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect 
 {
 	constructor(
 		private readonly gameService: GameService,
@@ -29,10 +29,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 	
 	@WebSocketServer() wss: Socket;
 
-	afterInit(server: Server): void 
-	{
-		this.logger.log('Init done');
-	}
 
 	/**
 	 * Add database id to client object. If the user is has status set to 'spectating', makes him
@@ -59,8 +55,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 			const room: Room = await this.gameService.attributeRoom(client.data.userDbId, client.id);
 			client.join(room.name);
 			client.emit('launchSpectate');
-
-			this.logger.log(`launching spectate mode for user ${client.data.userDbId}, room name : ${room.name}`);
 		}
 		else if (client.data.roomId === 'none') {
 			client.emit('renderOption');
