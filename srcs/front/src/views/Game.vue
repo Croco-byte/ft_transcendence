@@ -206,6 +206,7 @@ export default defineComponent({
 		if (this.$route.params.RenderGamePlay === 'true'){
 			this.isSpectating = true;
 			this.isStarting = true;
+			console.log("IS STARTING true");
 		}
 
 		if (this.$route.params.RenderGameOption === 'false')

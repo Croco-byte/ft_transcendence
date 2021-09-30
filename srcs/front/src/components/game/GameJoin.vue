@@ -1,7 +1,7 @@
 <template>
 	<div class="text">
 		<div class="test">
-			<p id="msg">Waiting for another player...</p>
+			<p id="msg">{{ text }}</p>
 		</div>
 		<div class="image">
 			<img class='gif' src="https://i.pinimg.com/originals/d7/65/ca/d765cadd577d6901922c2bfcd8419015.gif ">
@@ -26,28 +26,37 @@ export default defineComponent({
 		}
 	},
 
+	data()
+	{
+		return {
+			text: "Waiting for another player..."
+		}
+	},
+
 	methods: {
-		updateHtmlText(id: string, msg: string)
+		updateHtmlText(msg: string)
 		{
-			const obj = document.getElementById(id);
-			if (obj)
-				obj.innerHTML = msg;	
+			this.text = msg;
+			// const obj = document.getElementById(id);
+			// if (obj)
+			// 	obj.innerHTML = msg;	
 		}
 	},
 
 	mounted()
 	{
+
 		if (this.isPrivate)
-			this.updateHtmlText('msg', 'Waiting for your friend to accept the match...');
+			this.updateHtmlText('Waiting for your friend to accept the match...');
 
 		if (this.isStarting) {
-			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
-								this.updateHtmlText('msg', 'Player found! Game will start soon.');
+			this.isPrivate ?	this.updateHtmlText('Player found! Private game will start soon.') :
+								this.updateHtmlText('Player found! Game will start soon.');
 		}
 
 		watch(() => this.isStarting, () => {
-			this.isPrivate ?	this.updateHtmlText('msg', 'Player found! Private game will start soon.') :
-								this.updateHtmlText('msg', 'Player found! Game will start soon.');
+			this.isPrivate ?	this.updateHtmlText('Player found! Private game will start soon.') :
+								this.updateHtmlText('Player found! Game will start soon.');
 		})
 	},
 

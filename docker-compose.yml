@@ -5,20 +5,19 @@ services:
     container_name: back
     build:
       context: ./srcs/back
-      # target: development
     links:
        - "postgres"
     volumes:
-      - ./srcs/back:/usr/src/app
       - node_modules_back:/usr/src/app/node_modules
     ports:
       - 3000:3000
       - 9229:9229
-    command: npm run start:dev
+    command: npm run start
     env_file:
       - ./srcs/env
     environment:
       - POSTGRES=postgres
+      - NODE_ENV=production
     networks:
       - webnet
     depends_on:
@@ -63,15 +62,14 @@ services:
     container_name: front
     build:
       context: ./srcs/front
-      # target: development
     volumes:
-      - ./srcs/front:/usr/src/app
       - node_modules_front:/usr/src/app/node_modules
     ports:
       - 8080:8080
       - 9228:9228
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - NODE_ENV=production
     command: npm run serve
     networks:
       - webnet
