@@ -564,6 +564,9 @@ export class ChannelController
 	{
 		let password = body.password;
 
+		if (!password || password.length == 0)
+			throw new BadRequestException("Password cannot be empty");
+
 		let channel = await this.channelService.findOne(channelID);
 
 		let user = await this.userService.findById(req.user.id);
