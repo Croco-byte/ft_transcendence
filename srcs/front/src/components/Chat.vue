@@ -874,7 +874,8 @@ export default defineComponent(
 	{
 		this.mode = 'normal';
 
-		this.loadChannelsList();
+		console.log("hello")
+		this.loadChannelsList().then(() => { console.log("hi") });
 		this.user_id = Number(authService.parseJwt().id);
 
 		this.socket = io(this.websocketServerURL, {query: {token: authHeader().Authorization.split(" ")[1]}});

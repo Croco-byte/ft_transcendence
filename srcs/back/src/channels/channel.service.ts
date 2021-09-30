@@ -35,7 +35,14 @@ export default class ChannelService
 
 	async findAllPublicChannels()
 	{
-		return await this.repository.find({relations: this.relations, where: { type: "public" }})
+		const result = await this.repository
+							.createQueryBuilder("channel")
+							.leftJoinAndSelect("channel.users", "users")
+							.leftJoinAndSelect("channel.administrators", "admins")
+							.leftJoinAndSelect("channel.owner", "owner")
+							.where("channel.type = 'public'")
+							.getMany()
+		return result;
 	}
 
 	async findAllJoinedChannels(user: User)
@@ -58,7 +65,13 @@ export default class ChannelService
 
 	async findAll(): Promise<Channel[]>
 	{
-		return await this.repository.find({relations: this.relations, where:[{isDirect: false}]});
+		const result = await this.repository
+					.createQueryBuilder("channel")
+					.leftJoinAndSelect("channel.users", "users")
+					.leftJoinAndSelect("channel.administrators", "admins")
+					.leftJoinAndSelect("channel.owner", "owner")
+					.getMany()
+		return result;
 	}
 	
 	async findOne(id: string): Promise<Channel>
