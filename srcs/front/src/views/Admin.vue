@@ -63,9 +63,6 @@
 			<div class="displayname">
 				<router-link :to="{ name: 'User', params: { id: user.id }}">{{ user.displayname }}</router-link>
 			</div>
-			<div class="status">
-				[status]
-			</div>
 			<div class="users_buttons">
 				<button v-if="user.is_admin !=='moderator' && user.is_admin !== 'owner'" class="make_mod" @click="makeModerator(user.id)">make moderator</button>
 				<button v-else-if="user.is_admin === 'moderator'" class="block" @click="deleteModerator(user.id)">delete moderator</button>

@@ -62,7 +62,7 @@ export class ChannelController
 			channel.type = "private";
 			channel.users.push(to);
 			channel.administrators = channel.users;
-			channel.name = user.username + '_' + to.username; 
+			channel.name = user.displayname + '_' + to.displayname; 
 			let exists = await this.channelService.directExists(user, to);
 			console.log("blocked => ", to.blocked, user.blocked);
 			if (exists)
@@ -346,11 +346,11 @@ export class ChannelController
 		return await this.userService.findByUsername(username).then((admin) =>
 		{
 			if (!this.channelService.isInChannel(channel, admin))
-				throw new NotFoundException("Member " + admin.username + " not found in this channel");
+				throw new NotFoundException("Member " + admin.displayname + " not found in this channel");
 			this.channelService.addAdmin(channel, admin);
 
-			this.logger.log("New admin (user : '" + admin.username + "') in channel " + channel.name);
-			return {message: "Administrator '" + admin.username + "' added successfully"};
+			this.logger.log("New admin (user : '" + admin.displayname + "') in channel " + channel.name);
+			return {message: "Administrator '" + admin.displayname + "' added successfully"};
 		});
 	}
 
@@ -627,7 +627,7 @@ export class ChannelController
 			throw new NotFoundException("User not in this channel");
 		await this.channelService.removeUser(channel, user);
 		this.websocketGateway.leaveChannel(channel, user);
-		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", user.username + " leave channel " + channel.name, channel);
+		this.websocketGateway.notifChannel("channel_" + channel.id, "member_leave", user.displayname + " leave channel " + channel.name, channel);
 	}
 	
 	@Delete("/:channelID/members/:username")

@@ -124,7 +124,7 @@ export default defineComponent({
 				response => {
 					ref.displaynameEditMode = false;
 					ref.displayname = ref.displaynameInput = response.data;
-					ref.confirmationNotification('Display name successfully updated');
+					ref.confirmationNotification('Username successfully updated');
 				},
 				(e) => {
 					ref.displaynameInput = ref.displayname;
